@@ -1164,8 +1164,8 @@ function symboltoimage(odata,w,h){
                } else if ( c > 0 ){
                    r = 255
                } else {
-                   r = 255
-                   a = 64
+//                   r = 255
+                   a = 0
                }
                data[ j++ ] = r
                data[ j++ ] = g
@@ -1205,7 +1205,7 @@ function symboltohitmask(odata,w,h){
            })
     }
     let hitmask = { mask : hm, w, h }
-    console.log(hitmask)
+    //console.log(hitmask)
     return hitmask
 }
 export function prepareHitmask(){
@@ -1217,7 +1217,43 @@ export function prepareHitmask(){
     }
     return hitmask
 }
-;
+
+function symboltobottomhitmask(odata,w,h){
+    let hm = new Array( w ).fill(0).map( () => h  )
+    let x = 0
+    let y = ( h - 1 )
+    for (let i = 0, j = 0; i < odata.length; i++) {
+        let q = odata[ i ];
+        ;[ (q & 0xc0) >> 6,
+           (q & 0x30) >> 4,
+           (q & 0x0c) >> 2,
+           (q & 0x03) ].forEach( (c,q) => {
+               if ( x === w ){
+                   x = 0
+                   y--
+               }
+               if ( c ){
+                   if ( y < hm[ x ] ) {
+                       hm[ x ] = y
+                   }
+               }
+               x++
+           })
+    }
+    let hitmask = { mask : hm, w, h }
+    return hitmask
+}
+
+export function prepareBottomHitmask(){
+    const hitmask = {
+        plane : swplnsym.map( r => r.map( angle => symboltobottomhitmask( angle, 16, 16 ) ) ),
+        targets : swtrgsym.map( type => symboltobottomhitmask( type, 16, 16 ) ),
+        bomb : swbmbsym.map( x => symboltobottomhitmask( x, 8, 8 ) ),
+        missile : swmscsym.map( x => symboltobottomhitmask( x, 8, 8 ) ),       
+    }
+    return hitmask
+    
+}
 export function prepareImages(){
     
     const sym = {
