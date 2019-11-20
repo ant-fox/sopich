@@ -1222,6 +1222,7 @@ function symboltobottomhitmask(odata,w,h){
     let hm = new Array( w ).fill(0).map( () => h  )
     let x = 0
     let y = ( h - 1 )
+    let min = ( h - 1 )
     for (let i = 0, j = 0; i < odata.length; i++) {
         let q = odata[ i ];
         ;[ (q & 0xc0) >> 6,
@@ -1235,12 +1236,15 @@ function symboltobottomhitmask(odata,w,h){
                if ( c ){
                    if ( y < hm[ x ] ) {
                        hm[ x ] = y
+                       if ( y < min ){
+                           min = y
+                       }
                    }
                }
                x++
            })
     }
-    let hitmask = { mask : hm, w, h }
+    let hitmask = { mask : hm, w, h, min }
     return hitmask
 }
 

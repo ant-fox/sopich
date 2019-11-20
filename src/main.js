@@ -1,6 +1,10 @@
 import { ground } from './ground.js'
 import { prepareImages, prepareHitmask, prepareBottomHitmask } from './symbols.js'
+import { Tree } from './coll.js'
 
+function clamp( x, a, b ){
+    return Math.max(a,Math.min(x,b))
+}
 function posmod(n,m) {
     return ((n%m)+m)%m;
 };1
@@ -54,6 +58,7 @@ function init_plane(i){
         r : false,
         a : 0,
         p : 2,
+//        hitmaskf : item => Hitmasks.plane[ (item.r)?1:0 ][ item.a ],
         bombs : new Array(8).fill(0).map( (_,i) => ({
             x : 1550+i*20,
             y : 100+i*10,
@@ -77,7 +82,7 @@ function init_plane(i){
 }
 const State = {
     ground : init_ground(),
-    planes : new Array(20).fill(0).map( (_,i) => init_plane(i) ),
+    planes : new Array(1).fill(0).map( (_,i) => init_plane(i) ),
     targets : {
         xs : [
 	    191, 284, 409, 539, 685,
@@ -96,7 +101,10 @@ const State = {
     },
     pxcoll : {
         list : []
-    }
+    },
+    version : 0,
+    tree : new Tree( 4096, 256, 16 )
+
     
 }
 let PAUSED = false
@@ -139,31 +147,6 @@ document.body.addEventListener('keydown', ({ code }) => {
     default : console.log(code)
     }
 })
-
-function clamp( x, a, b ){
-    return Math.max(a,Math.min(x,b))
-}
-function groundTargets(){
-    const ground = State.ground
-    const { xs, tys } = State.targets
-    for ( let i = 0 ; i < xs.length ; i++ ){
-        let x = xs[ i ]        
-        
-        let meany = 0;
-        for ( let ii = 0 ; ii < 16 ; ii++ ){
-            let wx = x + ii
-            let h = ground[ Math.floor( wx ) % ground.length ]
-            meany += h/16
-        }        
-        for ( let ii = 0 ; ii < 16 ; ii++ ){
-            let wx = x + ii
-            ground[ Math.floor( wx ) % ground.length ] = meany
-        }
-    }
-    
-}
-groundTargets()
-
 function putSprite( image, x, y ){
     $context.drawImage( image, Math.floor(x)  , Math.floor(y - image.height)  )
 }
@@ -251,6 +234,7 @@ function display(){
         let wxy = world_to_context( x, y )
         if ( hit ){
             $context.fillStyle = 'rgba(255,255,255,0.1)'
+            /*
             let wcb = world_to_context( hit.l, hit.t )
             $context.fillRect(wcb.x,
                               0,//wcb.y,
@@ -262,7 +246,7 @@ function display(){
                               800,
                               hit.t-hit.b,
                              )
-            
+            */
             putSprite( Images.target_hit, wxy.x  , wxy.y )
             //putSprite( Images.targets[ty], wxy.x  , wxy.y )
         } else {
@@ -338,10 +322,6 @@ function display(){
             
         })
     })
-    //    displayGround()
-    //  display
-    
-    
 }
 
 function animate(){
@@ -388,7 +368,7 @@ function handleinputs(){
     while ( inputs.length ){
         const { input, client } = inputs.shift()
         let merged_input = merged_inputs[client]
-        
+        if ( merged_input ) {
         switch ( input ){
         case 'noseup' : merged_input.dda = 1 ; break
         case 'nosedown' : merged_input.dda = -1 ; break
@@ -397,6 +377,7 @@ function handleinputs(){
         case 'powerdown' : merged_input.dds = -1 ; break
         case 'firebomb' : merged_input.firebomb = 1 ; break
         case 'firemissile' : merged_input.firemissile = 1 ; break
+        }
         }
     }
     merged_inputs.forEach( ({plane,dda,reverse,dds,firebomb,firemissile}) => {
@@ -535,17 +516,7 @@ function move(){
         }
     })
 }
-function rectangle_intersection(x1,y1,w1,h1,x2,y2,w2,h2, o = {} ){
-    o.l = Math.max( x1, x2 )
-    o.r = Math.min( x1 + w1 , x2 + w2 )
-    if ( o.l >= o.r )
-        return 
-    o.b = Math.max( y1, y2 )
-    o.t = Math.min( y1 + h1 , y2 + h2)
-    if ( o.b >= o.t )
-        return
-    return o
-}
+import { rectangle_intersection } from './rect.js'
 const Hitmasks = prepareHitmask()
 const BottomHitmasks = prepareBottomHitmask()
 
@@ -562,21 +533,60 @@ function pixel_collision(b,
             let p1 = hm1.mask[ lx1 ][ ly1 ]
             let p2 = hm2.mask[ lx2 ][ ly2 ]
             if ( p1 && p2 ){
-                if ( State.pxcoll.list.length > 40000 ){
-                    State.pxcoll.list.shift()
-                }
-                State.pxcoll.list.push( [ i, j, getRandomColor()] )
+                /*
+                  if ( State.pxcoll.list.length > 40000 ){
+                  State.pxcoll.list.shift()
+                  }
+                  State.pxcoll.list.push( [ i, j, getRandomColor()] )
+                */
                 docoll = true
+                return true
             }
         }
     }
     return docoll
 }
 
+function pixel_bottom_collision(fx,y,bhitmask){
+    let collides = false
+    const ground = State.ground
+    
+    const mask = bhitmask.mask
+    const w = bhitmask.w    
+    for ( let i = 0; i < w ; i++ ){
+        let gheight = ground[ ( i + fx )  % ground.length ]
+        let m = mask[ i ]
+        if ( m < bhitmask.h ){
+            let pheight = y + m
+            if ( pheight <= gheight ){
+                
+                //if ( State.pxcoll.list.length > 40000 ){
+                //State.pxcoll.list.shift()
+                //}
+                //State.pxcoll.list.push( [ i+fx, pheight,getRandomColor()] )
+                // modify ground
+                ground[  ( i + fx )  % ground.length ] = pheight
+                collides = true
+            }
+        }
+    }
+    return collides
+}
+function collisions2(){
+    State.version++
+
+    const version = State.version 
+    const tree = State.tree
+    let ncoll = 0;
+    
+}
 
 function collisions(){
+    State.version++
 
-    
+    const version = State.version 
+    const tree = State.tree
+    let ncoll = 0;
     State.planes.forEach( plane => {
         const { x, y, r, a, p, bombs, missiles, explosion } = plane
         
@@ -588,18 +598,22 @@ function collisions(){
         */
         
         ;[ [ [ plane ], item => Hitmasks.plane[ (item.r)?1:0 ][ item.a ] ],
-           //[ bombs, item => Hitmasks.bomb[ item.a ] ],
-           //[ missiles, item => Hitmasks.missile[ item.a ] ]
+           [ bombs, item => Hitmasks.bomb[ item.a ] ],
+           [ missiles, item => Hitmasks.missile[ item.a ] ]
          ].forEach( ([ items, hitmaskf ]) => {
-
-
              items.forEach( item => {
+                 
                  if (( item.ttl === undefined ) || (item.ttl > 0 )){
                      
                      const explosion = item.explosion               
                      const hitmask = hitmaskf( item )
                      const x = item.x
                      const y = item.y
+                     tree.insert(
+                         { x,y,w:hitmask.w,h:hitmask.h, item },
+                         version,
+                         () => { ncoll++ }
+                     )
                      
                      //const { x, y, r, a, p, explosion } = item //State.plane
                      
@@ -654,52 +668,34 @@ function collisions(){
          ].forEach( ([ items, bhitmaskf ]) => {
              items.forEach( item => {
                  if (( item.ttl === undefined ) || (item.ttl > 0 )){
-                     
                      const bhitmask = bhitmaskf( item )
                      const x = item.x
                      const fx = Math.floor(x)
                      const y = item.y
-                     const mask = bhitmask.mask
-
-                     let collides = false
-                     for ( let i = 0, l = bhitmask.w ; i < l ; i++ ){
-                         let gheight = ground[ ( i + fx )  % ground.length ]
-                         let m = mask[ i ]
-                         if ( m < bhitmask.h ){
-                             let pheight = y + m
-                             if ( pheight <= gheight ){
-                                 
-                                 if ( State.pxcoll.list.length > 40000 ){
-                                     State.pxcoll.list.shift()
-                                 }
-                                 State.pxcoll.list.push( [ i+fx, pheight,getRandomColor()] )
-                                 ground[  ( i + fx )  % ground.length ] = pheight
-
-                                 collides = true
-                             }
+                     let collides = pixel_bottom_collision(fx,y,bhitmask)
+                     if ( collides ) {
+                         item.ttl = 0
+                         const explosion = item.explosion
+                         //
+                         explosion.ttl = 10
+                         explosion.step = 0
+                         explosion.p = 2
+                         const debris = explosion.debris
+                         for ( let j = 0, ll = debris.length ; j < ll ; j++ ){
+                             const debri = debris[ j ]
+                             debri.x = x
+                             debri.y = y
                          }
-                         if ( collides ) {
-                             item.ttl = 0
-                             const explosion = item.explosion
-                             //
-                             explosion.ttl = 10
-                             explosion.step = 0
-                             explosion.p = 2
-                             const debris = explosion.debris
-                             for ( let j = 0, ll = debris.length ; j < ll ; j++ ){
-                                 const debri = debris[ j ]
-                                 debri.x = x
-                                 debri.y = y
-                             }
-                             //
-
-                         }
+                         //
+                         
                      }
+                     
                      
                  }
              })
          })
     })
+    console.log('ncoll',ncoll)
 }
 
 
@@ -708,7 +704,8 @@ function ia(){
     let commands = [
         'noseup',
         //    'nosedown',
-        //'reverse','powerup','firemissile','firebomb'
+        //'reverse','powerup',
+        'firemissile','firebomb'
     ]
     let clients = [1,2,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
     for ( let i = 0 ; i < 30 ; i++){
@@ -718,6 +715,26 @@ function ia(){
     }
 
 }
+function groundTargets(){
+    const ground = State.ground
+    const { xs, tys } = State.targets
+    for ( let i = 0 ; i < xs.length ; i++ ){
+        let x = xs[ i ]        
+        
+        let meany = 0;
+        for ( let ii = 0 ; ii < 16 ; ii++ ){
+            let wx = x + ii
+            let h = ground[ Math.floor( wx ) % ground.length ]
+            meany += h/16
+        }        
+        for ( let ii = 0 ; ii < 16 ; ii++ ){
+            let wx = x + ii
+            ground[ Math.floor( wx ) % ground.length ] = meany
+        }
+    }
+    
+}
+groundTargets()
 
 const FPS = 16//16//2//16
 
