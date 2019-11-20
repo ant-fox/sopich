@@ -13,8 +13,8 @@ display.animate()
 //const { PLAYER_RADIUS, PLAYER_MAX_HP, BULLET_RADIUS, MAP_SIZE } = Constants;
 
 // Get the canvas graphics context
-const canvas = document.getElementById('game-canvas');
-const context = canvas.getContext('2d');
+//const canvas = document.getElementById('game-canvas');
+//const context = canvas.getContext('2d');
 
 ///////////////////
 // setCanvasDimensions();
