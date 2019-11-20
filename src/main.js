@@ -1,34 +1,70 @@
 import { ground } from './ground.js'
-import { prepareImages, prepareHitmask, prepareBottomHitmask } from './symbols.js'
+import { prepareHitmask, prepareBottomHitmask } from './symbols.js'
 import { Tree } from './coll.js'
+import { clamp, posmod } from './utils.js'
+import { Display } from './display.js'
+import { Controller } from './controller.js'
 
-function clamp( x, a, b ){
-    return Math.max(a,Math.min(x,b))
+const inputs = []
+function input_send0( input ){
+    inputs.push( { input, client : 0 } )
+    inputs.push( { input, client : 4 } )
 }
-function posmod(n,m) {
-    return ((n%m)+m)%m;
-};1
 
-const Images = prepareImages()
-const $canvas = document.createElement('canvas')
-$canvas.width = 640
-$canvas.height = 200
-document.body.appendChild( $canvas )
-const $context = $canvas.getContext('2d')
 
-function getRandomColor() {
-    if (Math.random()>0.5){
-        return 'black'
-    } else {
-        return 'white'
+const display = new Display()
+const controller = new Controller( input_send0 )
+controller.connect()
+
+function animate(){
+    requestAnimationFrame( animate )
+    display.display()
+}
+animate()
+
+
+/*
+ *
+ */
+const directions16 = new Array( 16 ).fill(0)
+      .map( (_,i) => ( i * 2 * Math.PI / 16 ) )
+      .map( x => [ Math.cos( x ), Math.sin( x ) ] )
+
+const directions8 = new Array( 8 ).fill(0)
+      .map( (_,i) => ( i * 2 * Math.PI / 8 ) )
+      .map( x => [ Math.cos( x ), Math.sin( x ) ] )
+
+const toFall8 = [7,0,6,4,5,6,6,6]
+
+const State = init_state()
+
+function init_state(){
+    return {
+        ground : init_ground(),
+        planes : new Array(1).fill(0).map( (_,i) => init_plane(i) ),
+        targets : init_targets(),
+//    pxcoll : { list : [] },
+        version : 0,
+        tree : new Tree( 4096, 256, 16 )   
     }
-    
-    var letters = '0123456789ABCDEF';
-    var color = '#';
-    for (var i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
+}
+function init_targets(){
+    return {
+        xs : [
+	    191, 284, 409, 539, 685,
+	    807, 934, 1210, 1240, 1440,
+	    1550, 1750, 1780, 2024, 2159,
+	    2279, 2390, 2549, 2678, 2763
+        ],
+        tys : [
+	    1, 3, 1, 1, 3,
+	    0, 1, 2, 0, 3,
+	    3, 0, 2, 1, 1,
+	    3, 3, 0, 0, 1
+        ],
+        hits : new Array(20).fill(false),
+        broken : new Array(20).fill(false),
     }
-    return color;
 }
 function init_ground(){
     return ground.map( x => x )
@@ -80,259 +116,7 @@ function init_plane(i){
         explosion : init_explosion()
     }
 }
-const State = {
-    ground : init_ground(),
-    planes : new Array(1).fill(0).map( (_,i) => init_plane(i) ),
-    targets : {
-        xs : [
-	    191, 284, 409, 539, 685,
-	    807, 934, 1210, 1240, 1440,
-	    1550, 1750, 1780, 2024, 2159,
-	    2279, 2390, 2549, 2678, 2763
-        ],
-        tys : [
-	    1, 3, 1, 1, 3,
-	    0, 1, 2, 0, 3,
-	    3, 0, 2, 1, 1,
-	    3, 3, 0, 0, 1
-        ],
-        hits : new Array(20).fill(false),
-        broken : new Array(20).fill(false),
-    },
-    pxcoll : {
-        list : []
-    },
-    version : 0,
-    tree : new Tree( 4096, 256, 16 )
 
-    
-}
-let PAUSED = false
-let OFFSET = {x:0,y:0}
-document.body.addEventListener('keydown', ({ code }) => {
-    switch ( code ){
-    case 'Pause' : PAUSED = !PAUSED
-        break
-    case 'Numpad1' : OFFSET.x -= 1
-        break
-    case 'Numpad3' : OFFSET.x += 1
-        break
-    case 'Numpad2' : OFFSET.y -= 1
-        break
-    case 'Numpad5' : OFFSET.y += 1
-        break
-    }
-})
-const inputs = []
-function input_send0( input ){
-    inputs.push( { input, client : 0 } )
-    inputs.push( { input, client : 4 } )
-}
-document.body.addEventListener('keydown', ({ code }) => {
-    switch ( code ){
-    case 'ArrowLeft' : input_send0( 'noseup' ) 
-        break
-    case 'ArrowRight' : input_send0( 'nosedown' ) 
-        break
-    case 'ArrowUp' : input_send0( 'reverse' ) 
-        break
-    case 'PageUp' : input_send0( 'powerup' ) 
-        break
-    case 'PageDown' : input_send0( 'powerdown' ) 
-        break
-    case 'ShiftRight' : input_send0( 'firemissile' ) 
-        break
-    case 'Enter' : input_send0( 'firebomb' ) 
-        break
-    default : console.log(code)
-    }
-})
-function putSprite( image, x, y ){
-    $context.drawImage( image, Math.floor(x)  , Math.floor(y - image.height)  )
-}
-function display_explosion(explosion, world_to_context){
-
-    const debris = explosion.debris
-    const ettl = explosion.ttl
-    if ( ettl > 0 ){
-        for ( let j = 0, ll = debris.length ; j < ll ; j++ ){
-            let { x, y, a, ttl, dtype } = debris[ j ]
-            let wxy = world_to_context( x, y )
-            putSprite( Images.debris[dtype], wxy.x , wxy.y )             
-        }
-    }
-}
-
-function display(){
-    
-
-    // camera
-    const camera_target = State.planes[0]
-    
-    const left = clamp(
-        camera_target.x -  $canvas.width / 2,
-        0, 3000 - $canvas.width
-    )
-    const right = left +  $canvas.width 
-    const top = clamp(
-        camera_target.y -  $canvas.height / 2,
-        0,
-        180
-    )   
-    const bottom = top +  $canvas.height
-
-    const { xs, tys, hits } = State.targets
-
-
-    function world_to_context( x, y ){
-        return {
-            x : x - left,
-            y : 200 - y + top 
-        }
-    }
-    function context_to_world( cx, cy ){
-        return {
-            x : left - x ,
-            y : -200 + y - top 
-        }
-    }
-
-    // sky
-    $context.fillStyle = 'black'//'SkyBlue'
-    $context.fillRect(0,0,$canvas.width,$canvas.height)
-    
-    const ground = State.ground
-
-    // ground
-    //$context.fillStyle = getRandomColor()
-    $context.fillStyle = 'green'
-    let lastwy = 0
-    let asLine = false
-    for ( let i = 0 ; i <= $canvas.width ; i++ ){
-
-        let wx = left + i
-        let wy = (wx<0)?(Math.random()*10):ground[ Math.floor( wx ) % ground.length ]        
-        let cxy = world_to_context( wx, wy )
-        if ( asLine ){
-            
-            lastwy = wy
-        } else {
-            $context.fillRect(Math.floor(i),
-                              Math.floor(cxy.y),
-                              Math.floor(1),
-                              Math.ceil($canvas.height - cxy.y))
-        }
-        
-    }
-    // targets
-    $context.fillStyle = 'black'
-    for ( let i = 0 ; i < xs.length ; i++ ){
-        let x = xs[ i ]        
-        let y = ground[ Math.floor( x ) % ground.length ]
-        let ty = tys[ i ]
-        let hit = hits[ i ]
-        let wxy = world_to_context( x, y )
-        if ( hit ){
-            $context.fillStyle = 'rgba(255,255,255,0.1)'
-            /*
-            let wcb = world_to_context( hit.l, hit.t )
-            $context.fillRect(wcb.x,
-                              0,//wcb.y,
-                              hit.r-hit.l,
-                              200//hit.b-hit.t,
-                             )
-            $context.fillRect(0,
-                              wcb.y,
-                              800,
-                              hit.t-hit.b,
-                             )
-            */
-            putSprite( Images.target_hit, wxy.x  , wxy.y )
-            //putSprite( Images.targets[ty], wxy.x  , wxy.y )
-        } else {
-            putSprite( Images.targets[ty], wxy.x  , wxy.y )
-        }
-        //        $context.drawImage( Images.targets[ty], wxy.x  , wxy.y - 16)
-
-    }
-
-    ///
-    /// planes
-    
-    ///
-    State.planes.forEach( plane => {
-        const { x, y, r, a, p, bombs, missiles, explosion } = plane
-
-        $context.fillStyle = 'black'
-        
-        //let va = Math.floor(posmod(a, 2 * Math.PI) / ( 2 * Math.PI ) * 16 )
-        let va = a
-        let vr = r?1:0
-        //$context.putImageData( Images.pln[vr][va], $canvas.width/2, $canvas.height/2)
-        let wxy = world_to_context( x, y )
-
-        putSprite( Images.plane[vr][va], wxy.x  , wxy.y )
-
-        //$context.drawImage( Images.plane[vr][va], wxy.x - 8 , wxy.y - 8 )
-        
-        $context.fillStyle = 'white'
-        $context.font = "10px monospace";
-        $context.fillText(`${Math.floor(x)},${Math.floor(y)},${p}`,
-                          wxy.x + 8 , wxy.y + 18 )
-
-
-        // bombs
-        
-        for ( let i = 0, l = bombs.length ; i < l ; i++ ){        
-            const bomb = bombs[i]
-            const { x, y, a, p, ttl, explosion } = bomb
-            if ( ttl > 0 ){
-                let wxy = world_to_context( x, y )
-                putSprite( Images.bomb[a], wxy.x , wxy.y ) 
-            }
-            // explosion
-            display_explosion(explosion, world_to_context)
-        }
-        // missiles
-        
-        for ( let i = 0, l = missiles.length ; i < l ; i++ ){        
-            const missile = missiles[i]
-            const { x, y, a, p, ttl, explosion } = missile
-            if ( ttl > 0 ){
-                let wxy = world_to_context( x, y )
-                putSprite( Images.missile[a], wxy.x , wxy.y ) 
-            }
-
-            // explosion
-            display_explosion(explosion, world_to_context)
-            
-        }
-
-        // explosion
-        display_explosion(explosion, world_to_context)
-        
-        // collision dbg
-        State.pxcoll.list.forEach( ([x,y,col]) => {
-            let wxy = world_to_context( x, y )
-            wxy.x = Math.floor( wxy.x )
-            wxy.y = Math.floor( wxy.y )
-            $context.fillStyle = col
-            $context.fillRect(wxy.x-0.5,wxy.y-0.5,1,1)
-
-            
-        })
-    })
-}
-
-function animate(){
-    requestAnimationFrame( animate )
-    display()
-}
-animate()
-
-/*
- *
- */
 function available_ttl( items ){
     for ( let i = 0, l = items.length ; i < l ; i++ ){
         if ( items[ i ].ttl <= 0 ){
@@ -342,8 +126,6 @@ function available_ttl( items ){
     return items.length
 }
 
-const BombDropAngle = [0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8]
-const BombDropOffset = [[0,0]]
 
 function init_client_merged_input( plane ){
     return {
@@ -354,11 +136,12 @@ function init_client_merged_input( plane ){
 function init_client_merged_inputs(){
     return State.planes.map( init_client_merged_input )
 }
+
+const BombDropAngle = [0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8]
+const BombDropOffset = [[0,0]]
 function handleinputs(){
 
     let merged_inputs = init_client_merged_inputs()
-    
-    
     
     let dda = 0
     let reverse = 0
@@ -424,15 +207,6 @@ function handleinputs(){
     })
 }
 
-const directions16 = new Array( 16 ).fill(0)
-      .map( (_,i) => ( i * 2 * Math.PI / 16 ) )
-      .map( x => [ Math.cos( x ), Math.sin( x ) ] )
-
-const directions8 = new Array( 8 ).fill(0)
-      .map( (_,i) => ( i * 2 * Math.PI / 8 ) )
-      .map( x => [ Math.cos( x ), Math.sin( x ) ] )
-
-const toFall8 = [7,0,6,4,5,6,6,6]
 
 function move_explosion( explosion ){
     if ( explosion.ttl > 0 ){
@@ -519,7 +293,6 @@ function move(){
 import { rectangle_intersection } from './rect.js'
 const Hitmasks = prepareHitmask()
 const BottomHitmasks = prepareBottomHitmask()
-
 function pixel_collision(b,
                          x1,y1,w1,h1,hm1,
                          x2,y2,w2,h2,hm2 ){
@@ -546,7 +319,6 @@ function pixel_collision(b,
     }
     return docoll
 }
-
 function pixel_bottom_collision(fx,y,bhitmask){
     let collides = false
     const ground = State.ground
@@ -734,6 +506,25 @@ function groundTargets(){
     }
     
 }
+
+let PAUSED = false
+let OFFSET = {x:0,y:0}
+
+document.body.addEventListener('keydown', ({ code }) => {
+    switch ( code ){
+    case 'Pause' : PAUSED = !PAUSED
+        break
+    case 'Numpad1' : OFFSET.x -= 1
+        break
+    case 'Numpad3' : OFFSET.x += 1
+        break
+    case 'Numpad2' : OFFSET.y -= 1
+        break
+    case 'Numpad5' : OFFSET.y += 1
+        break
+    }
+})
+
 groundTargets()
 
 const FPS = 16//16//2//16
@@ -756,7 +547,7 @@ function gameloop(){
         controlled_debug_plane.y += OFFSET.y
         OFFSET = {x:0,y:0}
         //
-        State.pxcoll.list = []
+        //State.pxcoll.list = []
         //
         if ( !PAUSED ){
             ia()
@@ -764,7 +555,7 @@ function gameloop(){
             move()
         }
         collisions()
-
+        display.setState( State )
     },1000/FPS)
 }
 
