@@ -15,8 +15,8 @@ function tellPlayer( inputId, state ){
     }
 }
 let game = new Game( { tellPlayer } )
-game.addPlayer('123456')
-game.addPlayer('1234567')
+game.addPlayer('123456','vivien')
+game.addPlayer('1234567','joe')
 
 // controller
 function onInput( input ){

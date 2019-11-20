@@ -31,20 +31,6 @@ export function Display() {
     function putSprite( image, x, y ){
         $context.drawImage( image, Math.floor(x)  , Math.floor(y - image.height)  )
     }
-
-  
-function display_explosion2(explosion, world_to_context){
-        
-        const debris = explosion.debris
-        const ettl = explosion.ttl
-        if ( ettl > 0 ){
-            for ( let j = 0, ll = debris.length ; j < ll ; j++ ){
-                let { x, y, a, ttl, dtype } = debris[ j ]
-                let wxy = world_to_context( x, y )
-                putSprite( Images.debris[dtype], wxy.x , wxy.y )             
-            }
-        }
-    }
     
     
     function display(){
@@ -177,8 +163,6 @@ function display_explosion2(explosion, world_to_context){
             $context.font = "10px monospace";
             $context.fillText(`${ name } ${Math.floor(x)},${Math.floor(y)},${p}`,
                               wxy.x + 8 , wxy.y + 18 )
-  // explosion
-            //display_explosion(explosion, world_to_context)
         })
             if ( true ) {
 
@@ -191,8 +175,6 @@ function display_explosion2(explosion, world_to_context){
                         let wxy = world_to_context( x, y )
                         putSprite( Images.bomb[a], wxy.x , wxy.y ) 
                     }
-                    // explosion
-                    //display_explosion(explosion, world_to_context)
                 }
                 // missiles
                 
@@ -204,9 +186,6 @@ function display_explosion2(explosion, world_to_context){
                         let wxy = world_to_context( x, y )
                         putSprite( Images.missile[a], wxy.x , wxy.y ) 
                     }
-
-                    // explosion
-                    //display_explosion(explosion, world_to_context)
                     
                 }
 
@@ -231,6 +210,22 @@ function display_explosion2(explosion, world_to_context){
                 let { x, y, a, ttl, dtype } = debris[ j ]
                 let wxy = world_to_context( x, y )
                 putSprite( Images.debris[dtype], wxy.x , wxy.y )             
+            }
+        }
+        const flocks = State.flocks
+        if (flocks){
+            for ( let j = 0, ll = flocks.length ; j < ll ; j++ ){
+                let { x, y, as } = flocks[ j ]
+                let wxy = world_to_context( x, y )
+                putSprite( Images.flock[as], wxy.x , wxy.y )             
+            }
+        }
+        const birds = State.birds
+        if (birds){
+            for ( let j = 0, ll = birds.length ; j < ll ; j++ ){
+                let { x, y, as } = birds[ j ]
+                let wxy = world_to_context( x, y )
+                putSprite( Images.bird[as], wxy.x , wxy.y )             
             }
         }
     }

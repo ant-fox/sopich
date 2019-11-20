@@ -1161,6 +1161,10 @@ function symboltoimage(odata,w,h){
                } else if ( c === 2 ){
                    b = 255
                    r = 255
+               } else if ( c === 3 ){
+                   r = 255
+                   g = 255
+                   b = 255
                } else if ( c > 0 ){
                    r = 255
                } else {

@@ -22,12 +22,32 @@ export function Game( { tellPlayer } ) {
     
     const State = init_state()
     const inputs = []
-
+    function init_bird( i, l ){
+        return {
+            x : Math.floor( 500 + ( i / l ) * 2000 ),
+            y : Math.floor( 100 + ( i / l ) * 100 ),
+            as : Math.floor( Math.random() * 2 ),
+            interv : Math.floor( 3 + Math.random() * 2 ),
+            step : 0
+        }
+    }
+    function init_flock(i,l){
+        return {
+            x : Math.floor( 500 + ( i / l ) * 2000 ),
+            y : Math.floor( 100 + ( i / l ) * 100 ),
+            as : Math.floor( Math.random() * 2 ),
+            interv : Math.floor( 5 + Math.random() * 5 ),
+            step : 0
+            
+        }
+    }
     function init_state(){
         return {
             ground : init_ground(),
             planes : new Array(20).fill(0).map( (_,i) => init_plane(i) ),
             targets : init_targets(),
+            birds : new Array(20).fill(0).map( (_,i,r) => init_bird(i,r.length) ),
+            flocks : new Array(4).fill(0).map( (_,i,r) => init_flock(i,r.length) ),
             //    pxcoll : { list : [] },
             version : 0,
             tree : new Tree( 4096, 256, 16 )   
@@ -54,16 +74,6 @@ export function Game( { tellPlayer } ) {
     function init_ground(){
         return ground.map( x => x )
     }
-    function init_explosion(){
-        return {
-            p : 4,
-            ttl : 100,
-            step : 0,
-            debris : new Array(16).fill(0).map( (_,i) => {
-                return init_debris( i )
-            })
-        }       
-    }
     function init_debris( i, x = 1600, y = 100 ){
         return {
             x : x+Math.floor( Math.random()*50 ),
@@ -71,6 +81,16 @@ export function Game( { tellPlayer } ) {
             a : ( (i*((Math.random()>0.5)?1:2)) % 16 ),
             dtype : ( i % 8 ),
         }
+    }
+    function init_explosion(){
+        return {
+            p : 4,
+            ttl : -1,
+            step : 0,
+            debris : new Array(16).fill(0).map( (_,i) => {
+                return init_debris( i )
+            })
+        }       
     }
     function init_plane(i){
         return {
@@ -275,6 +295,22 @@ export function Game( { tellPlayer } ) {
                 }
                 move_explosion( missile.explosion )
             }
+        })
+        State.flocks.forEach( flock => {
+            if ( ( flock.step % flock.interv ) === 0 ){
+                flock.as = ( flock.as + 1)%2
+                flock.x = Math.floor( flock.x + ( Math.random() * 2 ) - 1 )
+                flock.y = Math.floor( flock.y + ( Math.random() * 2 ) - 1 )
+            }
+            flock.step++
+        })
+        State.birds.forEach( bird => {
+            if ( ( bird.step % bird.interv ) === 0 ){
+                bird.as = ( bird.as + 1)%2
+                bird.x = Math.floor( bird.x + ( Math.random() * 4 ) - 2 )
+                bird.y = Math.floor( bird.y + ( Math.random() * 4 ) - 2 )
+            }
+            bird.step++
         })
     }
     function pixel_collision(b,
@@ -602,8 +638,13 @@ export function Game( { tellPlayer } ) {
             debris : [],
             ground : State.ground,
             targets : State.targets,
+            birds : State.birds,
+            flocks : []
         }
-
+        State.flocks.forEach( flock => {
+            let { x, y, as } = flock
+            payload.flocks.push( { x, y, as } )
+        })
         
         State.planes.forEach( plane => {
             let { x, y, r, a, p, explosion } = plane
