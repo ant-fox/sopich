@@ -31,7 +31,9 @@ export function Display() {
     function putSprite( image, x, y ){
         $context.drawImage( image, Math.floor(x)  , Math.floor(y - image.height)  )
     }
-    function display_explosion(explosion, world_to_context){
+
+  
+function display_explosion2(explosion, world_to_context){
         
         const debris = explosion.debris
         const ettl = explosion.ttl
@@ -49,7 +51,7 @@ export function Display() {
         if ( !State ) {
             return
         }
-        // console.log( State )
+//        console.log( State )
         if ( ! State.planes ){
             return 
         } 
@@ -222,6 +224,14 @@ export function Display() {
                   })
                 */
             
+            }
+        const debris = State.debris
+        if (debris){
+            for ( let j = 0, ll = debris.length ; j < ll ; j++ ){
+                let { x, y, a, ttl, dtype } = debris[ j ]
+                let wxy = world_to_context( x, y )
+                putSprite( Images.debris[dtype], wxy.x , wxy.y )             
+            }
         }
     }
     function animate(){

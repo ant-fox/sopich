@@ -599,25 +599,48 @@ export function Game( { tellPlayer } ) {
             explosions : [],
             bombs : [],
             missiles : [],
+            debris : [],
             ground : State.ground,
             targets : State.targets,
         }
+
         
         State.planes.forEach( plane => {
-            let { x, y, r, a, p } = plane
+            let { x, y, r, a, p, explosion } = plane
             let name = '?'
             if ( plane.inputId ){
                 name = nameByInputId[ plane.inputId ]
             }
             payload.planes.push( { x, y, r, a, p, name } )
+            
+            if ( explosion.ttl > 0 ){
+                explosion.debris.forEach( debri => {
+                    let { x, y, a, dtype } = debri
+                    payload.debris.push( { x, y, a, dtype } )
+                })
+            }
+            
+            
             plane.bombs.forEach( bomb => {
-                let { x, y, a, p, ttl, step } = bomb
-                payload.bombs.push( { x, y, a, p, ttl, step } )                
+                let { x, y, a, p, ttl,  step, explosion } = bomb
+                payload.bombs.push( { x, y, a, p, ttl /*, step */ } )
+                if ( explosion.ttl > 0 ){
+                    explosion.debris.forEach( debri => {
+                        let { x, y, a, dtype } = debri
+                        payload.debris.push( { x, y, a, dtype } )
+                    })
+                }
+                
             })
             plane.missiles.forEach( missile => {
                 let { x, y, a, p, ttl, step } = missile
-                payload.missiles.push( { x, y, a, p, ttl, step } )
-                
+                payload.missiles.push( { x, y, a, p, ttl /*, step */ } )
+                if ( explosion.ttl > 0 ){
+                    explosion.debris.forEach( debri => {
+                        let { x, y, a, dtype } = debri
+                        payload.debris.push( { x, y, a, dtype } )
+                    })
+                }                
             })
         })
         
