@@ -11,7 +11,6 @@ import { Game } from '../../game.js'
 
 const Constants = require('../shared/constants');
 //const Game = require('./game');
-const webpackConfig = require('../../../webpack.dev.js');
 
 // Setup an Express server
 const app = express();
@@ -19,6 +18,7 @@ app.use(express.static('public'));
 
 if (process.env.NODE_ENV === 'development') {
   // Setup Webpack for development
+    const webpackConfig = require('../../../webpack.dev.js');
   const compiler = webpack(webpackConfig);
   app.use(webpackDevMiddleware(compiler));
 } else {
