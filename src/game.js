@@ -31,6 +31,15 @@ const toFall8 = [7,0,6,4,5,6,6,6]
 const Hitmasks = prepareHitmask()
 const BottomHitmasks = prepareBottomHitmask()
 
+function available_ttl( items ){
+    for ( let i = 0, l = items.length ; i < l ; i++ ){
+        if ( items[ i ].ttl <= 0 ){
+            return i
+        }
+    }
+    return items.length
+}
+
 export function Game( { tellPlayer } ) {
     
     const State = init_state()
@@ -44,7 +53,7 @@ export function Game( { tellPlayer } ) {
             dir : 1,
             loop : true,
             interv : 8,
-            ttl : 100,
+            ttl : -1,
             as : 0,
             p : 1,
         }
@@ -58,7 +67,7 @@ export function Game( { tellPlayer } ) {
             dir : -1,
             loop : false,
             interv : 15,
-            ttl : 1000, 
+            ttl : -1, 
             as : 3,
         }
     }    
@@ -87,19 +96,7 @@ export function Game( { tellPlayer } ) {
             
         }
     }
-    function init_state(){
-        return {
-            ground : init_ground(),
-            planes : new Array(20).fill(0).map( (_,i) => init_plane(i) ),
-            targets : init_targets(),
-            birds : new Array(20).fill(0).map( (_,i,r) => init_bird(i,r.length) ),
-            flocks : new Array(4).fill(0).map( (_,i,r) => init_flock(i,r.length) ),
-            oxs : new Array(12).fill(0).map( (_,i,r) => init_ox(i,r.length) ),
-            //    pxcoll : { list : [] },
-            version : 0,
-            tree : new Tree( 4096, 256, 16 )   
-        }
-    }
+    
     function init_ground(){
         return ground.map( x => x )
     }
@@ -173,14 +170,18 @@ export function Game( { tellPlayer } ) {
             respawn : -1,
         }
     }
-
-    function available_ttl( items ){
-        for ( let i = 0, l = items.length ; i < l ; i++ ){
-            if ( items[ i ].ttl <= 0 ){
-                return i
-            }
+    function init_state(){
+        return {
+            ground : init_ground(),
+            planes : new Array(20).fill(0).map( (_,i) => init_plane(i) ),
+            targets : init_targets(),
+            birds : new Array(20).fill(0).map( (_,i,r) => init_bird(i,r.length) ),
+            flocks : new Array(4).fill(0).map( (_,i,r) => init_flock(i,r.length) ),
+            oxs : new Array(12).fill(0).map( (_,i,r) => init_ox(i,r.length) ),
+            //    pxcoll : { list : [] },
+            version : 0,
+            tree : new Tree( 4096, 256, 16 )   
         }
-        return items.length
     }
 
 
@@ -335,6 +336,7 @@ export function Game( { tellPlayer } ) {
                 if ( plane.respawn < 0 ){
                     plane.ttl = 1000
                     plane.y = 256
+                    plane.p = 1
                 }
             }
             move_anim( leaving )
@@ -467,6 +469,32 @@ export function Game( { tellPlayer } ) {
         
     }
 
+    
+    function start_explosion( explosion, x, y ){
+        console.log(explosion)
+        //
+        explosion.ttl = 10
+        explosion.step = 0
+        explosion.p = 2
+        const debris = explosion.debris
+        for ( let j = 0, ll = debris.length ; j < ll ; j++ ){
+            const debri = debris[ j ]
+            debri.x = x
+            debri.y = y
+        }
+        //                
+    }
+    function start_falling( item ){
+        if ( item.falling ){
+            // TODO
+            item.falling = init_falling_plane()
+            item.falling.x = item.x
+            item.falling.y = item.y
+        }
+        if ( item.respawn ){
+            item.respawn = 30
+        }
+    }
     function collisions(){
         State.version++
 
@@ -502,15 +530,12 @@ export function Game( { tellPlayer } ) {
                          )
                          
                          //const { x, y, r, a, p, explosion } = item //State.plane
-                         
-                         
-                         
                          for ( let i = 0 ; i < xs.length ; i++ ){
-                             let tx = xs[ i ]
-                             let ty = ground[ Math.floor( tx ) % ground.length ]
-                             let hit = hits[ i ]
-                             let ttype = tys[ i ] // type
-                             let o = {}
+                             const tx = xs[ i ]
+                             const ty = ground[ Math.floor( tx ) % ground.length ]
+                             const hit = hits[ i ]
+                             const ttype = tys[ i ] // type
+                             const o = {}
                              if ( rectangle_intersection( x,y,hitmask.w,hitmask.h, tx,ty,16,16, o ) ){
                                  if ( pixel_collision( o, x,y,hitmask.w,hitmask.h, hitmask, tx,ty,16,16, Hitmasks.targets[ ttype ]) ){
                                      
@@ -529,30 +554,7 @@ export function Game( { tellPlayer } ) {
                  })
              })
 
-            function start_explosion( explosion, x, y ){
-                //
-                explosion.ttl = 10
-                explosion.step = 0
-                explosion.p = 2
-                const debris = explosion.debris
-                for ( let j = 0, ll = debris.length ; j < ll ; j++ ){
-                    const debri = debris[ j ]
-                    debri.x = x
-                    debri.y = y
-                }
-                //                
-            }
-            function start_falling( item ){
-                if ( item.falling ){
-                    // TODO
-                    item.falling = init_falling_plane()
-                    item.falling.x = item.x
-                    item.falling.y = item.y
-                }
-                if ( item.respawn ){
-                    item.respawn = 30
-                }
-            }
+            
             /*
              * ground coll
              */
@@ -578,7 +580,7 @@ export function Game( { tellPlayer } ) {
              })
             
         })
-//        console.log('ncoll',ncoll)
+        //        console.log('ncoll',ncoll)
     }
 
 
@@ -766,7 +768,7 @@ export function Game( { tellPlayer } ) {
             }
             // TODO
             //if ( ttl > 0 ){
-                payload.planes.push( { ttl, x, y, r, a, p, name } )
+            payload.planes.push( { ttl, x, y, r, a, p, name } )
             //}
             {
                 const {x,y,as,ttl} = leaving

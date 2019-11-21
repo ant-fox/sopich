@@ -18,12 +18,18 @@ function getRandomColor() {
     return color;
 }
 
-function setCanvasDimensions( canvas ) {
+function setCanvasDimensions( canvas, previousDimensions ) {
     // On small screens (e.g. phones), we want to "zoom out" so players can still see at least
     // 200 in-game units of width.
-    const scaleRatio = Math.max(1, 200 / window.innerWidth);
-    canvas.width = scaleRatio * window.innerWidth   ;
-    canvas.height = scaleRatio * window.innerHeight;
+    const scaleRatio = Math.max( 1, 200 / window.innerWidth )
+    const width = Math.floor( scaleRatio * window.innerWidth ) 
+    const height = Math.floor( scaleRatio * window.innerHeight )
+    if ( ( canvas.width === width ) && ( canvas.height === height ) ){
+        return
+    } 
+    canvas.width = width
+    canvas.height = height
+
 }
 export function Display() {
     
@@ -38,7 +44,6 @@ export function Display() {
     function putSprite( image, x, y ){
         $context.drawImage( image, Math.floor(x)  , Math.floor(y) - image.height  )
     }
-    
     function display(){
 
         setCanvasDimensions( $canvas )
