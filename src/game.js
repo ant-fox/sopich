@@ -662,7 +662,7 @@ export function Game( { tellPlayer } ) {
     groundOxs()
 
     // const FPS = 16//16//2//16
-    const FPS = 16//16
+    const FPS = 5//16
     State.lastUpdateTime = Date.now()
 
 
