@@ -6,8 +6,8 @@
   "scripts": {
     "build": "webpack --config webpack.prod.js",
     "lint": "eslint --cache --ext .js,.jsx src/",
-    "develop": "cross-env NODE_ENV=development node  -r esm src/server/server.js",
-    "start": "cross-env NODE_ENV=production node -r esm src/server/server.js"
+    "develop": "cross-env NODE_ENV=development node  -r esm src/iogame/server/server.js",
+    "start": "cross-env NODE_ENV=production node -r esm src/iogame/server/server.js"
   },
   "author": "Victor Zhou",
   "license": "MIT",
