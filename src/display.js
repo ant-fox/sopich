@@ -19,10 +19,10 @@ function getRandomColor() {
 
 export function Display() {
     
-
     const $canvas = document.createElement('canvas')
-    $canvas.width = 640
-    $canvas.height = 200
+    $canvas.classList.add('game')
+    $canvas.width = 320*4
+    $canvas.height = 200*3
     document.body.appendChild( $canvas )
     const $context = $canvas.getContext('2d')
 
@@ -37,7 +37,7 @@ export function Display() {
         if ( !State ) {
             return
         }
-//        console.log( State )
+        //        console.log( State )
         if ( ! State.planes ){
             return 
         } 
@@ -57,7 +57,7 @@ export function Display() {
         const top = clamp(
             camera_target.y -  $canvas.height / 2,
             0,
-            180
+            400
         )   
         const bottom = top +  $canvas.height
 
@@ -66,30 +66,28 @@ export function Display() {
         function world_to_context( x, y ){
             return {
                 x : x - left,
-                y : 200 - y + top 
+                y : 400 - y + top 
             }
         }
+        /*
         function context_to_world( cx, cy ){
             return {
                 x : left - x ,
                 y : -200 + y - top 
             }
         }
-
+*/
         // sky
         $context.fillStyle = 'black'//'SkyBlue'
         $context.fillRect(0,0,$canvas.width,$canvas.height)
 
+        // ground
         const ground = State.ground
         if ( ground ){
-
-            // ground
-            //$context.fillStyle = getRandomColor()
             $context.fillStyle = 'green'
             let lastwy = 0
             let asLine = false
             for ( let i = 0 ; i <= $canvas.width ; i++ ){
-
                 let wx = left + i
                 let wy = (wx<0)?(Math.random()*10):ground[ Math.floor( wx ) % ground.length ]        
                 let cxy = world_to_context( wx, wy )
@@ -102,13 +100,12 @@ export function Display() {
                                       Math.floor(1),
                                       Math.ceil($canvas.height - cxy.y))
                 }
-                
             }
         }
+        
+        // targets
         if ( true ){
             const { xs, tys, hits } = State.targets
-
-            // targets
             $context.fillStyle = 'black'
             for ( let i = 0 ; i < xs.length ; i++ ){
                 let x = xs[ i ]        
@@ -118,92 +115,60 @@ export function Display() {
                 let wxy = world_to_context( x, y )
                 if ( hit ){
                     $context.fillStyle = 'rgba(255,255,255,0.1)'
-                    /*
-                      let wcb = world_to_context( hit.l, hit.t )
-                      $context.fillRect(wcb.x,
-                      0,//wcb.y,
-                      hit.r-hit.l,
-                      200//hit.b-hit.t,
-                      )
-                      $context.fillRect(0,
-                      wcb.y,
-                      800,
-                      hit.t-hit.b,
-                      )
-                    */
                     putSprite( Images.target_hit, wxy.x  , wxy.y )
-                    //putSprite( Images.targets[ty], wxy.x  , wxy.y )
                 } else {
                     putSprite( Images.targets[ty], wxy.x  , wxy.y )
                 }
-                //        $context.drawImage( Images.targets[ty], wxy.x  , wxy.y - 16)
-
             }
         }
-        ///
+
         /// planes
-        
-        ///
-        State.planes.forEach( plane => {
-            const { x, y, r, a, p, /*bombs, missiles, explosion*/ name } = plane
+        const planes = State.planes
+        if ( planes ){
+            State.planes.forEach( plane => {
+                const { x, y, r, a, p, /*bombs, missiles, explosion*/ name } = plane
 
-            $context.fillStyle = 'black'
-            
-            //let va = Math.floor(posmod(a, 2 * Math.PI) / ( 2 * Math.PI ) * 16 )
-            let va = a
-            let vr = r?1:0
-            //$context.putImageData( Images.pln[vr][va], $canvas.width/2, $canvas.height/2)
-            let wxy = world_to_context( x, y )
-//            console.log( 'vrva', vr, va )
-            putSprite( Images.plane[vr][va], wxy.x  , wxy.y )
-
-            //$context.drawImage( Images.plane[vr][va], wxy.x - 8 , wxy.y - 8 )
-            
-            $context.fillStyle = 'white'
-            $context.font = "10px monospace";
-            $context.fillText(`${ name } ${Math.floor(x)},${Math.floor(y)},${p}`,
-                              wxy.x + 8 , wxy.y + 18 )
-        })
-            if ( true ) {
-
-                // bombs
-                const bombs = State.bombs
-                for ( let i = 0, l = bombs.length ; i < l ; i++ ){        
-                    const bomb = bombs[i]
-                    const { x, y, a, p, ttl, explosion } = bomb
-                    if ( ttl > 0 ){
-                        let wxy = world_to_context( x, y )
-                        putSprite( Images.bomb[a], wxy.x , wxy.y ) 
-                    }
-                }
-                // missiles
+                $context.fillStyle = 'black'
                 
-                const missiles = State.missiles
-                for ( let i = 0, l = missiles.length ; i < l ; i++ ){        
-                    const missile = missiles[i]
-                    const { x, y, a, p, ttl, explosion } = missile
-                    if ( ttl > 0 ){
-                        let wxy = world_to_context( x, y )
-                        putSprite( Images.missile[a], wxy.x , wxy.y ) 
-                    }
-                    
-                }
-
+                //let va = Math.floor(posmod(a, 2 * Math.PI) / ( 2 * Math.PI ) * 16 )
+                let va = a
+                let vr = r?1:0
+                //$context.putImageData( Images.pln[vr][va], $canvas.width/2, $canvas.height/2)
+                let wxy = world_to_context( x, y )
+                //            console.log( 'vrva', vr, va )
+                putSprite( Images.plane[vr][va], wxy.x  , wxy.y )
                 
-                // collision dbg
-                /*
-                  State.pxcoll.list.forEach( ([x,y,col]) => {
-                  let wxy = world_to_context( x, y )
-                  wxy.x = Math.floor( wxy.x )
-                  wxy.y = Math.floor( wxy.y )
-                  $context.fillStyle = col
-                  $context.fillRect(wxy.x-0.5,wxy.y-0.5,1,1)
+                //$context.drawImage( Images.plane[vr][va], wxy.x - 8 , wxy.y - 8 )
+                
+                $context.fillStyle = 'white'
+                $context.font = "10px monospace";
+                $context.fillText(`${ name } ${Math.floor(x)},${Math.floor(y)},${p}`,
+                                  wxy.x + 8 , wxy.y + 18 )
+            })
+        }
 
-                  
-                  })
-                */
-            
+        const bombs = State.bombs
+        if ( bombs ) {
+            for ( let i = 0, l = bombs.length ; i < l ; i++ ){        
+                const bomb = bombs[i]
+                const { x, y, a, p, ttl, explosion } = bomb
+                if ( ttl > 0 ){
+                    let wxy = world_to_context( x, y )
+                    putSprite( Images.bomb[a], wxy.x , wxy.y ) 
+                }
             }
+        }
+        const missiles = State.missiles
+        if ( missiles ){
+            for ( let i = 0, l = missiles.length ; i < l ; i++ ){        
+                const missile = missiles[i]
+                const { x, y, a, p, ttl, explosion } = missile
+                if ( ttl > 0 ){
+                    let wxy = world_to_context( x, y )
+                    putSprite( Images.missile[a], wxy.x , wxy.y ) 
+                }
+            }
+        }
         const debris = State.debris
         if (debris){
             for ( let j = 0, ll = debris.length ; j < ll ; j++ ){
@@ -226,6 +191,31 @@ export function Display() {
                 let { x, y, as } = birds[ j ]
                 let wxy = world_to_context( x, y )
                 putSprite( Images.bird[as], wxy.x , wxy.y )             
+            }
+        }
+        const fallings = State.fallings
+        if (fallings){
+            for ( let j = 0, ll = fallings.length ; j < ll ; j++ ){
+                let { x, y, as } = fallings[ j ]
+                let wxy = world_to_context( x, y )
+                putSprite( Images.plane_hit[as], wxy.x , wxy.y )             
+            }
+        }
+        const leavings = State.leavings
+        if (leavings){
+            for ( let j = 0, ll = leavings.length ; j < ll ; j++ ){
+                let { x, y, as } = leavings[ j ]
+                let wxy = world_to_context( x, y )
+                putSprite( Images.plane_win[as], wxy.x , wxy.y )             
+            }
+        }
+        const oxs = State.oxs
+        if (oxs){
+            for ( let j = 0, ll = oxs.length ; j < ll ; j++ ){
+                let { x, as } = oxs[ j ]
+                let y =  ground[ Math.floor( x ) % ground.length ]
+                let wxy = world_to_context( x, y )
+                putSprite( Images.ox[as], wxy.x , wxy.y )             
             }
         }
     }
