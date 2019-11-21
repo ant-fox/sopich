@@ -21,15 +21,15 @@ export function Display() {
     
     const $canvas = document.createElement('canvas')
     $canvas.classList.add('game')
-    $canvas.width = 320*4
-    $canvas.height = 200*3
+    $canvas.width = 320
+    $canvas.height = 200
     document.body.appendChild( $canvas )
     const $context = $canvas.getContext('2d')
 
     let State
 
     function putSprite( image, x, y ){
-        $context.drawImage( image, Math.floor(x)  , Math.floor(y - image.height)  )
+        $context.drawImage( image, Math.floor(x)  , Math.floor(y) - image.height  )
     }
     
     
@@ -57,7 +57,7 @@ export function Display() {
         const top = clamp(
             camera_target.y -  $canvas.height / 2,
             0,
-            400
+            200
         )   
         const bottom = top +  $canvas.height
 
@@ -66,7 +66,7 @@ export function Display() {
         function world_to_context( x, y ){
             return {
                 x : x - left,
-                y : 400 - y + top 
+                y : 200 - y + top 
             }
         }
         /*
@@ -126,8 +126,10 @@ export function Display() {
         const planes = State.planes
         if ( planes ){
             State.planes.forEach( plane => {
-                const { x, y, r, a, p, /*bombs, missiles, explosion*/ name } = plane
-
+                const { ttl, x, y, r, a, p, /*bombs, missiles, explosion*/ name } = plane
+                if ( ttl < 0 ){
+                    return
+                }
                 $context.fillStyle = 'black'
                 
                 //let va = Math.floor(posmod(a, 2 * Math.PI) / ( 2 * Math.PI ) * 16 )

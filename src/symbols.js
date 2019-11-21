@@ -1178,8 +1178,7 @@ function symboltoimage(odata,w,h){
            })
     }
     $ctx.putImageData(imageData, 0, 0);
-    
-    document.body.appendChild( $canvas );
+    document.body.appendChild( $canvas )
     
     // return imageData
     
