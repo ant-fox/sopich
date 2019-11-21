@@ -6,8 +6,8 @@
   "scripts": {
     "build": "webpack --config webpack.prod.js",
     "lint": "eslint --cache --ext .js,.jsx src/",
-    "develop": "cross-env NODE_ENV=development node  -r esm src/iogame/server/server.js",
-    "start": "cross-env NODE_ENV=production node -r esm src/iogame/server/server.js"
+    "develop": "NODE_ENV=development node  -r esm src/iogame/server/server.js",
+    "start": "NODE_ENV=production node -r esm src/iogame/server/server.js"
   },
   "author": "Vivien Guillet, Victor Zhou",
   "license": "MIT",
