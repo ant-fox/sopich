@@ -170,6 +170,7 @@ export function Game( { tellPlayer } ) {
             explosion : init_explosion(),
             falling : init_falling_plane(),
             leaving : init_leaving_plane(),
+            respawn : -1,
         }
     }
 
@@ -235,11 +236,11 @@ export function Game( { tellPlayer } ) {
             let ds = dds
             controlled_plane.p = clamp( controlled_plane.p + ds, 0, 4)
             if (firebomb){
-                let off = BombDropOffset[ a % BombDropOffset.length]
-                let normal = ( a + (r?4:12) ) % directions16.length 
-                let dir = directions16[ normal ]
                 let avail = available_ttl( bombs )
                 if ( avail !== bombs.length ){
+                    let off = BombDropOffset[ a % BombDropOffset.length]
+                    let normal = ( a + (r?4:12) ) % directions16.length 
+                    let dir = directions16[ normal ]
                     const bomb = bombs[ avail ]
                     bomb.x = x + off[0] + ( 16 / 2 ) - ( 8 / 2 ) + dir[0] * 8
                     bomb.y = y + off[1] + ( 16 / 2 ) - ( 8 / 2 ) + dir[1] * 8
@@ -328,6 +329,12 @@ export function Game( { tellPlayer } ) {
                     plane.a = 12
                     //        State.plane.r = !(State.plane.r)
                     
+                }
+            } else {
+                plane.respawn -= 1
+                if ( plane.respawn < 0 ){
+                    plane.ttl = 1000
+                    plane.y = 256
                 }
             }
             move_anim( leaving )
@@ -541,6 +548,9 @@ export function Game( { tellPlayer } ) {
                     item.falling = init_falling_plane()
                     item.falling.x = item.x
                     item.falling.y = item.y
+                }
+                if ( item.respawn ){
+                    item.respawn = 30
                 }
             }
             /*
