@@ -1,6 +1,6 @@
 {
-  "name": "io-game-from-scratch",
-  "version": "1.0.0",
+  "name": "sopich-game",
+  "version": "0.5",
   "description": "",
   "main": "src/server/server.js",
   "scripts": {
@@ -9,7 +9,7 @@
     "develop": "cross-env NODE_ENV=development node  -r esm src/iogame/server/server.js",
     "start": "cross-env NODE_ENV=production node -r esm src/iogame/server/server.js"
   },
-  "author": "Victor Zhou",
+  "author": "Vivien Guillet, Victor Zhou",
   "license": "MIT",
   "dependencies": {
     "esm": "^3.2.25",
