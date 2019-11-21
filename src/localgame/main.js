@@ -1,6 +1,6 @@
-import { Display } from './display.js'
-import { Controller } from './controller.js'
-import { Game } from './game.js'
+import { Display } from '../display.js'
+import { Controller } from '../controller.js'
+import { Game } from '../game.js'
 
 // display 
 const display = new Display()

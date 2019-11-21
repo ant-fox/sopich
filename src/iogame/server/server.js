@@ -5,13 +5,13 @@ const socketio = require('socket.io');
 
 //import { clamp } from '../../../src/utils.js'
 
-import { Game } from '../../../src/game.js'
+import { Game } from '../../game.js'
 
 
 
 const Constants = require('../shared/constants');
 //const Game = require('./game');
-const webpackConfig = require('../../webpack.dev.js');
+const webpackConfig = require('../../../webpack.dev.js');
 
 // Setup an Express server
 const app = express();
