@@ -36,12 +36,13 @@ module.exports = {
     ],
   },
   plugins: [
-    new MiniCssExtractPlugin({
-      filename: '[name].[contenthash].css',
-    }),
-    new HtmlWebpackPlugin({
-      filename: 'index.html',
-      template: 'src/iogame/client/html/index.html',
-    }),
+      new MiniCssExtractPlugin({
+          filename: '[name].[contenthash].css',
+      }),
+      new HtmlWebpackPlugin({
+          filename: 'index.html',
+          template: 'src/iogame/client/html/index.html',
+          favicon: 'src/localgame/favicon.ico',
+      }),
   ],
 };
