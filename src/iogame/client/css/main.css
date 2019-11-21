@@ -32,10 +32,10 @@ button:focus {
 .hidden {
   display: none !important;
 }
-
-#game-canvas {
-/*  width: 100%;
-  height: 100%;*/
+canvas.game {
+/*#game-canvas {*/
+/*  width: 100%;*/
+/*  height: 100%;*/
 }
 
 #play-menu {
