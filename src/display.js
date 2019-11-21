@@ -1,6 +1,7 @@
 import { prepareImages } from './symbols.js'
 const Images = prepareImages()
 import { clamp } from './utils.js'
+import { worldSize } from './game.js'
 
 function getRandomColor() {
     if (Math.random()>0.5){
@@ -17,23 +18,31 @@ function getRandomColor() {
     return color;
 }
 
+function setCanvasDimensions( canvas ) {
+    // On small screens (e.g. phones), we want to "zoom out" so players can still see at least
+    // 200 in-game units of width.
+    const scaleRatio = Math.max(1, 200 / window.innerWidth);
+    canvas.width = scaleRatio * window.innerWidth   ;
+    canvas.height = scaleRatio * window.innerHeight;
+}
 export function Display() {
     
     const $canvas = document.createElement('canvas')
     $canvas.classList.add('game')
-    $canvas.width = 320
-    $canvas.height = 200
+    $canvas.width = 800//100//320
+    $canvas.height = 600//200
     document.body.appendChild( $canvas )
     const $context = $canvas.getContext('2d')
 
     let State
-
     function putSprite( image, x, y ){
         $context.drawImage( image, Math.floor(x)  , Math.floor(y) - image.height  )
     }
     
-    
     function display(){
+
+        setCanvasDimensions( $canvas )
+        
         if ( !State ) {
             return
         }
@@ -50,23 +59,23 @@ export function Display() {
         const camera_target = State[ me.type ][ me.idx ]
         
         const left = clamp(
-            camera_target.x -  $canvas.width / 2,
-            0, 3000 - $canvas.width
+            // TODO : 8
+            8 + camera_target.x -  $canvas.width / 2, 
+            worldSize.x1,
+            worldSize.x2 - $canvas.width
         )
-        const right = left +  $canvas.width 
-        const top = clamp(
-            camera_target.y -  $canvas.height / 2,
-            0,
-            200
+        const right = left +  $canvas.width       
+        const bottom = clamp(
+            camera_target.y - $canvas.height / 2,
+            worldSize.y1,
+            worldSize.y2 -  $canvas.height
         )   
-        const bottom = top +  $canvas.height
-
-        
+        const top = bottom +  $canvas.height
 
         function world_to_context( x, y ){
             return {
                 x : x - left,
-                y : 200 - y + top 
+                y : $canvas.height - y + bottom
             }
         }
         /*
@@ -78,8 +87,10 @@ export function Display() {
         }
 */
         // sky
-        $context.fillStyle = 'black'//'SkyBlue'
-        $context.fillRect(0,0,$canvas.width,$canvas.height)
+        {
+            $context.fillStyle = 'black'//'SkyBlue'
+            $context.fillRect(0,0,$canvas.width,$canvas.height)
+        }
 
         // ground
         const ground = State.ground

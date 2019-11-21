@@ -4,6 +4,8 @@ html, body {
   overflow: hidden;
   overscroll-behavior: none;
   background-color: black;
+  background-color : darkgrey;
+  margin:0px;
 }
 
 hr {
@@ -31,13 +33,16 @@ button:focus {
 
 .hidden {
   display: none !important;
+} canvas.game {
+          display: block;
+          width:100%;
+          height:100%;
 }
-canvas.game {
-/*#game-canvas {*/
-/*  width: 100%;*/
-/*  height: 100%;*/
+canvas {
+    display : none;
+    /* visibility: collapse; */
+    /* margin : 5px; */
 }
-
 #play-menu {
   position: fixed;
   top: 50%;
