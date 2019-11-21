@@ -471,8 +471,6 @@ export function Game( { tellPlayer } ) {
 
     
     function start_explosion( explosion, x, y ){
-        console.log(explosion)
-        //
         explosion.ttl = 10
         explosion.step = 0
         explosion.p = 2
@@ -482,7 +480,6 @@ export function Game( { tellPlayer } ) {
             debri.x = x
             debri.y = y
         }
-        //                
     }
     function start_falling( item ){
         if ( item.falling ){
@@ -803,7 +800,7 @@ export function Game( { tellPlayer } ) {
                 
             })
             plane.missiles.forEach( missile => {
-                let { x, y, a, p, ttl, step } = missile
+                let { x, y, a, p, ttl, step, explosion } = missile
                 payload.missiles.push( { x, y, a, p, ttl /*, step */ } )
                 if ( explosion.ttl > 0 ){
                     explosion.debris.forEach( debri => {
