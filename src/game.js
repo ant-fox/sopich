@@ -2,6 +2,7 @@
 // collisions
 // collision broken -> coll mask non broken ?
 // set y of ox and target at move step
+// target offset (ground target)?
 
 import { ground } from './ground.js'
 import { prepareHitmask, prepareBottomHitmask } from './symbols.js'
@@ -146,7 +147,6 @@ export function Game( { tellPlayer } ) {
                 hits: false*/
             }
         })
-        console.log( targets )
         return targets
     }
     function init_plane(idx){
@@ -581,6 +581,11 @@ export function Game( { tellPlayer } ) {
             */
             ox : item => Hitmasks.ox[ item.as ],
         }
+        const Bhitmaskfs = {
+            plane : item => BottomHitmasks.plane[ (item.r)?1:0 ][ item.a ],
+            bomb : item => BottomHitmasks.bomb[ item.a ],
+            missile : item => BottomHitmasks.missile[ item.a ],            
+        }
         iterateStateObjects( (type,item1) => {
             if ( ( item1.ttl !== undefined ) && ( item1.ttl < 0 ) ){
                 return
@@ -593,7 +598,24 @@ export function Game( { tellPlayer } ) {
             // set hitmask
             const hitmask = Hitmaskfs[ type ]( item1 )
             item1._hitmask = hitmask
-            //
+
+            // test ground
+            if ( item1.ttl ){
+                if ( Bhitmaskfs[ type ] ){
+                    const bhitmask = Bhitmaskfs[ type ](  item1 )
+                    const x = item1.x
+                    const fx = Math.floor(x)
+                    const y = item1.y
+                    let collides = pixel_bottom_collision(fx,y,bhitmask)
+                    if ( collides ) {
+                        item1.ttl = -1
+                        start_explosion( item1.explosion,fx ,y )
+                        start_falling( item1 )
+                    }
+                }
+            }
+
+            
 
             // insert/collide
             const { x, y } = item1
@@ -618,19 +640,13 @@ export function Game( { tellPlayer } ) {
                         if ( ( item2.owner !== undefined ) && ( item1.idx !== undefined )){                                    
                             dont = item2.owner === item1.idx 
                         }
-                        
-                        
                         if ( ( item1.owner !== undefined ) && ( item2.owner !== undefined )){                                    
                             dont = item1.owner === item2.owner
                         }
-                        
-
                         if ( (!dont) && rectangle_intersection( x,y,hitmask.w,hitmask.h,
                                                                 item2.x,item2.y,hitmask2.w,hitmask2.h, o ) ){
                             
                             State.showcolls.push( o )
-                                                        
-                          
                           
                                 if ( item1.explosion ) {                                
                                     start_explosion( item1.explosion, x, y )

@@ -1259,8 +1259,8 @@ function symboltobottomhitmask(odata,w,h){
 export function prepareBottomHitmask(){
     const hitmask = {
         plane : swplnsym.map( r => r.map( angle => symboltobottomhitmask( angle, 16, 16 ) ) ),
-        // TODO
-        targets : swtrgsym.map( type => symboltobottomhitmask( type, 16, 16 ) ),
+        // TODO ?
+        // targets : swtrgsym.map( type => symboltobottomhitmask( type, 16, 16 ) ),
         bomb : swbmbsym.map( x => symboltobottomhitmask( x, 8, 8 ) ),
         missile : swmscsym.map( x => symboltobottomhitmask( x, 8, 8 ) ),
       
