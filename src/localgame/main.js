@@ -1,15 +1,20 @@
 import { Display } from '../display.js'
 import { Controller } from '../controller.js'
 import { Game } from '../game.js'
+import { Audio } from '../audio.js'
 
 // display 
 const display = new Display()
 display.animate()
 
+// sound
+const audio = new Audio()
+
 // game
 function tellPlayer( inputId, state ){
     if ( inputId === '123456'){
         display.setState( state )
+        audio.setState( state )
     } else {
         //console.log('worldpdate',state.version)
     }
