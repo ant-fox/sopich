@@ -119,7 +119,20 @@ export function Display() {
             }
         }
         
+        const targets = State.targets
+        if ( targets ) {
+            for ( let i = 0, l = targets.length ; i < l ; i++ ){
+
+                const target = targets[i]
+                const { x, y, as } = target
+                //if ( ttl > 0 ){
+                let wxy = world_to_context( x, y )
+                putSprite( Images.targets[as], wxy.x , wxy.y ) 
+                //}
+            }
+        }
         // targets
+        /*
         if ( true ){
             const { xs, tys, hits } = State.targets
             $context.fillStyle = 'black'
@@ -137,7 +150,7 @@ export function Display() {
                 }
             }
         }
-
+        */
         /// planes
         const planes = State.planes
         if ( planes ){
@@ -235,6 +248,35 @@ export function Display() {
                 let wxy = world_to_context( x, y )
                 putSprite( Images.ox[as], wxy.x , wxy.y )             
             }
+        }
+        const showcolls = State.showcolls
+        if ( showcolls ){
+            showcolls.forEach( showcoll => {
+                const {l,r,b,t} = showcoll
+                let wxy1 = world_to_context( l, t )
+                let wxy2 = world_to_context( r, b )
+                let w = Math.abs( wxy2.x - wxy1.x )
+                let h = Math.abs( wxy2.y - wxy1.y )
+                $context.fillStyle = 'red'
+                $context.fillRect(wxy1.x,wxy1.y,w,h)
+            })
+        }
+        const showtreecells = State.showtreecells
+        if ( showtreecells ){
+            showtreecells.forEach( showtreecell => {
+                
+                const {ox,oy,w,h} = showtreecell
+                let wxya = world_to_context( ox, oy )
+                let wxyb = world_to_context( ox + w, oy + h )
+                let wxy1 = { x: wxya.x, y : wxyb.y }
+                let wxy2 = { x: wxyb.x, y : wxya.y }
+                let h1 = Math.abs( wxy2.y - wxy1.y )
+
+                $context.strokeStyle = 'rgba(0,255,0,0.1)'
+                $context.strokeRect(wxy1.x,wxy1.y,w,h1)
+                
+                
+            })
         }
     }
     function animate(){

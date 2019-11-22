@@ -1,5 +1,13 @@
+//
+// all the tree is build at startup ( except each node item list )
+// further insertion search is controlled by provided collision function
+// works on an *2 ratio,
+// bouding w and h may be different
+// use versionning on insert to remove the need to clean the tree
+//
 import { rectangle_intersection, rectangle_includes } from './rect.js'
-
+export const CONTINUE_VISIT = 0
+export const STOP_VISIT = 1
 class Node {
     constructor( ox, oy, w, h, min, parent, depth = 0 ){
         this.depth = depth
@@ -10,68 +18,106 @@ class Node {
         this.parent = parent
         this.items = []
         this.version = 0
-        let qw, qh
-        if ( w > min ) qw = w / 2
-        if ( h > min ) qh = h / 2
-        if ( qw || qh ){
-            qw = qw?qw:w
-            qh = qh?qh:h
-            this.quads = [
-                new Node(this.ox, this.oy+qh, qw, qh,min, this, depth+1),
-                new Node(this.ox+qw, this.oy+qh, qw, qh,min, this, depth+1),
-                new Node(this.ox+qw, this.oy, qw, qh,min, this, depth+1),
-                new Node(this.ox, this.oy, qw, qh,min, this, depth+1)
-            ]
-        } else {
+        let dw,dh
+
+        // if the node is not a square, divide only largest dimension
+        if ( w > min ){
+            if ( w === h ){
+                dw = 2
+            } else if ( w > h ) {
+                dw = 4
+            } else {
+                dw = 1
+            }
+        } 
+        if ( h > min ){ 
+            if ( w === h ){
+                dh = 2
+            } else if ( h > w ) {
+                dh = 4
+            } else {
+                dh = 1
+            }
+        }
+        
+        if ( (!dh) || (!dw) || (dh+dw === 2 ) ){
+            // no more division
             this.quads = undefined
+        } else {
+            let qw = w / dw
+            let qh = h / dh
+            this.quads = []
+            for ( let i = 0 ; i < dw ; i++ ){
+                const qx = ox + ( w / dw ) * i
+                for ( let j = 0 ; j < dh ; j++ ){
+                    const qy = oy + ( h / dh ) * j
+                    const node =  new Node( qx, qy, qw, qh, min, this, depth+1)
+                    this.quads.push( node )
+                }
+            }
         }
     }
-    includes(x2,y2,w2,h2){
-        return rectangle_includes(this.ox,this.oy,this.w,this.h,
-                                  x2,y2,w2,h2)
+    includes(x,y,w,h){
+        return rectangle_includes(this.ox,this.oy,this.w,this.h,x,y,w,h)
     }
-    dbg(){
-        return ['depth:',this.depth,',',this.ox,':',this.oy,',',this.w,'x',this.h].join(' ')
-    }
-    visit( version, collides ){
-        if ( this.items.length ){
-            collides( this.items )
+    visit( version, collidesf ){
+        if ( this.version === version ){
+            if ( this.items.length ){
+                if ( collidesf( this.items ) === STOP_VISIT ){
+                    return STOP_VISIT
+                }
+            }
         }
         if ( ( this.quads ) && ( this.version === version ) ){
-            this.quads[ 0 ].visit( version, collides )
-            this.quads[ 1 ].visit( version, collides )
-            this.quads[ 2 ].visit( version, collides )
-            this.quads[ 3 ].visit( version, collides )
+            for ( let i = 0 ; i < 4 ; i++ ) {
+                let r = this.quads[ i ].visit( version, collidesf )                   
+                if ( r === STOP_VISIT ){
+                    return STOP_VISIT
+                }
+            }
         }
     }
-    insert( item, version, collides ){
+    insert( item, version, collidesf ){
         if ( this.version !== version ){
             this.items = []
             this.version = version
         } else if ( this.items.length ){
-            collides( this.items )
+            if ( collidesf( this.items ) === STOP_VISIT ){
+                return
+            }
         }
         let { x, y, w, h } = item
         if ( this.quads ){
             if ( this.quads[ 0 ].includes( x,y,w,h ) ){
-                return this.quads[ 0 ].insert( item, version, collides )
+                return this.quads[ 0 ].insert( item, version, collidesf )
             } else if ( this.quads[ 1 ].includes( x,y,w,h ) ){
-                return this.quads[ 1 ].insert( item, version, collides )
+                return this.quads[ 1 ].insert( item, version, collidesf )
             } else if ( this.quads[ 2 ].includes( x,y,w,h ) ){
-                return this.quads[ 2 ].insert( item, version, collides )
+                return this.quads[ 2 ].insert( item, version, collidesf )
             } else if ( this.quads[ 3 ].includes( x,y,w,h ) ){
-                return this.quads[ 3 ].insert( item, version, collides )
+                return this.quads[ 3 ].insert( item, version, collidesf )
             } else {
-                this.quads[ 0 ].visit( version, collides )
-                this.quads[ 1 ].visit( version, collides )
-                this.quads[ 2 ].visit( version, collides )
-                this.quads[ 3 ].visit( version, collides )
+                for ( let i = 0 ; i < 4 ; i++ ) {
+                    let r = this.quads[ i ].visit( version, collidesf )                   
+                    if ( r === STOP_VISIT ){
+                        return
+                    }
+                }
                 this.items.push( item )
             }
         } else {
             this.items.push( item )
         }
         return this
+    }
+    remove( obj ){
+        // TODO
+        this.items = this.items.filter( item => {
+            return item.item !== obj
+        })
+    }
+    dbg(){
+        return ['depth:',this.depth,',',this.ox,':',this.oy,',',this.w,'x',this.h].join(' ')
     }
 }
 export class Tree {   

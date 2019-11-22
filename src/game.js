@@ -1,9 +1,11 @@
 // bird + flock  use anim
 // collisions
+// collision broken -> coll mask non broken ?
+// set y of ox and target at move step
 
 import { ground } from './ground.js'
 import { prepareHitmask, prepareBottomHitmask } from './symbols.js'
-import { Tree } from './coll.js'
+import { Tree, CONTINUE_VISIT, STOP_VISIT } from './coll.js'
 import { clamp, posmod } from './utils.js'
 import { rectangle_intersection } from './rect.js'
 
@@ -119,7 +121,7 @@ export function Game( { tellPlayer } ) {
         }       
     }
     function init_targets(){
-        return {
+        const model = {
             xs : [
 	        191, 284, 409, 539, 685,
 	        807, 934, 1210, 1240, 1440,
@@ -135,12 +137,24 @@ export function Game( { tellPlayer } ) {
             hits : new Array(20).fill(false),
             broken : new Array(20).fill(false),
         }
+        const targets = model.xs.map( (x,i) => {
+            const as = model.tys[ i ]
+            // let y = ground[ Math.floor( x ) % ground.length ]
+            return {
+                x,as,/*
+                broken : false,
+                hits: false*/
+            }
+        })
+        console.log( targets )
+        return targets
     }
-    function init_plane(i){
+    function init_plane(idx){
         return {
+            idx,
             ttl : 300,
             inputId : undefined,
-            x : 1500 + i * 10,
+            x : 250 + idx * 250,
             y : 100,
             r : false,
             a : 0,
@@ -151,18 +165,20 @@ export function Game( { tellPlayer } ) {
                 y : 100+i*10,
                 a : i,
                 p : 1,
-                ttl : 0,
+                ttl : -1,
                 step : 0,
-                explosion : init_explosion()
+                explosion : init_explosion(),
+                owner : idx,
             })),
             missiles : new Array(16).fill(0).map( (_,i) => ({
                 x : 1250+i*40,
                 y : 100+i*10,
                 a : i,
                 p : 3,
-                ttl : 0,
+                ttl : -1,
                 step : 0,
-                explosion : init_explosion()
+                explosion : init_explosion(),
+                owner : idx,
             })),
             explosion : init_explosion(),
             falling : init_falling_plane(),
@@ -180,7 +196,9 @@ export function Game( { tellPlayer } ) {
             oxs : new Array(12).fill(0).map( (_,i,r) => init_ox(i,r.length) ),
             //    pxcoll : { list : [] },
             version : 0,
-            tree : new Tree( 4096, 256, 16 )   
+            tree : new Tree( 4096, 1024, 16 ),
+            showcolls : [],
+            showtreecells : [],
         }
     }
 
@@ -408,6 +426,9 @@ export function Game( { tellPlayer } ) {
             }
             bird.step++
         })
+
+        
+        
     }
     function pixel_collision(b,
                              x1,y1,w1,h1,hm1,
@@ -492,7 +513,160 @@ export function Game( { tellPlayer } ) {
             item.respawn = 30
         }
     }
+    const SOTypes = [ 'plane' ]
+    
+    function iterateStateObjects( f ){
+        //f( 'ground', State.ground )
+
+        State.oxs.forEach( ox => f( 'ox', ox ) )
+        State.targets.forEach( (target,i) => f( 'target', target ) )
+        State.birds.forEach( bird => f( 'bird', bird ) )
+        State.flocks.forEach( flock => f( 'flock', flock ) )
+
+        State.planes.forEach( plane => {
+            const { bombs, missiles, explosion } = plane
+            f( 'plane', plane )
+            // explosion.debris.forEach( debri => f( 'debris', debri ) )
+            bombs.forEach( bomb => {
+                 const { explosion } = bomb
+                 f( 'bomb', bomb )
+                //     // explosion.debris.forEach( debri => f( 'debris', debri ) )
+            })
+             missiles.forEach( missile => {
+                 const { explosion } = missile
+                 f( 'missile', missile )
+            //     // explosion.debris.forEach( debri => f( 'debris', debri ) )
+             })
+
+        })
+    }
     function collisions(){
+//        State.tree = new Tree( 4096, 256, 16 )
+
+        // to move ?
+        State.oxs.forEach( ox => {
+            const { x } = ox
+            const y =  ground[ Math.floor( x ) % ground.length ]
+            ox.y = y
+        })
+        State.targets.forEach( ox => {
+            const { x } = ox
+            const y =  ground[ Math.floor( x ) % ground.length ]
+            ox.y = y
+        })
+        
+        State.planes[ 0 ].undescrtu = true
+        let c = { }
+        let total = 0
+        //
+        State.showcolls = []
+        State.showtreecells = []
+
+        const tree = State.tree
+        State.version++
+        const version = State.version
+        const Hitmaskfs = {
+            plane : item => Hitmasks.plane[ (item.r)?1:0 ][ item.a ],
+            bomb : item => Hitmasks.bomb[ item.a ],
+            missile : item => Hitmasks.missile[ item.a ],
+            flock : item => Hitmasks.flock[ item.as ],
+            bird : item => Hitmasks.bird[ item.as ],
+            target : item => Hitmasks.targets[ item.as ],
+            /*target : item => 
+                return {
+                    Hitmasks.targets[ 
+                    
+                }
+            }
+            */
+            ox : item => Hitmasks.ox[ item.as ],
+        }
+        iterateStateObjects( (type,item1) => {
+            if ( ( item1.ttl !== undefined ) && ( item1.ttl < 0 ) ){
+                return
+            }
+            // stats
+            total++;
+            const ct = c[ type ]
+            c[ type ] = 1 + (ct?ct:0)
+
+            // set hitmask
+            const hitmask = Hitmaskfs[ type ]( item1 )
+            item1._hitmask = hitmask
+            //
+
+            // insert/collide
+            const { x, y } = item1
+            let node = tree.insert(
+                { x,y, w:hitmask.w,h:hitmask.h, item :item1 },
+                version,
+                (candidates) => {
+                    for ( let i = 0, l = candidates.length ; i < l ; i++ ){
+                        const candidate = candidates[ i ]
+                        if ( ( candidate.ttl !== undefined ) && ( candidate.ttl < 0 ) ){
+                            continue
+                        }
+                        const item2 = candidate.item
+                        let hitmask2 = item2._hitmask
+                        let o = {}
+                        let dont = false
+                        
+                        if ( ( item1.owner !== undefined ) && ( item2.idx !== undefined )){                                    
+                            dont = item1.owner === item2.idx 
+                        }
+                        
+                        if ( ( item2.owner !== undefined ) && ( item1.idx !== undefined )){                                    
+                            dont = item2.owner === item1.idx 
+                        }
+                        
+                        
+                        if ( ( item1.owner !== undefined ) && ( item2.owner !== undefined )){                                    
+                            dont = item1.owner === item2.owner
+                        }
+                        
+
+                        if ( (!dont) && rectangle_intersection( x,y,hitmask.w,hitmask.h,
+                                                                item2.x,item2.y,hitmask2.w,hitmask2.h, o ) ){
+                            
+                            State.showcolls.push( o )
+                                                        
+                          
+                          
+                                if ( item1.explosion ) {                                
+                                    start_explosion( item1.explosion, x, y )
+                                }
+                                if ( item2.explosion ) {
+                                    start_explosion( item2.explosion, item2.x, item2.y )
+                                }
+                                if ( (!item1.undescrtu) && ( item1.ttl !== undefined ) ){
+                                    item1.ttl = -1
+                                }
+                                if ( (!item2.undescrtu) && ( item2.ttl !== undefined ) ){
+                                    item2.ttl = -1
+                                }
+                                if ( (!item2.undescrtu) ){
+                                    item2._node.remove( item2 )
+                                    //item2_.node = undefined
+                                }
+                          
+
+                            return STOP_VISIT
+                       } else {
+                            return CONTINUE_VISIT
+                        }
+                    }
+                }
+            )
+            if ( node ){
+                State.showtreecells.push( node )
+                item1._node = node
+            }
+            
+            
+        })
+        //console.log(total,c)        
+    }
+    function collisions2(){
         State.version++
 
         const version = State.version 
@@ -622,10 +796,9 @@ export function Game( { tellPlayer } ) {
     }
     function groundTargets(){
         const ground = State.ground
-        const { xs, tys } = State.targets
-        for ( let i = 0 ; i < xs.length ; i++ ){
-            let x = xs[ i ]        
-            
+        const targets = State.targets
+        targets.forEach( target => {
+            const x = Math.floor( target.x )
             let meany = 0;
             for ( let ii = 0 ; ii < 16 ; ii++ ){
                 let wx = x + ii
@@ -636,8 +809,7 @@ export function Game( { tellPlayer } ) {
                 let wx = x + ii
                 ground[ Math.floor( wx ) % ground.length ] = meany
             }
-        }
-        
+        })
     }
     /*
       let PAUSED = false
@@ -662,7 +834,7 @@ export function Game( { tellPlayer } ) {
     groundOxs()
 
     // const FPS = 16//16//2//16
-    const FPS = 5//16
+    const FPS = 5//16//5
     State.lastUpdateTime = Date.now()
 
 
@@ -751,6 +923,8 @@ export function Game( { tellPlayer } ) {
             flocks : [],
             fallings : [],
             leavings : [],
+            showcolls : State.showcolls,
+            showtreecells : State.showtreecells,
         }
         State.flocks.forEach( flock => {
             let { x, y, as } = flock

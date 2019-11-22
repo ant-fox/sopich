@@ -1215,8 +1215,13 @@ export function prepareHitmask(){
     const hitmask = {
         plane : swplnsym.map( r => r.map( angle => symboltohitmask( angle, 16, 16 ) ) ),
         targets : swtrgsym.map( type => symboltohitmask( type, 16, 16 ) ),
+        target_hit : symboltohitmask( swhtrsym, 16,16),
         bomb : swbmbsym.map( x => symboltohitmask( x, 8, 8 ) ),
-        missile : swmscsym.map( x => symboltohitmask( x, 8, 8 ) ),       
+        missile : swmscsym.map( x => symboltohitmask( x, 8, 8 ) ),
+        flock : swflksym.map( x => symboltohitmask( x, 16, 16 ) ),
+        bird : swbrdsym.map( x => symboltohitmask( x, 4, 2 ) ),
+        ox : swoxsym.map( type => symboltohitmask( type, 16, 16 ) ),
+     
     }
     return hitmask
 }
@@ -1254,9 +1259,11 @@ function symboltobottomhitmask(odata,w,h){
 export function prepareBottomHitmask(){
     const hitmask = {
         plane : swplnsym.map( r => r.map( angle => symboltobottomhitmask( angle, 16, 16 ) ) ),
+        // TODO
         targets : swtrgsym.map( type => symboltobottomhitmask( type, 16, 16 ) ),
         bomb : swbmbsym.map( x => symboltobottomhitmask( x, 8, 8 ) ),
-        missile : swmscsym.map( x => symboltobottomhitmask( x, 8, 8 ) ),       
+        missile : swmscsym.map( x => symboltobottomhitmask( x, 8, 8 ) ),
+      
     }
     return hitmask
     
