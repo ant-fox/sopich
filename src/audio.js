@@ -86,6 +86,7 @@ function Synth( ctx, wavetables ){
         //return { compressor, gain1, gain2 }
         return {
             gain1,
+            compressor,
             connect : m => gain2.connect( m )
         }
     }
@@ -129,7 +130,7 @@ function Synth( ctx, wavetables ){
     
     function periodicWaveOscillatorGain( name ){
         const wavetable = wavetables[ name ]
-        const wave = ctx.createPeriodicWave(wavetable.real, wavetable.imag);
+        const wave = ctx.createPeriodicWave(new Float32Array(wavetable.real), new Float32Array(wavetable.imag));
         const osc = ctx.createOscillator();
         osc.frequency.setValueAtTime( 0.0, ctx.currentTime )
         osc.setPeriodicWave(wave);
@@ -160,10 +161,10 @@ function Synth( ctx, wavetables ){
     let explosion = whiteNoiseBandPassGain()
     explosion
         .connect( compressor.gain1 )
-
+    
     compressor.connect( ctx.destination )
     
-
+    console.log( compressor )
     //engine.osc.stop()
     //engine2.osc.stop()
 
@@ -287,7 +288,6 @@ export function Audio(){
                 })
                 if ( lastNDebris < ndebris ){
                     
-                    console.log('ndebris',ndebris)
                     synth.setExplosionF( 0.01, 0.01 )
                     synth.setExplosionG( 1.0, 0.001 )
                     synth.setExplosionQ( 0.00001, 0.01 )

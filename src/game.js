@@ -3,7 +3,10 @@
 // collision broken -> coll mask non broken ?
 // set y of ox and target at move step
 // target offset (ground target)?
-
+// throttle bomb/missile drop (+ rotation ?)
+// bullets
+// login
+// mongo
 import { ground } from './ground.js'
 import { prepareHitmask, prepareBottomHitmask } from './symbols.js'
 import { Tree, CONTINUE_VISIT, STOP_VISIT } from './coll.js'
