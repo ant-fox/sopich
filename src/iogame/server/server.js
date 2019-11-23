@@ -2,6 +2,44 @@ const express = require('express');
 const webpack = require('webpack');
 const webpackDevMiddleware = require('webpack-dev-middleware');
 const socketio = require('socket.io');
+const mongoose = require('mongoose')
+
+const localcs = 'mongodb://127.0.0.1:27017/TodoApp'
+mongoose.connect(process.env.MONGOLAB_URI || localcs, {useNewUrlParser: true} );
+// mongoose.connect('mongodb://localhost:27017/test', {useNewUrlParser: true});
+console.log('============== mongo : ')
+console.log(process.env.MONGOLAB_URI)
+console.log('==============')
+/**
+ *
+ */
+const Schema = mongoose.Schema;
+const UserSchema = new Schema({
+    name: String,
+    score : String
+})
+UserSchema.statics.findByName = function(name) {
+    return this.find({ name: new RegExp(name, 'i') });
+};
+const User = mongoose.model('User', UserSchema);
+
+const kitty = new User({ name: 'Zildjian', score : "12" });
+kitty.save().then(() => console.log('meow'));
+
+User.findByName('Zildjian').exec(function(err, animals) {
+    console.log('found',animals);
+});
+///
+// const uri = "mongodb+srv://statistician:<password>@cluster0-3fkkv.mongodb.net/test?retryWrites=true&w=majority";
+// const client = new MongoClient(uri, { useNewUrlParser: true });
+// client.connect(err => {
+//   const collection = client.db("test").collection("devices");
+//   // perform actions on the collection object
+//   client.close();
+// });
+//
+/**
+*/
 
 //import { clamp } from '../../../src/utils.js'
 

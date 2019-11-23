@@ -490,6 +490,7 @@ export function Game( { tellPlayer } ) {
         }
         return collides
     }
+    /*
     function collisions2(){
         State.version++
 
@@ -498,7 +499,7 @@ export function Game( { tellPlayer } ) {
         let ncoll = 0;
         
     }
-
+*/
     
     function start_explosion( explosion, x, y ){
         explosion.ttl = 10
@@ -691,93 +692,93 @@ export function Game( { tellPlayer } ) {
         })
         //console.log(total,c)        
     }
-    function collisions2(){
-        State.version++
+    // function collisions2(){
+    //     State.version++
 
-        const version = State.version 
-        const tree = State.tree
-        let ncoll = 0;
-        State.planes.forEach( plane => {
-            const { x, y, r, a, p, bombs, missiles, explosion } = plane
+    //     const version = State.version 
+    //     const tree = State.tree
+    //     let ncoll = 0;
+    //     State.planes.forEach( plane => {
+    //         const { x, y, r, a, p, bombs, missiles, explosion } = plane
             
-            const { xs, tys, hits, broken } = State.targets
-            const ground = State.ground
+    //         const { xs, tys, hits, broken } = State.targets
+    //         const ground = State.ground
 
-            /*
-              collisions with items
-            */
+    //         /*
+    //           collisions with items
+    //         */
             
-            ;[ [ [ plane ], item => Hitmasks.plane[ (item.r)?1:0 ][ item.a ] ],
-               [ bombs, item => Hitmasks.bomb[ item.a ] ],
-               [ missiles, item => Hitmasks.missile[ item.a ] ]
-             ].forEach( ([ items, hitmaskf ]) => {
-                 items.forEach( item => {
+    //         ;[ [ [ plane ], item => Hitmasks.plane[ (item.r)?1:0 ][ item.a ] ],
+    //            [ bombs, item => Hitmasks.bomb[ item.a ] ],
+    //            [ missiles, item => Hitmasks.missile[ item.a ] ]
+    //          ].forEach( ([ items, hitmaskf ]) => {
+    //              items.forEach( item => {
                      
-                     if (( item.ttl === undefined ) || (item.ttl > 0 )){
+    //                  if (( item.ttl === undefined ) || (item.ttl > 0 )){
                          
-                         const explosion = item.explosion               
-                         const hitmask = hitmaskf( item )
-                         const x = item.x
-                         const y = item.y
-                         tree.insert(
-                             { x,y,w:hitmask.w,h:hitmask.h, item },
-                             version,
-                             () => { ncoll++ }
-                         )
+    //                      const explosion = item.explosion               
+    //                      const hitmask = hitmaskf( item )
+    //                      const x = item.x
+    //                      const y = item.y
+    //                      tree.insert(
+    //                          { x,y,w:hitmask.w,h:hitmask.h, item },
+    //                          version,
+    //                          () => { ncoll++ }
+    //                      )
                          
-                         //const { x, y, r, a, p, explosion } = item //State.plane
-                         for ( let i = 0 ; i < xs.length ; i++ ){
-                             const tx = xs[ i ]
-                             const ty = ground[ Math.floor( tx ) % ground.length ]
-                             const hit = hits[ i ]
-                             const ttype = tys[ i ] // type
-                             const o = {}
-                             if ( rectangle_intersection( x,y,hitmask.w,hitmask.h, tx,ty,16,16, o ) ){
-                                 if ( pixel_collision( o, x,y,hitmask.w,hitmask.h, hitmask, tx,ty,16,16, Hitmasks.targets[ ttype ]) ){
+    //                      //const { x, y, r, a, p, explosion } = item //State.plane
+    //                      for ( let i = 0 ; i < xs.length ; i++ ){
+    //                          const tx = xs[ i ]
+    //                          const ty = ground[ Math.floor( tx ) % ground.length ]
+    //                          const hit = hits[ i ]
+    //                          const ttype = tys[ i ] // type
+    //                          const o = {}
+    //                          if ( rectangle_intersection( x,y,hitmask.w,hitmask.h, tx,ty,16,16, o ) ){
+    //                              if ( pixel_collision( o, x,y,hitmask.w,hitmask.h, hitmask, tx,ty,16,16, Hitmasks.targets[ ttype ]) ){
                                      
-                                     hits[ i ] = o
-                                     broken[ i ] = true
-                                     start_explosion( explosion, tx ,ty )
-                                     item.ttl = -1
-                                     start_falling( item )
-                                 }
-                             } else {
-                                 //hits[ i ] = false
-                                 //broken[ i ] = false
-                             }
-                         }
-                     }
-                 })
-             })
+    //                                  hits[ i ] = o
+    //                                  broken[ i ] = true
+    //                                  start_explosion( explosion, tx ,ty )
+    //                                  item.ttl = -1
+    //                                  start_falling( item )
+    //                              }
+    //                          } else {
+    //                              //hits[ i ] = false
+    //                              //broken[ i ] = false
+    //                          }
+    //                      }
+    //                  }
+    //              })
+    //          })
 
             
-            /*
-             * ground coll
-             */
+    //         /*
+    //          * ground coll
+    //          */
             
-            ;[ [ [ plane ], item => BottomHitmasks.plane[ (item.r)?1:0 ][ item.a ] ],
-               [ bombs, item => BottomHitmasks.bomb[ item.a ] ],
-               [ missiles, item => BottomHitmasks.missile[ item.a ] ]
-             ].forEach( ([ items, bhitmaskf ]) => {
-                 items.forEach( item => {
-                     if ( item.ttl > 0 ){
-                         const bhitmask = bhitmaskf( item )
-                         const x = item.x
-                         const fx = Math.floor(x)
-                         const y = item.y
-                         let collides = pixel_bottom_collision(fx,y,bhitmask)
-                         if ( collides ) {
-                             item.ttl = -1
-                             start_explosion( item.explosion,fx ,y )
-                             start_falling( item )
-                         }
-                     }
-                 })
-             })
+    //         ;[ [ [ plane ], item => BottomHitmasks.plane[ (item.r)?1:0 ][ item.a ] ],
+    //            [ bombs, item => BottomHitmasks.bomb[ item.a ] ],
+    //            [ missiles, item => BottomHitmasks.missile[ item.a ] ]
+    //          ].forEach( ([ items, bhitmaskf ]) => {
+    //              items.forEach( item => {
+    //                  if ( item.ttl > 0 ){
+    //                      const bhitmask = bhitmaskf( item )
+    //                      const x = item.x
+    //                      const fx = Math.floor(x)
+    //                      const y = item.y
+    //                      let collides = pixel_bottom_collision(fx,y,bhitmask)
+    //                      if ( collides ) {
+    //                          item.ttl = -1
+    //                          start_explosion( item.explosion,fx ,y )
+    //                          start_falling( item )
+    //                      }
+    //                  }
+    //              })
+    //          })
             
-        })
-        //        console.log('ncoll',ncoll)
-    }
+    //     })
+    //     //        console.log('ncoll',ncoll)
+    // }
 
 
 

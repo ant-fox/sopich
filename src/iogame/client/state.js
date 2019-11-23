@@ -29,8 +29,9 @@ export function processGameUpdate(update) {
             { username : 'bob', score : 87 }
         ]
     }
-    
-  updateLeaderboard(update.leaderboard);
+    if ( update.leaderboard ){
+        updateLeaderboard(update.leaderboard);
+    }
 
   // Keep only one game update before the current server time
   const base = getBaseUpdate();
