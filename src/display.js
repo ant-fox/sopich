@@ -139,7 +139,7 @@ export function Display() {
         const planes = State.planes
         if ( planes ){
             State.planes.forEach( plane => {
-                const { ttl, x, y, r, a, p, /*bombs, missiles, explosion*/ name } = plane
+                const { ttl, x, y, r, a, p, cs, /*bombs, missiles, explosion*/ name } = plane
                 if ( ttl < 0 ){
                     return
                 }
@@ -151,7 +151,7 @@ export function Display() {
                 //$context.putImageData( Images.pln[vr][va], $canvas.width/2, $canvas.height/2)
                 let wxy = world_to_context( x, y )
                 //            console.log( 'vrva', vr, va )
-                putSprite( Images.plane[vr][va], wxy.x  , wxy.y )
+                putSprite( Images.plane[cs][vr][va], wxy.x  , wxy.y )
                 
                 //$context.drawImage( Images.plane[vr][va], wxy.x - 8 , wxy.y - 8 )
                 

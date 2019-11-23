@@ -1140,8 +1140,13 @@ const swbstsym = [
 // //
 // //---------------------------------------------------------------------------
 ;
-function symboltoimage(odata,w,h){
-    
+const DefaultPalette = [
+    [0,200,255],   // light blue
+    [255,0,255],   // pink
+    [255,255,255], // white
+    [0,0,0],       // mandatory transparent
+]
+function symboltoimage(odata,w,h,palette = DefaultPalette){
     const $canvas = document.createElement('canvas')
     $canvas.width = w
     $canvas.height = h
@@ -1154,27 +1159,11 @@ function symboltoimage(odata,w,h){
            (q & 0x30) >> 4,
            (q & 0x0c) >> 2,
            (q & 0x03) ].forEach( (c) => {
-               let r = 0, g = 0, b = 0, a = 255;
-               if ( c === 1 ){
-                   b = 255
-                   g = 200
-               } else if ( c === 2 ){
-                   b = 255
-                   r = 255
-               } else if ( c === 3 ){
-                   r = 255
-                   g = 255
-                   b = 255
-               } else if ( c > 0 ){
-                   r = 255
-               } else {
-//                   r = 255
-                   a = 0
-               }
-               data[ j++ ] = r
-               data[ j++ ] = g
-               data[ j++ ] = b
-               data[ j++ ] = a
+               let rgb = c?palette[ c - 1 ]:DefaultPalette[ 3 ]
+               data[ j++ ] = rgb[ 0 ]
+               data[ j++ ] = rgb[ 1 ]
+               data[ j++ ] = rgb[ 2 ]
+               data[ j++ ] = c?255:0
            })
     }
     $ctx.putImageData(imageData, 0, 0);
@@ -1268,10 +1257,40 @@ export function prepareBottomHitmask(){
     return hitmask
     
 }
+
+import { hslToRgb } from './utils.js'
+
+
+let pal = [
+    [0,200,255],   // light blue
+    [255,0,255],   // pink
+    [255,255,255], // white
+]
+
+function pal1c( h ){    
+    let circle = (h + 0.5)%1
+    const pal = [
+        hslToRgb(h,0.6,0.5),
+        hslToRgb(circle,0.6,0.5),
+        [255,255,255], // white
+    ]
+    return pal
+}
+function colschn( n ){
+    return new Array( n )
+        .fill( 0 )
+        .map( (_,i) => i / n )
+        .map( pal1c )
+}
+
+export const ColorSchemes = [ DefaultPalette, ...colschn( 8 ) ]
+
+pal = ColorSchemes[ 4 ]
+
 export function prepareImages(){
-    
+
     const sym = {
-        plane : swplnsym.map( r => r.map( angle => symboltoimage( angle, 16, 16 ) ) ),
+        plane : ColorSchemes.map( pal => swplnsym.map( r => r.map( a => symboltoimage( a, 16, 16, pal ) ) )),
         targets : swtrgsym.map( type => symboltoimage( type, 16, 16 ) ),
         target_hit : symboltoimage( swhtrsym, 16,16),
         ox : swoxsym.map( type => symboltoimage( type, 16, 16 ) ),

@@ -10,7 +10,7 @@ function waitAudioContext(){
         function running(){
             if ( ctx.state === 'running' ){
                 ctx.onstatechange = undefined
-                console.log('context ok')
+                console.info('Audio Context is running')
                 resolve( ctx )
             }
         }
@@ -26,7 +26,10 @@ function waitAudioContext(){
 /*
   const ALL = [ 'Bass_Amp360','01_Saw','02_Triangle','03_Square','04_Noise','05_Pulse','06_Warm_Saw','07_Warm_Triangle','08_Warm_Square','09_Dropped_Saw','10_Dropped_Square','11_TB303_Square','Bass','Bass_Fuzz','Bass_Fuzz_ 2','Bass_Sub_Dub','Bass_Sub_Dub_2','Brass','Brit_Blues','Brit_Blues_Driven','Buzzy_1','Buzzy_2','Celeste','Chorus_Strings','Dissonant Piano','Dissonant_1','Dissonant_2','Dyna_EP_Bright','Dyna_EP_Med','Ethnic_33','Full_1','Full_2','Guitar_Fuzz','Harsh','Mkl_Hard','Organ_2','Organ_3','Phoneme_ah','Phoneme_bah','Phoneme_ee','Phoneme_o','Phoneme_ooh','Phoneme_pop_ahhhs','Piano','Putney_Wavering','Throaty','Trombone','Twelve String Guitar 1','Twelve_OpTines','Wurlitzer','Wurlitzer_2','original','original/01_Saw','original/02_Triangle','original/03_Square','original/04_Noise','original/05_Pulse','original/06_Warm_Saw','original/07_Warm_Triangle','original/08_Warm_Square','original/09_Dropped_Saw','original/10_Dropped_Square','original/11_TB303_Square','original/Bass','original/Bass_Amp360','original/Bass_Fuzz','original/Bass_Fuzz_ 2','original/Bass_Sub_Dub','original/Bass_Sub_Dub_2','original/Brass','original/Brit_Blues','original/Brit_Blues_Driven','original/Buzzy_1','original/Buzzy_2','original/Celeste','original/Chorus_Strings','original/Dissonant Piano','original/Dissonant_1','original/Dissonant_2','original/Dyna_EP_Bright','original/Dyna_EP_Med','original/Ethnic_33','original/Full_1','original/Full_2','original/Guitar_Fuzz','original/Harsh','original/Mkl_Hard','original/Organ_2','original/Organ_3','original/Phoneme_ah','original/Phoneme_bah','original/Phoneme_ee','original/Phoneme_o','original/Phoneme_ooh','original/Phoneme_pop_ahhhs','original/Piano','original/Putney_Wavering','original/Throaty','original/Trombone','original/Twelve String Guitar 1','original/Twelve_OpTines','original/Wurlitzer','original/Wurlitzer_2','original/yyy','original/zzz']
 */
+/*
 const GOOD = ["Bass_Amp360", "Harsh", "Mkl_Hard", "Organ_2", "Organ_3", "Phoneme_ah", "Phoneme_bah", "01_Saw", "02_Triangle", "03_Square", "04_Noise", "05_Pulse", "06_Warm_Saw", "07_Warm_Triangle", "08_Warm_Square", "09_Dropped_Saw", "10_Dropped_Square", "11_TB303_Square", "Bass", "Bass_Fuzz", "Bass_Fuzz_ 2", "Bass_Sub_Dub", "Bass_Sub_Dub_2", "Brass", "Brit_Blues", "Brit_Blues_Driven", "Buzzy_1", "Buzzy_2", "Celeste", "Chorus_Strings", "Dissonant Piano", "Dissonant_1", "Dissonant_2", "Dyna_EP_Bright", "Dyna_EP_Med", "Ethnic_33", "Full_1", "Full_2", "Guitar_Fuzz", "Phoneme_ee", "Phoneme_o", "Phoneme_ooh", "Phoneme_pop_ahhhs", "Piano", "Putney_Wavering", "Throaty", "Trombone", "Twelve String Guitar 1", "Twelve_OpTines", "Wurlitzer", "Wurlitzer_2", "original/yyy", "original/zzz"]
+*/
+const GOOD = ["Wurlitzer","Brit_Blues"]
 
 function nameToUrl( name ){
     const url = [/*'.',*/'','wave-tables',name].join('/')

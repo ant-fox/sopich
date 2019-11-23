@@ -19,7 +19,7 @@ import { prepareHitmask, prepareBottomHitmask } from './symbols.js'
 import { Tree, CONTINUE_VISIT, STOP_VISIT } from './coll.js'
 import { clamp, posmod } from './utils.js'
 import { rectangle_intersection } from './rect.js'
-
+import { ColorSchemes } from './symbols.js'
 
 export const worldSize = {
     x1 : 0,
@@ -97,7 +97,10 @@ export function Game( { tellPlayer } ) {
             y : Math.floor( 100 + ( i / l ) * 100 ),
             as : Math.floor( Math.random() * 2 ),
             interv : Math.floor( 3 + Math.random() * 2 ),
-            step : 0
+            step : 0,
+            destroyed : item => {
+                item.ttl = -1
+            }
         }
     }
     function init_flock(i,l){
@@ -106,8 +109,10 @@ export function Game( { tellPlayer } ) {
             y : Math.floor( 100 + ( i / l ) * 100 ),
             as : Math.floor( Math.random() * 2 ),
             interv : Math.floor( 5 + Math.random() * 5 ),
-            step : 0
-            
+            step : 0,
+            destroyed : item => {
+                item.ttl = -1
+            }           
         }
     }
     
@@ -164,6 +169,7 @@ export function Game( { tellPlayer } ) {
     }
     function init_plane(idx){
         return {
+            cs : idx%ColorSchemes.length,
             idx,
             ttl : 300,
             inputId : undefined,
@@ -975,11 +981,15 @@ export function Game( { tellPlayer } ) {
         })
         State.flocks.forEach( flock => {
             let { x, y, as } = flock
-            payload.flocks.push( { x, y, as } )
+            if ( ( flock.ttl === undefined ) || ( flock.ttl > 0 ) ){
+                payload.flocks.push( { x, y, as } )
+            }
         })
         State.birds.forEach( bird => {
-            let { x, y, as } = bird
-            payload.birds.push( { x, y, as } )
+            let { x, y, as, ttl } = bird
+            if ( ( bird.ttl === undefined ) || ( bird.ttl > 0 ) ){
+                payload.birds.push( { x, y, as } )
+            }
         })
         State.oxs.forEach( ox => {
             let { x, y, as } = ox
@@ -987,7 +997,7 @@ export function Game( { tellPlayer } ) {
         })
 
         State.planes.forEach( plane => {
-            let { ttl, x, y, r, a, p, explosion, leaving, falling } = plane
+            let { ttl, x, y, r, a, p, cs, explosion, leaving, falling } = plane
             let name = '?'
             if ( plane.inputId ){
                 name = nameByInputId[ plane.inputId ]
@@ -995,7 +1005,7 @@ export function Game( { tellPlayer } ) {
 
             // TODO
             //if ( ttl > 0 ){
-            payload.planes.push( { ttl, x, y, r, a, p, name } )
+            payload.planes.push( { ttl, x, y, r, a, p, cs, name } )
             //}
             if ( true ){
                 {
