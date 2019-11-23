@@ -29,7 +29,9 @@ const ALL = [ 'Bass_Amp360','01_Saw','02_Triangle','03_Square','04_Noise','05_Pu
 const GOOD = ["Bass_Amp360", "Harsh", "Mkl_Hard", "Organ_2", "Organ_3", "Phoneme_ah", "Phoneme_bah", "01_Saw", "02_Triangle", "03_Square", "04_Noise", "05_Pulse", "06_Warm_Saw", "07_Warm_Triangle", "08_Warm_Square", "09_Dropped_Saw", "10_Dropped_Square", "11_TB303_Square", "Bass", "Bass_Fuzz", "Bass_Fuzz_ 2", "Bass_Sub_Dub", "Bass_Sub_Dub_2", "Brass", "Brit_Blues", "Brit_Blues_Driven", "Buzzy_1", "Buzzy_2", "Celeste", "Chorus_Strings", "Dissonant Piano", "Dissonant_1", "Dissonant_2", "Dyna_EP_Bright", "Dyna_EP_Med", "Ethnic_33", "Full_1", "Full_2", "Guitar_Fuzz", "Phoneme_ee", "Phoneme_o", "Phoneme_ooh", "Phoneme_pop_ahhhs", "Piano", "Putney_Wavering", "Throaty", "Trombone", "Twelve String Guitar 1", "Twelve_OpTines", "Wurlitzer", "Wurlitzer_2", "original/yyy", "original/zzz"]
 
 function nameToUrl( name ){
-    return ['..','wave-tables',name].join('/')
+    const url = [/*'.',*/'','wave-tables',name].join('/')
+    console.log('url',url)
+    return url
 }
 // let bad = []  // 52
 // let good = [] // 53

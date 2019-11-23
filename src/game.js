@@ -7,6 +7,11 @@
 // login
 // mongo
 // graphics px x 2 3 4 5 6....
+// scoreboard
+// option ( snd, fx... )
+// plane color
+// fix interpolation bypass
+// pass explosion/missile/bomb start for audio
 
 import { ground } from './ground.js'
 import { prepareHitmask, prepareBottomHitmask } from './symbols.js'
@@ -1026,14 +1031,6 @@ export function Game( { tellPlayer } ) {
                 type : 'planes',
                 idx : State.planes.findIndex( p => plane === p )
             }
-            /*for ( let i = 0 ; i < Object.keys( payload ).length ; i++ ){
-                let n = Object.keys( payload )[ i ]
-                let p = payload[ n ]
-                console.log('=',n)
-                JSON.stringify( p )
-            }
-*/
-            // console.log( JSON.stringify( payload ) )
             tellPlayer( inputId, Object.assign( { me } , payload ) )
         })
     }

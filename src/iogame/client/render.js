@@ -1,12 +1,50 @@
 import { Display } from '../../../src/display.js'
+import { Audio } from '../../../src/audio.js'
+
+
+
 // Learn more about this file at:
 // https://victorzhou.com/blog/build-an-io-game-part-1/#5-client-rendering
 import { debounce } from 'throttle-debounce';
 // import { getAsset } from './assets';
 import { getCurrentState } from './state';
 
+// display 
 const display = new Display()
 display.animate()
+
+// sound
+const audio = new Audio()
+
+
+function render() {
+    const ST = getCurrentState();
+    display.setState( ST )
+    audio.setState( ST )
+    return;
+}
+function renderMainMenu() {
+ /*
+   const t = Date.now() / 7500;
+   const x = MAP_SIZE / 2 + 800 * Math.cos(t);
+   const y = MAP_SIZE / 2 + 800 * Math.sin(t);
+   renderBackground(x, y);
+ */
+}
+
+let renderInterval = setInterval(renderMainMenu, 1000 / 60);
+
+// Replaces main menu rendering with game rendering.
+export function startRendering() {
+  clearInterval(renderInterval);
+  renderInterval = setInterval(render, 1000 / 60);
+}
+
+// Replaces game rendering with main menu rendering.
+export function stopRendering() {
+  clearInterval(renderInterval);
+  renderInterval = setInterval(renderMainMenu, 1000 / 60);
+}
 
 //const Constants = require('../shared/constants');
 
@@ -30,12 +68,6 @@ display.animate()
 // window.addEventListener('resize', debounce(40, setCanvasDimensions));
 /////////////////////
 
-function render() {
-    const ST = getCurrentState();
-    display.setState( ST )
-    
-    return;
-}
 //     const { me, others, bullets } = getCurrentState();
 //     console.log('me',me)
 //   if (!me) {
@@ -124,25 +156,3 @@ function render() {
 //   );
 // }
 
-function renderMainMenu() {
- /*
-   const t = Date.now() / 7500;
-   const x = MAP_SIZE / 2 + 800 * Math.cos(t);
-   const y = MAP_SIZE / 2 + 800 * Math.sin(t);
-   renderBackground(x, y);
- */
-}
-
-let renderInterval = setInterval(renderMainMenu, 1000 / 60);
-
-// Replaces main menu rendering with game rendering.
-export function startRendering() {
-  clearInterval(renderInterval);
-  renderInterval = setInterval(render, 1000 / 60);
-}
-
-// Replaces game rendering with main menu rendering.
-export function stopRendering() {
-  clearInterval(renderInterval);
-  renderInterval = setInterval(renderMainMenu, 1000 / 60);
-}

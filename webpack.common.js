@@ -3,6 +3,7 @@
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: {
@@ -39,6 +40,9 @@ module.exports = {
       new MiniCssExtractPlugin({
           filename: '[name].[contenthash].css',
       }),
+      new CopyPlugin([
+          { from: 'src/wave-tables', to: 'wave-tables' },
+      ]),
       new HtmlWebpackPlugin({
           filename: 'index.html',
           template: 'src/iogame/client/html/index.html',
