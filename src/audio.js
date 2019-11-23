@@ -24,13 +24,12 @@ function waitAudioContext(){
     })
 }
 /*
-const ALL = [ 'Bass_Amp360','01_Saw','02_Triangle','03_Square','04_Noise','05_Pulse','06_Warm_Saw','07_Warm_Triangle','08_Warm_Square','09_Dropped_Saw','10_Dropped_Square','11_TB303_Square','Bass','Bass_Fuzz','Bass_Fuzz_ 2','Bass_Sub_Dub','Bass_Sub_Dub_2','Brass','Brit_Blues','Brit_Blues_Driven','Buzzy_1','Buzzy_2','Celeste','Chorus_Strings','Dissonant Piano','Dissonant_1','Dissonant_2','Dyna_EP_Bright','Dyna_EP_Med','Ethnic_33','Full_1','Full_2','Guitar_Fuzz','Harsh','Mkl_Hard','Organ_2','Organ_3','Phoneme_ah','Phoneme_bah','Phoneme_ee','Phoneme_o','Phoneme_ooh','Phoneme_pop_ahhhs','Piano','Putney_Wavering','Throaty','Trombone','Twelve String Guitar 1','Twelve_OpTines','Wurlitzer','Wurlitzer_2','original','original/01_Saw','original/02_Triangle','original/03_Square','original/04_Noise','original/05_Pulse','original/06_Warm_Saw','original/07_Warm_Triangle','original/08_Warm_Square','original/09_Dropped_Saw','original/10_Dropped_Square','original/11_TB303_Square','original/Bass','original/Bass_Amp360','original/Bass_Fuzz','original/Bass_Fuzz_ 2','original/Bass_Sub_Dub','original/Bass_Sub_Dub_2','original/Brass','original/Brit_Blues','original/Brit_Blues_Driven','original/Buzzy_1','original/Buzzy_2','original/Celeste','original/Chorus_Strings','original/Dissonant Piano','original/Dissonant_1','original/Dissonant_2','original/Dyna_EP_Bright','original/Dyna_EP_Med','original/Ethnic_33','original/Full_1','original/Full_2','original/Guitar_Fuzz','original/Harsh','original/Mkl_Hard','original/Organ_2','original/Organ_3','original/Phoneme_ah','original/Phoneme_bah','original/Phoneme_ee','original/Phoneme_o','original/Phoneme_ooh','original/Phoneme_pop_ahhhs','original/Piano','original/Putney_Wavering','original/Throaty','original/Trombone','original/Twelve String Guitar 1','original/Twelve_OpTines','original/Wurlitzer','original/Wurlitzer_2','original/yyy','original/zzz']
+  const ALL = [ 'Bass_Amp360','01_Saw','02_Triangle','03_Square','04_Noise','05_Pulse','06_Warm_Saw','07_Warm_Triangle','08_Warm_Square','09_Dropped_Saw','10_Dropped_Square','11_TB303_Square','Bass','Bass_Fuzz','Bass_Fuzz_ 2','Bass_Sub_Dub','Bass_Sub_Dub_2','Brass','Brit_Blues','Brit_Blues_Driven','Buzzy_1','Buzzy_2','Celeste','Chorus_Strings','Dissonant Piano','Dissonant_1','Dissonant_2','Dyna_EP_Bright','Dyna_EP_Med','Ethnic_33','Full_1','Full_2','Guitar_Fuzz','Harsh','Mkl_Hard','Organ_2','Organ_3','Phoneme_ah','Phoneme_bah','Phoneme_ee','Phoneme_o','Phoneme_ooh','Phoneme_pop_ahhhs','Piano','Putney_Wavering','Throaty','Trombone','Twelve String Guitar 1','Twelve_OpTines','Wurlitzer','Wurlitzer_2','original','original/01_Saw','original/02_Triangle','original/03_Square','original/04_Noise','original/05_Pulse','original/06_Warm_Saw','original/07_Warm_Triangle','original/08_Warm_Square','original/09_Dropped_Saw','original/10_Dropped_Square','original/11_TB303_Square','original/Bass','original/Bass_Amp360','original/Bass_Fuzz','original/Bass_Fuzz_ 2','original/Bass_Sub_Dub','original/Bass_Sub_Dub_2','original/Brass','original/Brit_Blues','original/Brit_Blues_Driven','original/Buzzy_1','original/Buzzy_2','original/Celeste','original/Chorus_Strings','original/Dissonant Piano','original/Dissonant_1','original/Dissonant_2','original/Dyna_EP_Bright','original/Dyna_EP_Med','original/Ethnic_33','original/Full_1','original/Full_2','original/Guitar_Fuzz','original/Harsh','original/Mkl_Hard','original/Organ_2','original/Organ_3','original/Phoneme_ah','original/Phoneme_bah','original/Phoneme_ee','original/Phoneme_o','original/Phoneme_ooh','original/Phoneme_pop_ahhhs','original/Piano','original/Putney_Wavering','original/Throaty','original/Trombone','original/Twelve String Guitar 1','original/Twelve_OpTines','original/Wurlitzer','original/Wurlitzer_2','original/yyy','original/zzz']
 */
 const GOOD = ["Bass_Amp360", "Harsh", "Mkl_Hard", "Organ_2", "Organ_3", "Phoneme_ah", "Phoneme_bah", "01_Saw", "02_Triangle", "03_Square", "04_Noise", "05_Pulse", "06_Warm_Saw", "07_Warm_Triangle", "08_Warm_Square", "09_Dropped_Saw", "10_Dropped_Square", "11_TB303_Square", "Bass", "Bass_Fuzz", "Bass_Fuzz_ 2", "Bass_Sub_Dub", "Bass_Sub_Dub_2", "Brass", "Brit_Blues", "Brit_Blues_Driven", "Buzzy_1", "Buzzy_2", "Celeste", "Chorus_Strings", "Dissonant Piano", "Dissonant_1", "Dissonant_2", "Dyna_EP_Bright", "Dyna_EP_Med", "Ethnic_33", "Full_1", "Full_2", "Guitar_Fuzz", "Phoneme_ee", "Phoneme_o", "Phoneme_ooh", "Phoneme_pop_ahhhs", "Piano", "Putney_Wavering", "Throaty", "Trombone", "Twelve String Guitar 1", "Twelve_OpTines", "Wurlitzer", "Wurlitzer_2", "original/yyy", "original/zzz"]
 
 function nameToUrl( name ){
     const url = [/*'.',*/'','wave-tables',name].join('/')
-    console.log('url',url)
     return url
 }
 // let bad = []  // 52
@@ -71,11 +70,11 @@ function Synth( ctx, wavetables ){
         compressor.attack.setValueAtTime(0, ctx.currentTime);
         
         compressor.release.setValueAtTime(0.25, ctx.currentTime);
-//        compressor.reduction/*.setValueAtTime(0, ctx.currentTime) // [ 0, -20 ]
+        //        compressor.reduction/*.setValueAtTime(0, ctx.currentTime) // [ 0, -20 ]
 
         const gain2 = ctx.createGain();
         gain2.gain.setValueAtTime( 0.8, ctx.currentTime )
-      
+        
         // connect the AudioBufferSourceNode to the destination
         gain1.connect(compressor).connect(gain2)
         //return { compressor, gain1, gain2 }
@@ -87,8 +86,8 @@ function Synth( ctx, wavetables ){
     }
     let compressor = compressorGain()
     /*let compressor = {
-        compressor : ctx.destination
-    }*/
+      compressor : ctx.destination
+      }*/
     function whiteNoiseBandPassGain(){
         let noiseDuration = 1;
         
@@ -140,7 +139,7 @@ function Synth( ctx, wavetables ){
         }
     }
 
-        
+    
     let engine = periodicWaveOscillatorGain('Wurlitzer')
     engine
         .connect( ctx.destination )
@@ -159,12 +158,12 @@ function Synth( ctx, wavetables ){
     
     compressor.connect( ctx.destination )
     
-    console.log( compressor )
+//     console.log( compressor )
     //engine.osc.stop()
     //engine2.osc.stop()
 
     //missile.noise.stop()
-  
+    
     return {
         //
         setef : f => engine.osc.frequency.setTargetAtTime( f, ctx.currentTime, 0.25),
@@ -234,96 +233,101 @@ export function Audio(){
     function mix( State ){
         if ( synth ){
             const me = State.me
-            const sound_target = State[ me.type ][ me.idx ]
-            if ( sound_target ){
-                // TODO : ttl
-                const { p } = sound_target
-                {
-                    const regime = regimes[ p ]
-                    const f = regime.f + (  Math.random() * 5 )
-                    const g = Math.min( 1, regime.g + Math.random() * 0.1 )
-                    synth.setef( f )
-                    synth.seteg( g )
-                }
-                {
-                    const regime = regimesb[ p ]
-                    const f = regime.f  //+ (  Math.random() * 5 )
-                    const g = Math.min( 1, regime.g + Math.random() * 0.1 )
-                    synth.setmf( f )
-                    synth.setmg( g )
+            if ( me ){
+                const sound_target = State[ me.type ][ me.idx ]
+                if ( sound_target ){
+                    // TODO : ttl
+                    const { p } = sound_target
+                    {
+                        const regime = regimes[ p ]
+                        const f = regime.f + (  Math.random() * 5 )
+                        const g = Math.min( 1, regime.g + Math.random() * 0.1 )
+                        synth.setef( f )
+                        synth.seteg( g )
+                    }
+                    {
+                        const regime = regimesb[ p ]
+                        const f = regime.f  //+ (  Math.random() * 5 )
+                        const g = Math.min( 1, regime.g + Math.random() * 0.1 )
+                        synth.setmf( f )
+                        synth.setmg( g )
+                    }
                 }
             }
             {
-                let nmissiles = 0
-                let fired = 0
-                State.missiles.forEach( m => {
-                    if ( m.ttl > 0 ){
-                        if ( m.ttl === 99 ){
-                            fired = true
+                if ( State.missiles ){
+                    let nmissiles = 0
+                    let fired = 0
+                    State.missiles.forEach( m => {
+                        if ( m.ttl > 0 ){
+                            if ( m.ttl === 99 ){
+                                fired = true
+                            }
+                            nmissiles++
                         }
-                        nmissiles++
+                    })
+                    if ( nmissiles > 5 ){
+                        nmissiles = 5
+                    }                
+                    let g = Math.sqrt( nmissiles / 5 ) * regimeMissile.g
+                    synth.setMissileG( g  )
+                    if ( fired ){
+                        synth.setMissileF( 5000, 0.001 )
+                    } else if ( nmissiles ) {
+                        let f = regimeMissile.f * 2 + Math.random() * 300 
+                        let q = regimeMissile.q - Math.random() * 10
+                        synth.setMissileF( f )
+                        synth.setMissileQ( q )
                     }
-                })
-                if ( nmissiles > 5 ){
-                    nmissiles = 5
-                }                
-                let g = Math.sqrt( nmissiles / 5 ) * regimeMissile.g
-                synth.setMissileG( g  )
-                if ( fired ){
-                    synth.setMissileF( 5000, 0.001 )
-                } else if ( nmissiles ) {
-                    let f = regimeMissile.f * 2 + Math.random() * 300 
-                    let q = regimeMissile.q - Math.random() * 10
-                    synth.setMissileF( f )
-                    synth.setMissileQ( q )
                 }
-                let ndebris = 0
-                State.debris.forEach( debri => {
-                    ndebris++
-                })
-                if ( lastNDebris < ndebris ){
-                    
-                    synth.setExplosionF( 0.01, 0.01 )
-                    synth.setExplosionG( 1.0, 0.001 )
-                    synth.setExplosionQ( 0.00001, 0.01 )
-                    
-                    synth.setExplosionF( 100, 0.2,0.1 )
-                    synth.setExplosionG( 0,  0.2,0.1 )
-                    synth.setExplosionQ( 10, 0.1,0.1 )
-                    
-                    /* boum sourd sec 
-                    synth.setExplosionF( 0.01, 0.1 )
-                    synth.setExplosionG( 0.5, 0.1 )
-                    synth.setExplosionQ( 0.0001, 0.0001 )
-                    
-                    synth.setExplosionF( 10, 0.2,0.1 )
-                    synth.setExplosionG( 0, 0.01,0.1 )
-                    synth.setExplosionQ( 100, 0.01,0.1 )
-                    */
-                    /* bouchon 
-                    synth.setExplosionF( 500, 0.1 )
-                    synth.setExplosionG( 0.5, 0.1 )
-                    synth.setExplosionQ( 0.001, 0.01 )
-                    
-                    synth.setExplosionF( 10, 0.2,0.1 )
-                    synth.setExplosionG( 0, 0.01,0.1 )
-                    synth.setExplosionQ( 100, 0.01,0.1 )
-                    */
-                    /*
-                      synth.setExplosionF( 100, 0.01 )
-                      synth.setExplosionG( 0, 0.01 )
-                      synth.setExplosionQ( 0.01, 0.01 )
-                      
-                      synth.setExplosionF( 0, 0.2,0.1 )
-                      synth.setExplosionG( 0.3, 0.01,0.1 )
-                      synth.setExplosionQ( 30, 0.01,0.1 )
-                    */
-                } 
-                lastNDebris = ndebris
-                
+                if ( State.debris ){
+                    let ndebris = 0
+                    State.debris.forEach( debri => {
+                        ndebris++
+                    })
+                    if ( lastNDebris < ndebris ){
+                        
+                        synth.setExplosionF( 0.01, 0.01 )
+                        synth.setExplosionG( 1.0, 0.001 )
+                        synth.setExplosionQ( 0.00001, 0.01 )
+                        
+                        synth.setExplosionF( 100, 0.2,0.1 )
+                        synth.setExplosionG( 0,  0.2,0.1 )
+                        synth.setExplosionQ( 10, 0.1,0.1 )
+                        
+                        /* boum sourd sec 
+                           synth.setExplosionF( 0.01, 0.1 )
+                           synth.setExplosionG( 0.5, 0.1 )
+                           synth.setExplosionQ( 0.0001, 0.0001 )
+                           
+                           synth.setExplosionF( 10, 0.2,0.1 )
+                           synth.setExplosionG( 0, 0.01,0.1 )
+                           synth.setExplosionQ( 100, 0.01,0.1 )
+                        */
+                        /* bouchon 
+                           synth.setExplosionF( 500, 0.1 )
+                           synth.setExplosionG( 0.5, 0.1 )
+                           synth.setExplosionQ( 0.001, 0.01 )
+                           
+                           synth.setExplosionF( 10, 0.2,0.1 )
+                           synth.setExplosionG( 0, 0.01,0.1 )
+                           synth.setExplosionQ( 100, 0.01,0.1 )
+                        */
+                        /*
+                          synth.setExplosionF( 100, 0.01 )
+                          synth.setExplosionG( 0, 0.01 )
+                          synth.setExplosionQ( 0.01, 0.01 )
+                          
+                          synth.setExplosionF( 0, 0.2,0.1 )
+                          synth.setExplosionG( 0.3, 0.01,0.1 )
+                          synth.setExplosionQ( 30, 0.01,0.1 )
+                        */
+                    } 
+                    lastNDebris = ndebris
+                }
             }
         }
-            
+        
     }
     return {
         setState : mix

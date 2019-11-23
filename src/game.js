@@ -12,6 +12,7 @@
 // plane color
 // fix interpolation bypass
 // pass explosion/missile/bomb start for audio
+// sound problem at startup for iogame
 
 import { ground } from './ground.js'
 import { prepareHitmask, prepareBottomHitmask } from './symbols.js'
@@ -913,6 +914,9 @@ export function Game( { tellPlayer } ) {
             plane.x = 500 + Math.floor( Math.random() * 1000 )
             plane.y = 100
             plane.p = 0
+            return true
+        } else {
+            return false
         }
     }
     function removePlayer( inputId ){
