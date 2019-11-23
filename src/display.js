@@ -166,10 +166,10 @@ export function Display() {
         if ( bombs ) {
             for ( let i = 0, l = bombs.length ; i < l ; i++ ){        
                 const bomb = bombs[i]
-                const { x, y, a, p, ttl, explosion } = bomb
+                const { x, y, a, p, ttl, cs, explosion } = bomb
                 if ( ttl > 0 ){
                     let wxy = world_to_context( x, y )
-                    putSprite( Images.bomb[a], wxy.x , wxy.y ) 
+                    putSprite( Images.bomb[cs][a], wxy.x , wxy.y ) 
                 }
             }
         }
@@ -177,19 +177,19 @@ export function Display() {
         if ( missiles ){
             for ( let i = 0, l = missiles.length ; i < l ; i++ ){        
                 const missile = missiles[i]
-                const { x, y, a, p, ttl, explosion } = missile
+                const { x, y, a, p, ttl, cs, explosion } = missile
                 if ( ttl > 0 ){
                     let wxy = world_to_context( x, y )
-                    putSprite( Images.missile[a], wxy.x , wxy.y ) 
+                    putSprite( Images.missile[cs][a], wxy.x , wxy.y ) 
                 }
             }
         }
         const debris = State.debris
         if (debris){
             for ( let j = 0, ll = debris.length ; j < ll ; j++ ){
-                let { x, y, a, ttl, dtype } = debris[ j ]
+                let { x, y, a, ttl, cs, dtype } = debris[ j ]
                 let wxy = world_to_context( x, y )
-                putSprite( Images.debris[dtype], wxy.x , wxy.y )             
+                putSprite( Images.debris[cs][dtype], wxy.x , wxy.y )             
             }
         }
         const flocks = State.flocks

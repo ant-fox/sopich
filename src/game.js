@@ -13,6 +13,7 @@
 // fix interpolation bypass
 // pass explosion/missile/bomb start for audio
 // sound problem at startup for iogame
+// randomize collision order
 
 import { ground } from './ground.js'
 import { prepareHitmask, prepareBottomHitmask } from './symbols.js'
@@ -119,21 +120,23 @@ export function Game( { tellPlayer } ) {
     function init_ground(){
         return ground.map( x => x )
     }
-    function init_debris( i, x = 1600, y = 100 ){
+    function init_debris( i, cs, x = 1600, y = 100 ){
         return {
+            cs,
             x : x+Math.floor( Math.random()*50 ),
             y : y+Math.floor( Math.random()*50 ),
             a : ( (i*((Math.random()>0.5)?1:2)) % 16 ),
             dtype : ( i % 8 ),
         }
     }
-    function init_explosion(){
+    function init_explosion( cs ){
         return {
+            cs,
             p : 4,
             ttl : -1,
             step : 0,
             debris : new Array(16).fill(0).map( (_,i) => {
-                return init_debris( i )
+                return init_debris( i, cs )
             })
         }       
     }
@@ -180,26 +183,28 @@ export function Game( { tellPlayer } ) {
             p : 2,
             //        hitmaskf : item => Hitmasks.plane[ (item.r)?1:0 ][ item.a ],
             bombs : new Array(8).fill(0).map( (_,i) => ({
+                cs : idx%ColorSchemes.length,
                 x : 1550+i*20,
                 y : 100+i*10,
                 a : i,
                 p : 1,
                 ttl : -1,
                 step : 0,
-                explosion : init_explosion(),
+                explosion : init_explosion(idx%ColorSchemes.length),
                 owner : idx,
             })),
             missiles : new Array(16).fill(0).map( (_,i) => ({
+                cs : idx%ColorSchemes.length,
                 x : 1250+i*40,
                 y : 100+i*10,
                 a : i,
                 p : 3,
                 ttl : -1,
                 step : 0,
-                explosion : init_explosion(),
+                explosion : init_explosion(idx%ColorSchemes.length),
                 owner : idx,
             })),
-            explosion : init_explosion(),
+            explosion : init_explosion(idx%ColorSchemes.length),
             falling : init_falling_plane(),
             leaving : init_leaving_plane(),
             respawn : -1,
@@ -633,11 +638,13 @@ export function Game( { tellPlayer } ) {
                     const x = item1.x
                     const fx = Math.floor(x)
                     const y = item1.y
-                    let collides = pixel_bottom_collision(fx,y,bhitmask)
+                    let collides = pixel_bottom_collision(fx,y,bhitmask) // modfies ground..
                     if ( collides ) {
-                        item1.ttl = -1
-                        start_explosion( item1.explosion,fx ,y )
-                        start_falling( item1 )
+                        if ( ! item1.undescrtu ) {
+                            item1.ttl = -1
+                            start_explosion( item1.explosion,fx ,y )
+                            start_falling( item1 )
+                        }
                     }
                 }
             }
@@ -1023,30 +1030,30 @@ export function Game( { tellPlayer } ) {
                 
                 if ( explosion.ttl > 0 ){
                     explosion.debris.forEach( debri => {
-                        let { x, y, a, dtype } = debri
-                        payload.debris.push( { x, y, a, dtype } )
+                        let { x, y, a, dtype, cs } = debri
+                        payload.debris.push( { x, y, a, dtype, cs } )
                     })
                 }
                 
                 
                 plane.bombs.forEach( bomb => {
-                    let { x, y, a, p, ttl,  step, explosion } = bomb
-                    payload.bombs.push( { x, y, a, p, ttl /*, step */ } )
+                    let { x, y, a, p, cs, ttl,  step, explosion } = bomb
+                    payload.bombs.push( { x, y, a, p, cs, ttl /*, step */ } )
                     if ( explosion.ttl > 0 ){
                         explosion.debris.forEach( debri => {
-                            let { x, y, a, dtype } = debri
-                            payload.debris.push( { x, y, a, dtype } )
+                            let { x, y, a, cs, dtype } = debri
+                            payload.debris.push( { x, y, a, cs, dtype } )
                         })
                     }
                     
                 })
                 plane.missiles.forEach( missile => {
-                    let { x, y, a, p, ttl, step, explosion } = missile
-                    payload.missiles.push( { x, y, a, p, ttl /*, step */ } )
+                    let { x, y, a, p, cs, ttl, step, explosion } = missile
+                    payload.missiles.push( { x, y, a, p, cs, ttl /*, step */ } )
                     if ( explosion.ttl > 0 ){
                         explosion.debris.forEach( debri => {
                             let { x, y, a, dtype } = debri
-                            payload.debris.push( { x, y, a, dtype } )
+                            payload.debris.push( { x, y, a, cs, dtype } )
                         })
                     }                
                 })

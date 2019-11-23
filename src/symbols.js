@@ -1289,16 +1289,17 @@ pal = ColorSchemes[ 4 ]
 
 export function prepareImages(){
 
+  
     const sym = {
         plane : ColorSchemes.map( pal => swplnsym.map( r => r.map( a => symboltoimage( a, 16, 16, pal ) ) )),
         targets : swtrgsym.map( type => symboltoimage( type, 16, 16 ) ),
         target_hit : symboltoimage( swhtrsym, 16,16),
         ox : swoxsym.map( type => symboltoimage( type, 16, 16 ) ),
-        bomb : swbmbsym.map( x => symboltoimage( x, 8, 8 ) ),
-        debris : swexpsym.map( x => symboltoimage( x, 8, 8 ) ),
+        debris : ColorSchemes.map( pal => swexpsym.map( x => symboltoimage( x, 8, 8, pal ) )),
         flock : swflksym.map( x => symboltoimage( x, 16, 16 ) ),
         bird : swbrdsym.map( x => symboltoimage( x, 4, 2 ) ),
-        missile : swmscsym.map( x => symboltoimage( x, 8, 8 ) ),
+        bomb : ColorSchemes.map( pal => swbmbsym.map( x => symboltoimage( x, 8, 8, pal ) ) ),
+        missile : ColorSchemes.map( pal =>  swmscsym.map( x => symboltoimage( x, 8, 8, pal ) )),
         burst : swbstsym.map( x => symboltoimage( x, 8, 8 ) ),
         plane_hit : swhitsym.map( x => symboltoimage( x, 16, 16 ) ),
         plane_win : swwinsym.map( x => symboltoimage( x, 16, 16 ) ),
