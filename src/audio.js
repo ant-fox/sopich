@@ -45,14 +45,7 @@ function fetchWaveTable( url ){
                .replace(/,]/g, ']') 
                .replace(/,}/g, '}') )
         .then( JSON.parse )
-        // .then(  x => {
-        //     good.push( url ) ;
-        //     console.log('good',good)
-        // } )
-        .catch( x => {
-            // bad.push( url ) ;
-            console.error('bad wavetable',url)
-        } )
+        .catch( x => console.error( 'bad wavetable', url ) )
 }
 function fetchWaveTables(){
     return Promise
