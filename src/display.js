@@ -124,34 +124,18 @@ export function Display() {
             for ( let i = 0, l = targets.length ; i < l ; i++ ){
 
                 const target = targets[i]
-                const { x, y, as } = target
+                const { x, y, as, broken } = target
                 //if ( ttl > 0 ){
                 let wxy = world_to_context( x, y )
-                putSprite( Images.targets[as], wxy.x , wxy.y ) 
+                if ( broken ){
+                    putSprite( Images.target_hit, wxy.x , wxy.y )
+                } else {
+                    putSprite( Images.targets[as], wxy.x , wxy.y )
+                }
                 //}
             }
         }
-        // targets
-        /*
-        if ( true ){
-            const { xs, tys, hits } = State.targets
-            $context.fillStyle = 'black'
-            for ( let i = 0 ; i < xs.length ; i++ ){
-                let x = xs[ i ]        
-                let y = ground[ Math.floor( x ) % ground.length ]
-                let ty = tys[ i ]
-                let hit = hits[ i ]
-                let wxy = world_to_context( x, y )
-                if ( hit ){
-                    $context.fillStyle = 'rgba(255,255,255,0.1)'
-                    putSprite( Images.target_hit, wxy.x  , wxy.y )
-                } else {
-                    putSprite( Images.targets[ty], wxy.x  , wxy.y )
-                }
-            }
-        }
-        */
-        /// planes
+     
         const planes = State.planes
         if ( planes ){
             State.planes.forEach( plane => {

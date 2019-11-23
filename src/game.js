@@ -88,6 +88,7 @@ export function Game( { tellPlayer } ) {
         return {
             x : Math.floor( 400 + ( i / l ) * 2000 ),
             as : 0,
+            destroyed : item => item.as = 1,
         }
     }
     function init_bird( i, l ){
@@ -152,9 +153,11 @@ export function Game( { tellPlayer } ) {
             const as = model.tys[ i ]
             // let y = ground[ Math.floor( x ) % ground.length ]
             return {
-                x,as,/*
+                x,as,
                 broken : false,
-                hits: false*/
+                destroyed : item => {
+                    item.broken = true
+                }
             }
         })
         return targets
@@ -321,6 +324,7 @@ export function Game( { tellPlayer } ) {
         }
     }
     function move_anim( leaving ){
+        
         if ( leaving.ttl > 0 ){
             if ( leaving.step && ( ( leaving.step  % leaving.interv ) === 0 ) ){
                 if ( leaving.loop ){
@@ -423,21 +427,25 @@ export function Game( { tellPlayer } ) {
         State.flocks.forEach( flock => {
             if ( ( flock.step % flock.interv ) === 0 ){
                 flock.as = ( flock.as + 1)%2
-                flock.x = Math.floor( flock.x + ( Math.random() * 2 ) - 1 )
-                flock.y = Math.floor( flock.y + ( Math.random() * 2 ) - 1 )
+                flock.x = Math.floor( flock.x + ( Math.random() * 2 ) - 0.5 )
+                flock.y = Math.floor( flock.y + ( Math.random() * 2 ) - 0.5 )
             }
             flock.step++
         })
         State.birds.forEach( bird => {
             if ( ( bird.step % bird.interv ) === 0 ){
                 bird.as = ( bird.as + 1)%2
-                bird.x = Math.floor( bird.x + ( Math.random() * 4 ) - 2 )
-                bird.y = Math.floor( bird.y + ( Math.random() * 4 ) - 2 )
+                bird.x = Math.floor( bird.x + ( Math.random() * 4 ) - 1.5 )
+                bird.y = Math.floor( bird.y + ( Math.random() * 4 ) - 1.2 )
             }
             bird.step++
         })
-
-        
+       
+        State.targets.forEach( ox => {
+            const { x } = ox
+            const y =  ground[ Math.floor( x ) % ground.length ]
+            ox.y = y
+        })
         
     }
     function pixel_collision(b,
@@ -492,15 +500,15 @@ export function Game( { tellPlayer } ) {
         return collides
     }
     /*
-    function collisions2(){
-        State.version++
+      function collisions2(){
+      State.version++
 
-        const version = State.version 
-        const tree = State.tree
-        let ncoll = 0;
-        
-    }
-*/
+      const version = State.version 
+      const tree = State.tree
+      let ncoll = 0;
+      
+      }
+    */
     
     function start_explosion( explosion, x, y ){
         explosion.ttl = 10
@@ -539,20 +547,20 @@ export function Game( { tellPlayer } ) {
             f( 'plane', plane )
             // explosion.debris.forEach( debri => f( 'debris', debri ) )
             bombs.forEach( bomb => {
-                 const { explosion } = bomb
-                 f( 'bomb', bomb )
+                const { explosion } = bomb
+                f( 'bomb', bomb )
                 //     // explosion.debris.forEach( debri => f( 'debris', debri ) )
             })
-             missiles.forEach( missile => {
-                 const { explosion } = missile
-                 f( 'missile', missile )
-            //     // explosion.debris.forEach( debri => f( 'debris', debri ) )
-             })
+            missiles.forEach( missile => {
+                const { explosion } = missile
+                f( 'missile', missile )
+                //     // explosion.debris.forEach( debri => f( 'debris', debri ) )
+            })
 
         })
     }
     function collisions(){
-//        State.tree = new Tree( 4096, 256, 16 )
+        //        State.tree = new Tree( 4096, 256, 16 )
 
         // to move ?
         State.oxs.forEach( ox => {
@@ -582,13 +590,15 @@ export function Game( { tellPlayer } ) {
             missile : item => Hitmasks.missile[ item.a ],
             flock : item => Hitmasks.flock[ item.as ],
             bird : item => Hitmasks.bird[ item.as ],
-            target : item => Hitmasks.targets[ item.as ],
+            target : item => ((item.broken)
+                              ?(Hitmasks.target_hit)
+                              :(Hitmasks.targets[ item.as ])),
             /*target : item => 
-                return {
-                    Hitmasks.targets[ 
-                    
-                }
-            }
+              return {
+              Hitmasks.targets[ 
+              
+              }
+              }
             */
             ox : item => Hitmasks.ox[ item.as ],
         }
@@ -658,27 +668,29 @@ export function Game( { tellPlayer } ) {
                                                                 item2.x,item2.y,hitmask2.w,hitmask2.h, o ) ){
                             
                             State.showcolls.push( o )
-                          
-                                if ( item1.explosion ) {                                
-                                    start_explosion( item1.explosion, x, y )
-                                }
-                                if ( item2.explosion ) {
-                                    start_explosion( item2.explosion, item2.x, item2.y )
-                                }
-                                if ( (!item1.undescrtu) && ( item1.ttl !== undefined ) ){
-                                    item1.ttl = -1
-                                }
-                                if ( (!item2.undescrtu) && ( item2.ttl !== undefined ) ){
-                                    item2.ttl = -1
-                                }
-                                if ( (!item2.undescrtu) ){
-                                    item2._node.remove( item2 )
-                                    //item2_.node = undefined
-                                }
-                          
+                            if ( item1.destroyed ) item1.destroyed( item1 )
+                            if ( item2.destroyed ) item2.destroyed( item2 )
+                            
+                            if ( item1.explosion ) {                                
+                                start_explosion( item1.explosion, x, y )
+                            }
+                            if ( item2.explosion ) {
+                                start_explosion( item2.explosion, item2.x, item2.y )
+                            }
+                            if ( (!item1.undescrtu) && ( item1.ttl !== undefined ) ){
+                                item1.ttl = -1
+                            }
+                            if ( (!item2.undescrtu) && ( item2.ttl !== undefined ) ){
+                                item2.ttl = -1
+                            }
+                            if ( (!item2.undescrtu) ){
+                                item2._node.remove( item2 )
+                                //item2_.node = undefined
+                            }
+                            
 
                             return STOP_VISIT
-                       } else {
+                        } else {
                             return CONTINUE_VISIT
                         }
                     }
@@ -701,22 +713,22 @@ export function Game( { tellPlayer } ) {
     //     let ncoll = 0;
     //     State.planes.forEach( plane => {
     //         const { x, y, r, a, p, bombs, missiles, explosion } = plane
-            
+    
     //         const { xs, tys, hits, broken } = State.targets
     //         const ground = State.ground
 
     //         /*
     //           collisions with items
     //         */
-            
+    
     //         ;[ [ [ plane ], item => Hitmasks.plane[ (item.r)?1:0 ][ item.a ] ],
     //            [ bombs, item => Hitmasks.bomb[ item.a ] ],
     //            [ missiles, item => Hitmasks.missile[ item.a ] ]
     //          ].forEach( ([ items, hitmaskf ]) => {
     //              items.forEach( item => {
-                     
+    
     //                  if (( item.ttl === undefined ) || (item.ttl > 0 )){
-                         
+    
     //                      const explosion = item.explosion               
     //                      const hitmask = hitmaskf( item )
     //                      const x = item.x
@@ -726,7 +738,7 @@ export function Game( { tellPlayer } ) {
     //                          version,
     //                          () => { ncoll++ }
     //                      )
-                         
+    
     //                      //const { x, y, r, a, p, explosion } = item //State.plane
     //                      for ( let i = 0 ; i < xs.length ; i++ ){
     //                          const tx = xs[ i ]
@@ -736,7 +748,7 @@ export function Game( { tellPlayer } ) {
     //                          const o = {}
     //                          if ( rectangle_intersection( x,y,hitmask.w,hitmask.h, tx,ty,16,16, o ) ){
     //                              if ( pixel_collision( o, x,y,hitmask.w,hitmask.h, hitmask, tx,ty,16,16, Hitmasks.targets[ ttype ]) ){
-                                     
+    
     //                                  hits[ i ] = o
     //                                  broken[ i ] = true
     //                                  start_explosion( explosion, tx ,ty )
@@ -752,11 +764,11 @@ export function Game( { tellPlayer } ) {
     //              })
     //          })
 
-            
+    
     //         /*
     //          * ground coll
     //          */
-            
+    
     //         ;[ [ [ plane ], item => BottomHitmasks.plane[ (item.r)?1:0 ][ item.a ] ],
     //            [ bombs, item => BottomHitmasks.bomb[ item.a ] ],
     //            [ missiles, item => BottomHitmasks.missile[ item.a ] ]
@@ -776,7 +788,7 @@ export function Game( { tellPlayer } ) {
     //                  }
     //              })
     //          })
-            
+    
     //     })
     //     //        console.log('ncoll',ncoll)
     // }
@@ -786,9 +798,10 @@ export function Game( { tellPlayer } ) {
     function ia(){
         let commands = [
             'noseup',
-            //    'nosedown',
+            //'nosedown',
             //'reverse','powerup',
-            //'firemissile','firebomb'
+            //'firemissile',
+            'firebomb'
         ]
         let clients = State.planes
             .map( (plane,idx) => [plane,idx] )
@@ -957,8 +970,8 @@ export function Game( { tellPlayer } ) {
             //showtreecells : State.showtreecells,
         }
         State.targets.forEach( target => {
-            let { x, y, as } = target
-            payload.targets.push( { x, y, as } )
+            let { x, y, as, broken } = target
+            payload.targets.push( { x, y, as, broken } )
         })
         State.flocks.forEach( flock => {
             let { x, y, as } = flock
@@ -970,7 +983,7 @@ export function Game( { tellPlayer } ) {
         })
         State.oxs.forEach( ox => {
             let { x, y, as } = ox
-            payload.oxs.push( { x, /*y, */as } )
+            payload.oxs.push( { x, y, as } )
         })
 
         State.planes.forEach( plane => {
@@ -986,29 +999,18 @@ export function Game( { tellPlayer } ) {
             //}
             if ( true ){
                 {
-                const {x,y,as,ttl} = leaving
-                if ( ttl > 0 ){
-                    payload.leavings.push({x,y,as})
+                    const {x,y,as,ttl} = leaving
+                    if ( ttl > 0 ){
+                        payload.leavings.push({x,y,as})
+                    }
                 }
-            }
-            {
-                const {x,y,as,ttl} = falling
-                if ( ttl > 0 ){
-                    payload.fallings.push({x,y,as})
+                {
+                    const {x,y,as,ttl} = falling
+                    if ( ttl > 0 ){
+                        payload.fallings.push({x,y,as})
+                    }
                 }
-            }
-            
-            if ( explosion.ttl > 0 ){
-                explosion.debris.forEach( debri => {
-                    let { x, y, a, dtype } = debri
-                    payload.debris.push( { x, y, a, dtype } )
-                })
-            }
-            
-            
-            plane.bombs.forEach( bomb => {
-                let { x, y, a, p, ttl,  step, explosion } = bomb
-                payload.bombs.push( { x, y, a, p, ttl /*, step */ } )
+                
                 if ( explosion.ttl > 0 ){
                     explosion.debris.forEach( debri => {
                         let { x, y, a, dtype } = debri
@@ -1016,20 +1018,31 @@ export function Game( { tellPlayer } ) {
                     })
                 }
                 
-            })
-            plane.missiles.forEach( missile => {
-                let { x, y, a, p, ttl, step, explosion } = missile
-                payload.missiles.push( { x, y, a, p, ttl /*, step */ } )
-                if ( explosion.ttl > 0 ){
-                    explosion.debris.forEach( debri => {
-                        let { x, y, a, dtype } = debri
-                        payload.debris.push( { x, y, a, dtype } )
-                    })
-                }                
-            })
+                
+                plane.bombs.forEach( bomb => {
+                    let { x, y, a, p, ttl,  step, explosion } = bomb
+                    payload.bombs.push( { x, y, a, p, ttl /*, step */ } )
+                    if ( explosion.ttl > 0 ){
+                        explosion.debris.forEach( debri => {
+                            let { x, y, a, dtype } = debri
+                            payload.debris.push( { x, y, a, dtype } )
+                        })
+                    }
+                    
+                })
+                plane.missiles.forEach( missile => {
+                    let { x, y, a, p, ttl, step, explosion } = missile
+                    payload.missiles.push( { x, y, a, p, ttl /*, step */ } )
+                    if ( explosion.ttl > 0 ){
+                        explosion.debris.forEach( debri => {
+                            let { x, y, a, dtype } = debri
+                            payload.debris.push( { x, y, a, dtype } )
+                        })
+                    }                
+                })
             }
         })
-                            
+        
         Object.keys( planeByInputId ).forEach( inputId => {
             let plane = planeByInputId[ inputId ]
             let me = {
