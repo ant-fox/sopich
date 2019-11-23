@@ -1,5 +1,4 @@
 // bird + flock  use anim
-// collisions
 // collision broken -> coll mask non broken ?
 // set y of ox and target at move step
 // target offset (ground target)?
@@ -7,6 +6,8 @@
 // bullets
 // login
 // mongo
+// graphics px x 2 3 4 5 6....
+
 import { ground } from './ground.js'
 import { prepareHitmask, prepareBottomHitmask } from './symbols.js'
 import { Tree, CONTINUE_VISIT, STOP_VISIT } from './coll.js'
@@ -936,31 +937,45 @@ export function Game( { tellPlayer } ) {
             missiles : [],
             debris : [],
             ground : State.ground,
-            targets : State.targets,
-            birds : State.birds,
-            oxs : State.oxs,
+            targets : [],
+            birds : [],
+            oxs : [],
             flocks : [],
             fallings : [],
             leavings : [],
-            showcolls : State.showcolls,
-            showtreecells : State.showtreecells,
+            //showcolls : State.showcolls,
+            //showtreecells : State.showtreecells,
         }
+        State.targets.forEach( target => {
+            let { x, y, as } = target
+            payload.targets.push( { x, y, as } )
+        })
         State.flocks.forEach( flock => {
             let { x, y, as } = flock
             payload.flocks.push( { x, y, as } )
         })
-        
+        State.birds.forEach( bird => {
+            let { x, y, as } = bird
+            payload.birds.push( { x, y, as } )
+        })
+        State.oxs.forEach( ox => {
+            let { x, y, as } = ox
+            payload.oxs.push( { x, /*y, */as } )
+        })
+
         State.planes.forEach( plane => {
             let { ttl, x, y, r, a, p, explosion, leaving, falling } = plane
             let name = '?'
             if ( plane.inputId ){
                 name = nameByInputId[ plane.inputId ]
             }
+
             // TODO
             //if ( ttl > 0 ){
             payload.planes.push( { ttl, x, y, r, a, p, name } )
             //}
-            {
+            if ( true ){
+                {
                 const {x,y,as,ttl} = leaving
                 if ( ttl > 0 ){
                     payload.leavings.push({x,y,as})
@@ -1002,15 +1017,24 @@ export function Game( { tellPlayer } ) {
                     })
                 }                
             })
+            }
         })
-        
+                            
         Object.keys( planeByInputId ).forEach( inputId => {
             let plane = planeByInputId[ inputId ]
             let me = {
                 type : 'planes',
                 idx : State.planes.findIndex( p => plane === p )
             }
-            tellPlayer( inputId, Object.assign( { me }, payload ) )
+            /*for ( let i = 0 ; i < Object.keys( payload ).length ; i++ ){
+                let n = Object.keys( payload )[ i ]
+                let p = payload[ n ]
+                console.log('=',n)
+                JSON.stringify( p )
+            }
+*/
+            // console.log( JSON.stringify( payload ) )
+            tellPlayer( inputId, Object.assign( { me } , payload ) )
         })
     }
     gameloop()

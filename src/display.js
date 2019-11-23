@@ -243,8 +243,9 @@ export function Display() {
         const oxs = State.oxs
         if (oxs){
             for ( let j = 0, ll = oxs.length ; j < ll ; j++ ){
-                let { x, as } = oxs[ j ]
-                let y =  ground[ Math.floor( x ) % ground.length ]
+                let { x, y, as } = oxs[ j ]
+                //  y ?
+                // let y =  ground[ Math.floor( x ) % ground.length ]
                 let wxy = world_to_context( x, y )
                 putSprite( Images.ox[as], wxy.x , wxy.y )             
             }

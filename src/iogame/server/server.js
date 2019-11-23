@@ -56,7 +56,7 @@ function joinGame(username) {
 }
 
 function handleInput(dir) {
-    console.log('handleInput',this.id,dir)
+//    console.log('handleInput',this.id,dir)
     game.handleInput(this.id,dir);
 }
 
