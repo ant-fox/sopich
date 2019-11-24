@@ -41,3 +41,22 @@ export function hslToRgb(h, s, l) {
 
   return [ r * 255, g * 255, b * 255 ];
 }
+
+export const chainf = fs => x => fs.reduce( (x,f) => f(x), x )
+// let k = chainf( [ x => x/2, x=> x+1 ] )
+// console.log('----', k(8) )
+export const fsetk = ( o, k, v ) => { o[ k ] = v ; return o }
+// .reduce( ( r, x ) => fsetk( r, KEYF( x ), x ), {} )
+export const defined = x => ( x !== undefined )
+
+export function centerText( text, l, c = ' ', biasLeft = true ){
+    
+    let biasf = biasLeft?Math.floor:Math.ceil
+    let bef = Math.max( 0, biasf( ( l - text.length ) / 2 ) )
+    let aft =  Math.max(0, l - text.length - bef)
+    return [
+        ' '.repeat( bef ),
+        text,
+        ' '.repeat( aft ),
+    ].join('').substring(0,l)
+}

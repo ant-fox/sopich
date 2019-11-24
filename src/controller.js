@@ -15,7 +15,7 @@ export function Controller( input_send0 ){
             break
         case 'Enter' : input_send0( 'firebomb' ) 
             break
-        default : console.log(code)
+        //default : console.log(code)
         }
     }
     function connect(){

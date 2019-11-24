@@ -2,6 +2,7 @@ import { prepareImages } from './symbols.js'
 const Images = prepareImages()
 import { clamp } from './utils.js'
 import { worldSize } from './game.js'
+import { Menu } from './menu.js'
 
 function getRandomColor() {
     if (Math.random()>0.5){
