@@ -12,6 +12,7 @@
   "author": "Vivien Guillet, Victor Zhou",
   "license": "MIT",
   "dependencies": {
+    "connect-mongo": "^3.1.2",
     "esm": "^3.2.25",
     "express": "^4.16.4",
     "express-session": "^1.17.0",

@@ -92,12 +92,26 @@ const app = express();
 // app.use(require('serve-static')(__dirname + '/../../public'));
 app.use(require('cookie-parser')());
 app.use(require('body-parser').urlencoded({ extended: true }));
-const expressSession = require('express-session')({
-  secret: 'keyboaxrdxcat',
-  resave: true,
-  saveUninitialized: true
-})
-app.use(expressSession);
+
+///*
+const expressSession = require('express-session')
+const MongoStore = require('connect-mongo')(expressSession)
+app.use(expressSession({
+    secret: 'itisnotasession',
+    resave: true,
+    saveUninitialized: true,
+    store : new MongoStore({ mongooseConnection: mongoose.connection })
+}))
+
+//app.use(expressSession);
+//*/
+//const expressSession = require('express-session')
+//const MongoStore = require('connect-mongo')(expressSession);
+/*
+app.use(expressSession({
+    store: new MongoStore({ mongooseConnection: mongoose.connection })
+}))
+*/
 app.use(passport.initialize());
 
 const passportSession = passport.session()
