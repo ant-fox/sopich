@@ -1,3 +1,4 @@
+//
 // bird + flock  use anim
 // collision broken -> coll mask non broken ?
 // set y of ox and target at move step
@@ -14,6 +15,7 @@
 // pass explosion/missile/bomb start for audio
 // sound problem at startup for iogame
 // randomize collision order
+// random sound at init
 
 import { ground } from './ground.js'
 import { prepareHitmask, prepareBottomHitmask } from './symbols.js'
@@ -54,8 +56,9 @@ function available_ttl( items ){
     return items.length
 }
 
-export function Game( { tellPlayer } ) {
-    
+export function Game( { tellPlayer, tellScore } ) {
+
+    tellScore = tellScore || ( _ => _ )
     const State = init_state()
 
     function init_score( idx ){
@@ -120,7 +123,7 @@ export function Game( { tellPlayer } ) {
     function init_flock(i,l){
         return {
             x : Math.floor( 500 + ( i / l ) * 2000 ),
-            y : Math.floor( 100 + ( i / l ) * 100 ),
+            y : Math.floor( 200 + ( i / l ) * 300 ),
             as : Math.floor( Math.random() * 2 ),
             interv : Math.floor( 5 + Math.random() * 5 ),
             step : 0,
@@ -987,7 +990,8 @@ export function Game( { tellPlayer } ) {
     ////
     const planeByInputId = {}
     const nameByInputId = {}
-    function addPlayer( inputId, name ){
+    function addPlayer( inputId, name, total = 0 ){
+        console.log('addPlayer', inputId, name, total )
         const plane = State.planes.find( x => x.inputId === undefined )
         if ( plane ){
             planeByInputId[ inputId ] = plane
@@ -996,7 +1000,8 @@ export function Game( { tellPlayer } ) {
             plane.x = 500 + Math.floor( Math.random() * 1000 )
             plane.y = 100
             plane.p = 0
-            plane.score = init_score()
+            plane.score = init_score( total )
+            plane.score.total = total
             return true
         } else {
             return false
@@ -1005,6 +1010,8 @@ export function Game( { tellPlayer } ) {
     function removePlayer( inputId ){
         const plane = planeByInputId[ inputId ]
         if ( plane ){
+            const name = nameByInputId[ inputId ]
+            tellScore( name, plane.score )
             delete planeByInputId[ inputId ]
             delete nameByInputId[ inputId ]
             plane.inputId = undefined

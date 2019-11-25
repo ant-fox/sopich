@@ -23,36 +23,22 @@ console.log('==============')
 const Schema = mongoose.Schema;
 const UserSchema = new Schema({
     username: String,
-    score : String
+    score : Number,
 })
 UserSchema.statics.findByUsername = function(username) {
     return this.find({ username: new RegExp(username, 'i') });
 };
 const User = mongoose.model('User', UserSchema);
 
-const kitty = new User({ username: 'Zildjian', score : "12" });
+///////////////
+const kitty = new User({ username: 'Zildjian', score : 12 });
 kitty.save().then(() => console.log('meow'));
-/**
- *
- */
 
-/*
-User.findByUsername('Zildjian').exec(function(err, animals) {
-    console.log('found',animals.length,'Zildjian');
+User.findByUsername('ss').exec(function(err, animals) {
+    console.log('found',animals.length,animals);
 });
-*/
-///
-// const uri = "mongodb+srv://statistician:<password>@cluster0-3fkkv.mongodb.net/test?retryWrites=true&w=majority";
-// const client = new MongoClient(uri, { useNewUrlParser: true });
-// client.connect(err => {
-//   const collection = client.db("test").collection("devices");
-//   // perform actions on the collection object
-//   client.close();
-// });
-//
-/**
+///////////////
 
- */
 function loggedIn(req, res, next) {
     if (req.user) {
         next();
@@ -207,12 +193,24 @@ function tellPlayer( socketId, update ){
 //    console.log('got to tell', socketId, update)
     io.to(`${socketId}`).emit( Constants.MSG_TYPES.GAME_UPDATE, update )
 }
-const game = new Game( { tellPlayer } )
+function tellScore( name, score ){
+    console.log(name,'quits with score',JSON.stringify(score) )
+    User.updateOne( { username : name },
+                    //{ $inc : { score : score.total } },
+                    { score : score.total },
+                    { upsert : true } )
+        .then( x => console.log('update!YES',x))
+        .catch( x => console.log('update!NO',x))
+}
+const game = new Game( { tellPlayer, tellScore } )
+    
 
-
-function joinGame(username) {
+async function joinGame(username) {
     console.log('joinGame',this.id,username)
-    game.addPlayer(this.id, username);
+    const id = this.id
+    User.findOne( { username } )
+        .then( u => game.addPlayer( id, username, u.score ) )
+        .catch( u => game.addPlayer( id, username ) )
 }
 
 function handleInput(dir) {
