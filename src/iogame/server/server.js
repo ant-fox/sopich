@@ -203,7 +203,18 @@ function tellScore( name, score ){
         .catch( x => console.log('update!NO',x))
 }
 const game = new Game( { tellPlayer, tellScore } )
-    
+
+app.get('/stats/players', function(req, res, next) {
+    if ( game && game.players ){
+        let names = game.players.names()
+        let scores = game.players.scores()
+        const out = names.map( (n,i) => [ n, scores[i] ] )
+        console.log( out )
+        res.json( out )
+    } else {
+        res.json( [] )
+    }
+})
 
 async function joinGame(username) {
     console.log('joinGame',this.id,username)

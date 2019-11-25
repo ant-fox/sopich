@@ -71,7 +71,6 @@ export function Game( { tellPlayer, tellScore } ) {
         let item = State.planes[ idx ]
         if ( item && item.score ){
             item.score.total += value
-            console.log('item',item.score.total)
         }
     }
     
@@ -1163,6 +1162,11 @@ export function Game( { tellPlayer, tellScore } ) {
         addPlayer,
         removePlayer,
         handleInput,
+        players : {
+            names : () => Object.values( nameByInputId ),
+            scores : () => Object.values( planeByInputId ).map( x => x.score.total ),
+        }
+        
     }
 }
 
