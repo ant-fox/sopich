@@ -952,8 +952,8 @@ export function Game( { tellPlayer } ) {
         const dt = (now - State.lastUpdateTime) / 1000;
         let rfps =  1 / dt / FPS
         if ( ( rfps > 1.5 ) || ( rfps < 0.75 ) ){
-            console.error( `update after ${ dt }s, should be ${ 1/FPS }s `,
-                           `at ${ 1 / dt }fps, should be ${ FPS  }fps  `)
+            console.error( `update after ${ dt }s, should be ${ 1/FPS }s`,
+                           `${ 1 / dt }fps, should be ${ FPS  }fps  `)
         }
         
         const controlled_debug_plane = State.planes[0]
