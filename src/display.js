@@ -2,7 +2,61 @@ import { prepareImages } from './symbols.js'
 const Images = prepareImages()
 import { clamp } from './utils.js'
 import { worldSize } from './game.js'
-import { Menu } from './menu.js'
+
+function LeaderBoardDisplay(){
+    const MAX_DISPLAYED = 10
+    
+    function $buildContainer(){
+        let $div = document.createElement('pre') 
+        $div.style = 'position:fixed;display:block;color:white;z-index:25;'
+            +'width:auto;height:auto;'
+            +'right:0px;top:0px;'
+            +'opacity:0.9'
+            +';margin:0px;padding-left:1em;padding-right:1em;'
+            +'background-color:rgb(130, 98, 50,0.5);'
+            +'border-bottom-left-radius:15px;'
+        $div.classList.add('noselect')
+        return $div
+    }
+    const $div = $buildContainer()
+    document.body.appendChild( $div )
+        
+    function hide(){
+        state.visible = false
+        $div.style.visibility = 'collapse'
+    }
+    function show(){
+        state.visible = false
+        display()
+        $div.style.visibility = 'visible'
+    }
+    function update( leaderboard ){
+
+        let width1 = clamp(leaderboard.reduce(
+            (r,{username}) => Math.max( r, username.length ),
+            0
+        ),8,32)
+        
+        let width2 = clamp(leaderboard.reduce(
+            (r,{score}) => Math.max( r, score.toString().length ),
+            0
+        ),4,20)
+        $div.innerHTML = leaderboard
+            .sort( (a,b) => b.score - a.score )
+            .slice(0,MAX_DISPLAYED)
+            .map( x => ['<p>',
+                        x.username.padEnd( width1,' ' ),
+                        '  ',
+                        x.score.toString().padStart( width2,' '),
+                        '</p>'
+                       ].join(''))
+            .join('')
+
+
+    }
+    return { hide, show, update }
+}
+const leaderboardDisplay = LeaderBoardDisplay()
 
 function getRandomColor() {
     if (Math.random()>0.5){
@@ -18,6 +72,7 @@ function getRandomColor() {
     }
     return color;
 }
+
 
 function setCanvasDimensions( canvas, previousDimensions ) {
     // On small screens (e.g. phones), we want to "zoom out" so players can still see at least
@@ -59,9 +114,19 @@ export function Display() {
         if ( ! State.planes.length ){
             return 
         }
+        const leaderboard = State.leaderboard
+        if ( leaderboard ){
+            leaderboardDisplay.update( leaderboard ) 
+            //console.log('leaderboard',leaderboard)
+            //updateLeaderboard( leaderboard )
+            // console.log('yes')
+        } else {
+            // console.log('no')
+        }
         // camera
         const me = State.me
 
+        
         const camera_target = State[ me.type ][ me.idx ]
         
         const left = clamp(

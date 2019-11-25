@@ -2,6 +2,7 @@ import { Display } from '../display.js'
 import { Controller } from '../controller.js'
 import { Game } from '../game.js'
 import { Audio } from '../audio.js'
+import  * as Menu from '../menu.js'
 
 // display 
 const display = new Display()
@@ -9,6 +10,9 @@ display.animate()
 
 // sound
 const audio = new Audio()
+
+// menu
+// Menu.start()
 
 // game
 function tellPlayer( inputId, state ){

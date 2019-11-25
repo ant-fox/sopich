@@ -262,7 +262,8 @@ export function Menu( Definitions, store ){
     function $buildContainer(){
         let $div = document.createElement('pre') 
         $div.style = 'position:fixed;display:block;color:white;z-index:25;'
-            +'width:100%;height:100%;background-color:black;opacity:0.8;margin:0;padding-left:1em';
+            +'width:100%;height:100%;'
+            +'background-color:black;opacity:0.8;margin:0;padding-left:1em';
         $div.classList.add('noselect')
         return $div
     }
@@ -410,23 +411,10 @@ export function Menu( Definitions, store ){
 const store = new Store( Definitions )
 const menu = new Menu( Definitions, store  )
 
-//store.valueChange.connectTo( () => menu.setDirty )
-
-/*
-function onValueChange( msg, type ){
-    console.log('1 message meny say','type?',type, 'msg',msg )
-}
-/*function onValueChange2( msg, type ){
-    console.log('2 message meny say','type?',type, 'msg',msg )
-}
-*/
-
 function onValueChange3( msg, type ){
     console.log('3 message meny say','type?',type, 'msg',msg )
 }
-
 store.valueChange.addListener( onValueChange3, 'config.sound.mute'  )
-// store.valueChange.connectTo( onValueChange )
 
 const mouseController = DomControllerf(
     menu.$div,
@@ -468,30 +456,40 @@ export function stop(){
     mouseController.stop()
 }
 
+/*
 setTimeout( start , 5000 )
 setTimeout( stop , 10000 )
 
-function variableTimeout( whenttimesout ){
-
-    const min = 4000
-    const max = 5000
-
-    whenttimesout()
+function variableTimeout( min, max, whenttimesout ){
 
     let o 
-    let timeout 
+    let timeout = 0
+
+    onInput()
     
     function onInput(){
         let now = Date.now()
         let remain = timeout - now
+        console.log('input!',now,timeout,remain)
         if ( remain < min ){
             if ( o ){
                 clearTimeout( o )
                 o = undefined
             }
             timeout = now + max
-            o = setTimeout( whentimesout, max )
+            o = setTimeout( whenttimesout, max )
         }
     }
     return { onInput }
 }
+
+
+let vto =  variableTimeout( 4000, 5000, function(){
+    console.log('it timed out')
+})
+*/
+/*
+setInterval( function(){
+    vto.onInput()
+},500)
+*/

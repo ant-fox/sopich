@@ -57,6 +57,21 @@ function available_ttl( items ){
 export function Game( { tellPlayer } ) {
     
     const State = init_state()
+
+    function init_score( idx ){
+        return {
+            total : 0,
+            owner : idx,
+        }
+    }
+    function give_points( idx, value ){
+        let item = State.planes[ idx ]
+        if ( item && item.score ){
+            item.score.total += value
+            console.log('item',item.score.total)
+        }
+    }
+    
     const inputs = []
     function init_falling_plane(){
         return {
@@ -99,9 +114,7 @@ export function Game( { tellPlayer } ) {
             as : Math.floor( Math.random() * 2 ),
             interv : Math.floor( 3 + Math.random() * 2 ),
             step : 0,
-            destroyed : item => {
-                item.ttl = -1
-            }
+            destroyed : item => item.ttl = -1
         }
     }
     function init_flock(i,l){
@@ -111,9 +124,7 @@ export function Game( { tellPlayer } ) {
             as : Math.floor( Math.random() * 2 ),
             interv : Math.floor( 5 + Math.random() * 5 ),
             step : 0,
-            destroyed : item => {
-                item.ttl = -1
-            }           
+            destroyed : item => item.ttl = -1
         }
     }
     
@@ -203,11 +214,19 @@ export function Game( { tellPlayer } ) {
                 step : 0,
                 explosion : init_explosion(idx%ColorSchemes.length),
                 owner : idx,
+                destroys : ( me, other ) => {
+                    if ( other.value ){
+                        give_points( me.owner, other.value )
+                    }
+                },
+                
             })),
             explosion : init_explosion(idx%ColorSchemes.length),
             falling : init_falling_plane(),
             leaving : init_leaving_plane(),
             respawn : -1,
+            value : 10,
+            score : init_score( idx )
         }
     }
     function init_state(){
@@ -451,12 +470,12 @@ export function Game( { tellPlayer } ) {
             }
             bird.step++
         })
-       
+        /*
         State.targets.forEach( ox => {
             const { x } = ox
             const y =  ground[ Math.floor( x ) % ground.length ]
             ox.y = y
-        })
+        })*/
         
     }
     function pixel_collision(b,
@@ -572,17 +591,20 @@ export function Game( { tellPlayer } ) {
     }
     function collisions(){
         //        State.tree = new Tree( 4096, 256, 16 )
-
+        
         // to move ?
         State.oxs.forEach( ox => {
-            const { x } = ox
-            const y =  ground[ Math.floor( x ) % ground.length ]
-            ox.y = y
+            ground_item16( ox )
+//            ox.y = Math.random() * 200
+/*            const { x } = ox
+            const y =  ground[ Math.floor( x ) % ground.length ]            
+            ox.y = y*/
         })
         State.targets.forEach( ox => {
-            const { x } = ox
+            ground_item16( ox )
+            /*const { x } = ox
             const y =  ground[ Math.floor( x ) % ground.length ]
-            ox.y = y
+            ox.y = y*/
         })
         
         State.planes[ 0 ].undescrtu = true
@@ -669,33 +691,63 @@ export function Game( { tellPlayer } ) {
                         
                         if ( ( item1.owner !== undefined ) && ( item2.idx !== undefined )){                                    
                             dont = item1.owner === item2.idx 
+                        } else if ( ( item2.owner !== undefined ) && ( item1.idx !== undefined )){                                    
+                            dont = dont || ( item2.owner === item1.idx )
+                        } else if ( ( item1.owner !== undefined ) && ( item2.owner !== undefined )){                                    
+                            dont = dont || ( item1.owner === item2.owner )
                         }
                         
-                        if ( ( item2.owner !== undefined ) && ( item1.idx !== undefined )){                                    
-                            dont = item2.owner === item1.idx 
-                        }
-                        if ( ( item1.owner !== undefined ) && ( item2.owner !== undefined )){                                    
-                            dont = item1.owner === item2.owner
-                        }
                         if ( (!dont) && rectangle_intersection( x,y,hitmask.w,hitmask.h,
                                                                 item2.x,item2.y,hitmask2.w,hitmask2.h, o ) ){
                             
                             State.showcolls.push( o )
+                            if ( item1.value || item2.value ){
+                                if ( item1.destroys || item2.destroys ){
+                                    if ( item2.destroys ){
+                                        console.log( (item1.destroys?'have':'no'), item1.cs,item1.value,
+                                                     '||',
+                                                     (item2.destroys?'have':'no'), item2.cs, item2.value )
+                                        item2.destroys( item2, item1 )
+                                    }
+                                }
+                            }
+                            
+                            
+                            
                             if ( item1.destroyed ) item1.destroyed( item1 )
                             if ( item2.destroyed ) item2.destroyed( item2 )
+
+                            if ( item1.cs && item2.cs && ( item1.cs !== item2.cs ) ){
+                            //    console.log( item1.destroys, item2.destroys, item1.cs, item2.cs )
+                                /*if ( item1.destroys ){
+                                    console.log('here1',Date.now(),{item1,item2})
+                                }
+                                if ( item2.destroys ){
+                                    console.log('here2',Date.now(),{item1,item2})
+                                }
+                                if ( item1.destroys ) item1.destroys( item1, item2 )
+                                if ( item2.destroys ) item2.destroys( item2, item1 )*/
+                            }
                             
-                            if ( item1.explosion ) {                                
-                                start_explosion( item1.explosion, x, y )
-                            }
-                            if ( item2.explosion ) {
-                                start_explosion( item2.explosion, item2.x, item2.y )
-                            }
+                            //
+
                             if ( (!item1.undescrtu) && ( item1.ttl !== undefined ) ){
                                 item1.ttl = -1
                             }
                             if ( (!item2.undescrtu) && ( item2.ttl !== undefined ) ){
                                 item2.ttl = -1
                             }
+                            
+                            //
+                            
+                            if ( item1.destoys ) item1.destirt
+                            if ( item1.explosion ) {                                
+                                start_explosion( item1.explosion, x, y )
+                            }
+                            if ( item2.explosion ) {
+                                start_explosion( item2.explosion, item2.x, item2.y )
+                            }
+                          
                             if ( (!item2.undescrtu) ){
                                 item2._node.remove( item2 )
                                 //item2_.node = undefined
@@ -829,7 +881,7 @@ export function Game( { tellPlayer } ) {
         }
 
     }
-
+/*
     function groundOxs(){
         const ground = State.ground
         const oxs = State.oxs
@@ -846,24 +898,26 @@ export function Game( { tellPlayer } ) {
                 ground[ Math.floor( wx ) % ground.length ] = meany
             }
         })
-    }
-    function groundTargets(){
+    }*/
+    function ground_item16( item ){        
+        const x = Math.floor( item.x )
         const ground = State.ground
-        const targets = State.targets
-        targets.forEach( target => {
-            const x = Math.floor( target.x )
-            let meany = 0;
-            for ( let ii = 0 ; ii < 16 ; ii++ ){
-                let wx = x + ii
-                let h = ground[ Math.floor( wx ) % ground.length ]
-                meany += h/16
-            }        
-            for ( let ii = 0 ; ii < 16 ; ii++ ){
-                let wx = x + ii
-                ground[ Math.floor( wx ) % ground.length ] = meany
-            }
-        })
+        let meany = 0;
+        let miny = Infinity
+        for ( let ii = 0 ; ii < 16 ; ii++ ){
+            let wx = x + ii
+            let h = ground[ Math.floor( wx ) % ground.length ]
+            //                console.log( h )
+            meany += h/16
+            miny = Math.min( h, miny )
+        }
+        for ( let ii = 0 ; ii < 16 ; ii++ ){
+            let wx = x + ii
+            ground[ Math.floor( wx ) % ground.length ] = miny
+        }
+        item.y = miny
     }
+
     /*
       let PAUSED = false
       let OFFSET = {x:0,y:0}
@@ -883,8 +937,8 @@ export function Game( { tellPlayer } ) {
       }
       })
     */
-    groundTargets()
-    groundOxs()
+//    groundTargets()
+//    groundOxs()
 
     // const FPS = 16//16//2//16
     const FPS = 10//16//5
@@ -916,6 +970,7 @@ export function Game( { tellPlayer } ) {
         move()
         //}
         collisions()
+        //groundTargets()
         
         //
         // display.setState( State )
@@ -935,11 +990,12 @@ export function Game( { tellPlayer } ) {
         const plane = State.planes.find( x => x.inputId === undefined )
         if ( plane ){
             planeByInputId[ inputId ] = plane
-            nameByInputId[ inputId ] = name
+            nameByInputId[ inputId ] = name || '?'
             plane.inputId = inputId
             plane.x = 500 + Math.floor( Math.random() * 1000 )
             plane.y = 100
             plane.p = 0
+            plane.score = init_score()
             return true
         } else {
             return false
@@ -962,8 +1018,20 @@ export function Game( { tellPlayer } ) {
             })
         }        
     }
+    const leaderboardskip = {
+        ttl : 0,
+        reset : 10
+    }
     function stateUpdated(){
         let now = Date.now()
+        let doLeaderboard = false
+        if ( leaderboardskip.ttl === 0 ){
+            doLeaderboard = true
+            leaderboardskip.ttl = leaderboardskip.reset
+        } else {
+            leaderboardskip.ttl -= 1
+        }
+        
         let payload = {
             t : now,
             version : State.version,
@@ -979,8 +1047,21 @@ export function Game( { tellPlayer } ) {
             flocks : [],
             fallings : [],
             leavings : [],
+            leaderboard : []
             //showcolls : State.showcolls,
             //showtreecells : State.showtreecells,
+        }
+        if ( doLeaderboard ) {
+            // no every time
+            State.planes.forEach( plane => {
+                if ( plane.inputId ){
+                    const username = nameByInputId[ plane.inputId ]
+                    payload.leaderboard.push( { username, score : plane.score.total } )
+                }
+                
+            })
+        } else {
+            payload.leaderboard = undefined
         }
         State.targets.forEach( target => {
             let { x, y, as, broken } = target
@@ -1005,7 +1086,7 @@ export function Game( { tellPlayer } ) {
 
         State.planes.forEach( plane => {
             let { ttl, x, y, r, a, p, cs, explosion, leaving, falling } = plane
-            let name = '?'
+            let name = '??'
             if ( plane.inputId ){
                 name = nameByInputId[ plane.inputId ]
             }
