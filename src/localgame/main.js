@@ -4,12 +4,18 @@ import { Game } from '../game.js'
 import { Audio } from '../audio.js'
 import  * as Menu from '../menu.js'
 
+//import { Tutuut } from './tutuut.js'
+
+if (true){
+
 // display 
 const display = new Display()
 display.animate()
 
 // sound
 const audio = new Audio()
+audio.start()
+
 
 // menu
 // Menu.start()
@@ -34,3 +40,4 @@ function onInput( input ){
 }
 const controller = new Controller( onInput )
 controller.connect()
+}
