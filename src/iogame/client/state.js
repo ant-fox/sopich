@@ -90,6 +90,13 @@ export function getCurrentState() {
 function linearInterpolation( v1, v2, ratio ){
     return v1 + ( v2 - v1 ) * ratio
 }
+function a816Interpolation( v1, v2, ratio ){
+    if ( ratio > 0.5 ){
+        return v2
+    } else {
+        return v1
+    }
+}
 function interpolateState( s1, s2, ratio ){
     const state = {}
     Object.keys( s2 ).forEach( (k2,i2) => {
@@ -106,16 +113,16 @@ function interpolateState( s1, s2, ratio ){
                 copy_cs2 = vs2.map( (vsk2,vi2) => {
                     let item = Object.assign({}, vsk2)
                     if ( s1[ k2 ] ){
-                    let vsk1 = s1[ k2 ][ vi2 ]
-                    if ( vsk1 ){
-                    if ( (item.x!==undefined) && (item.y!==undefined) ){
-                        item.x = linearInterpolation( vsk1.x, vsk2.x, ratio )
-                        item.y = linearInterpolation( vsk1.y, vsk2.y, ratio )
-                        //item.x += Math.random() * 50
-                    //  plane, debri
-                        //if ( k2 === 'plane' ){
-                    }
-                    }
+                        let vsk1 = s1[ k2 ][ vi2 ]
+                        if ( vsk1 ){
+                            if ( (item.x!==undefined) && (item.y!==undefined) ){
+                                item.x = linearInterpolation( vsk1.x, vsk2.x, ratio )
+                                item.y = linearInterpolation( vsk1.y, vsk2.y, ratio )                                
+                            }
+                            if ( (item.a!==undefined) && (item.a!==undefined) ){
+                                item.a = a816Interpolation( vsk1.a, vsk2.a, ratio )
+                            }
+                        }
                     }
                     return item
                     //}
