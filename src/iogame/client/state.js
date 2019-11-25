@@ -77,7 +77,8 @@ export function getCurrentState() {
       const next = gameUpdates[base + 1];
 //      console.log('interpolate',baseUpdate,next)
       const ratio = (serverTime - baseUpdate.t) / (next.t - baseUpdate.t);
-      return next/*{
+      
+      return interpolateState( baseUpdate, next, ratio )/*{
           planes : [ interpolateObject(baseUpdate.me, next.me, ratio) ],
           
             others: interpolateObjectArray(baseUpdate.others, next.others, ratio),
@@ -86,7 +87,47 @@ export function getCurrentState() {
   //};
   }
 }
-
+function linearInterpolation( v1, v2, ratio ){
+    return v1 + ( v2 - v1 ) * ratio
+}
+function interpolateState( s1, s2, ratio ){
+    const state = {}
+    Object.keys( s2 ).forEach( (k2,i2) => {
+        // planes, debris...
+        let vs2 = s2[ k2 ]
+        let copy_cs2
+        if ( vs2.length ){
+            if ( k2 === 'ground' ){
+                copy_cs2 = vs2.map( (h2,ig2) => {
+                    let h1 = s1.ground[ ig2 ]
+                    return linearInterpolation( h1, h2, ratio )
+                })
+            } else {
+                copy_cs2 = vs2.map( (vsk2,vi2) => {
+                    let item = Object.assign({}, vsk2)
+                    if ( s1[ k2 ] ){
+                    let vsk1 = s1[ k2 ][ vi2 ]
+                    if ( vsk1 ){
+                    if ( (item.x!==undefined) && (item.y!==undefined) ){
+                        item.x = linearInterpolation( vsk1.x, vsk2.x, ratio )
+                        item.y = linearInterpolation( vsk1.y, vsk2.y, ratio )
+                        //item.x += Math.random() * 50
+                    //  plane, debri
+                        //if ( k2 === 'plane' ){
+                    }
+                    }
+                    }
+                    return item
+                    //}
+                })
+            }
+            state[ k2 ] = copy_cs2
+        } else {
+            state[ k2 ] = vs2
+        }
+    })
+    return state
+}
 function interpolateObject(object1, object2, ratio) {
   if (!object2) {
     return object1;

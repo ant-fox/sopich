@@ -1,3 +1,4 @@
+/*
 import escape from 'lodash/escape';
 
 const leaderboard = document.getElementById('leaderboard');
@@ -23,3 +24,4 @@ export function setLeaderboardHidden(hidden) {
     leaderboard.classList.remove('hidden');
   }
 }
+*/
