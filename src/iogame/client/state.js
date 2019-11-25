@@ -1,6 +1,6 @@
 // Learn more about this file at:
 // https://victorzhou.com/blog/build-an-io-game-part-1/#7-client-state
-import { updateLeaderboard } from './leaderboard';
+// import { updateLeaderboard } from './leaderboard';
 
 // The "current" state will always be RENDER_DELAY ms behind server time.
 // This makes gameplay smoother and lag less noticeable.
@@ -22,7 +22,7 @@ export function processGameUpdate(update) {
     gameStart = Date.now();
   }
   gameUpdates.push(update);
-
+    /*
     update = {
         leaderboard : [
             { username : 'joe', score : 27 },
@@ -32,7 +32,7 @@ export function processGameUpdate(update) {
     if ( update.leaderboard ){
         updateLeaderboard(update.leaderboard);
     }
-
+    */
   // Keep only one game update before the current server time
   const base = getBaseUpdate();
   if (base > 0) {

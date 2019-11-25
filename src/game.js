@@ -391,13 +391,14 @@ export function Game( { tellPlayer } ) {
                 if ( plane.y > worldSize.y2 ){ // TODO
                     plane.a = 12
                     //        State.plane.r = !(State.plane.r)
-                    
                 }
+                plane.x = clamp( plane.x, worldSize.x1, worldSize.x2)
+                plane.y = clamp( plane.y, worldSize.y1, worldSize.y2)
             } else {
                 plane.respawn -= 1
                 if ( plane.respawn < 0 ){
                     plane.ttl = 1000
-                    plane.y = 256
+                    plane.y = 200 + Math.floor( Math.random() * 200 )
                     plane.p = 1
                 }
             }
