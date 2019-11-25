@@ -236,48 +236,49 @@ function Store( root ) {
         }
     }
     return {
-        valueByLocatorString, get, modify, valueChange
+        get, modify, valueChange
     }
     
 }
 //
 // Menu
 //
-export function Menu( Definitions ){
+export function Menu( Definitions, store ){
     
     const state = {
         root : Definitions,
-        pointed : Definitions.childs[ 0 ].childs[ 2 ]
+        pointed : Definitions.childs[ 0 ].childs[ 2 ],
+        visible : true
     }
-  //  let dirty = true
-    function setDirty( b = true ){
-        // TODO throttle
-        //dirty = b
-        //display()
-    }
+
     const definitionByLocatorString = toArray( depthFirst )( state.root )
           .reduce( ( r, x ) => fsetk( r, locatorString( x ), x ), {} )
 
-    let store = Store( state.root )
-    function setStore( s ){
-        store = s
-    }
     const $div = $buildContainer()
-    
-    display()
+    hide()
+    document.body.appendChild( $div )
+
     
     function $buildContainer(){
         let $div = document.createElement('pre') 
         $div.style = 'position:fixed;display:block;color:white;z-index:25;'
             +'width:100%;height:100%;background-color:black;opacity:0.8;margin:0;padding-left:1em';
         $div.classList.add('noselect')
-        document.body.appendChild( $div )
         return $div
+    }
+    function hide(){
+        state.visible = false
+        $div.style.visibility = 'collapse'
+    }
+    function show(){
+        state.visible = false
+        display()
+        $div.style.visibility = 'visible'
     }
     function clickable( tag, d, text ){
         return `<${tag} locator=${locatorString(d)}>${ text }</${tag}>`  
     }
-
+    
     function setPointed( p ){
         state.pointed = p
         //setDirty()
@@ -300,9 +301,6 @@ export function Menu( Definitions ){
         }
     }
     function display(){
-        //if ( !dirty ){
-        //return
-        //        }
         check()
         let pParent = state.pointed.parent
         let pParents = toArray( parents )( state.pointed ).reverse()
@@ -323,7 +321,6 @@ export function Menu( Definitions ){
             '<p>'+dirs,
             listing
         ].join('')
-        //dirty = false
     }
     function changeValue( f, forceMod ){
         const p = state.pointed
@@ -404,15 +401,15 @@ export function Menu( Definitions ){
     return {
         $div,
         onInput,
-        setStore,
-      //  setDirty
+        show,
+        hide
     }
 }
 
 
 const store = new Store( Definitions )
-const menu = new Menu( Definitions  )
-menu.setStore( store )
+const menu = new Menu( Definitions, store  )
+
 //store.valueChange.connectTo( () => menu.setDirty )
 
 /*
@@ -460,6 +457,41 @@ const keyboardController = DomControllerf(
     }
 )
 
-keyboardController.start()
-mouseController.start()
+export function start(){
+    menu.show()
+    keyboardController.start()
+    mouseController.start()
+}
+export function stop(){
+    menu.hide()
+    keyboardController.stop()
+    mouseController.stop()
+}
 
+setTimeout( start , 5000 )
+setTimeout( stop , 10000 )
+
+function variableTimeout( whenttimesout ){
+
+    const min = 4000
+    const max = 5000
+
+    whenttimesout()
+
+    let o 
+    let timeout 
+    
+    function onInput(){
+        let now = Date.now()
+        let remain = timeout - now
+        if ( remain < min ){
+            if ( o ){
+                clearTimeout( o )
+                o = undefined
+            }
+            timeout = now + max
+            o = setTimeout( whentimesout, max )
+        }
+    }
+    return { onInput }
+}
