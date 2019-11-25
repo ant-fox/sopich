@@ -36,12 +36,14 @@ let renderInterval = setInterval(renderMainMenu, 1000 / 60);
 
 // Replaces main menu rendering with game rendering.
 export function startRendering() {
-  clearInterval(renderInterval);
-  renderInterval = setInterval(render, 1000 / 60);
+    audio.start()
+    clearInterval(renderInterval);
+    renderInterval = setInterval(render, 1000 / 60);    
 }
 
 // Replaces game rendering with main menu rendering.
 export function stopRendering() {
+    audio.stop()
   clearInterval(renderInterval);
   renderInterval = setInterval(renderMainMenu, 1000 / 60);
 }
