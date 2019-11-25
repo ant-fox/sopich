@@ -110,7 +110,7 @@ export function Game( { tellPlayer } ) {
     function init_bird( i, l ){
         return {
             x : Math.floor( 500 + ( i / l ) * 2000 ),
-            y : Math.floor( 100 + ( i / l ) * 100 ),
+            y : Math.floor( 100 + ( i / l ) * 500 ),
             as : Math.floor( Math.random() * 2 ),
             interv : Math.floor( 3 + Math.random() * 2 ),
             step : 0,
