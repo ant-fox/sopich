@@ -912,7 +912,7 @@ export function Game( { tellPlayer, tellScore } ) {
             if ( p.inputId === undefined ){
              //   if ( i > 0 ){
                     // ia1( State.planes[ i ], State.planes[ i - 1 ] )
-                    if ( i%2 ){
+                if ( !(i%2) ){
                         ia1( State.planes[ i ], State.planes[ 0 ], 300)
                     } else {
                         ia1( State.planes[ i ], State.planes[ i - 1 ],2000 )
