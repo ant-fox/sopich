@@ -16,7 +16,7 @@
 // sound problem at startup for iogame
 // randomize collision order
 // random sound at init
-
+// when missile/bomb destroys missile/bomb, last emmited wins
 import { ground } from './ground.js'
 import { prepareHitmask, prepareBottomHitmask } from './symbols.js'
 import { Tree, CONTINUE_VISIT, STOP_VISIT } from './coll.js'
@@ -324,7 +324,7 @@ export function Game( { tellPlayer, tellScore } ) {
                     missile.x = x + off[0] + ( 16 / 2 ) - ( 8 / 2 ) + dir[0] * 8
                     missile.y = y + off[1] + ( 16 / 2 ) - ( 8 / 2 ) + dir[1] * 8
                     missile.ttl = 100
-                    missile.p = 4
+                    missile.p = 5
                     missile.step = 0
                     missile.a = a
                 }
@@ -400,7 +400,8 @@ export function Game( { tellPlayer, tellScore } ) {
                 plane.respawn -= 1
                 if ( plane.respawn < 0 ){
                     plane.ttl = 1000
-                    plane.y = 200 + Math.floor( Math.random() * 200 )
+                    plane.x = Math.floor( worldSize.x1 + worldSize.w * Math.random() )
+                    plane.y = Math.floor( 100 + Math.floor( Math.random() * 700 ) )
                     plane.p = 1
                 }
             }
@@ -864,13 +865,73 @@ export function Game( { tellPlayer, tellScore } ) {
 
 
     function ia(){
+        let cp = State.planes[ 1 ]
+        
+        function ia1( cp, target, maxdist ){
+            //cp.undescrtu = true
+
+            //inputs.push( { input : 'nosedown', client : cp.idx } )
+
+            let dist = Math.sqrt( Math.pow( target.x - cp.x, 2),  Math.pow( target.y - cp.y, 2) )
+            if ( dist < maxdist ){
+                let dir = { x : target.x - cp.x, y : target.y - cp.y }
+                let angle = Math.atan2( dir.y, dir.x )
+                let a16 = ( 8 + Math.floor( 16 * ( angle + Math.PI  )/ ( 2 * Math.PI ) ) ) % 16
+                if ( a16 !== cp.a ){
+                    // always up looping until right direction
+                    //inputs.push( { input : 'noseup', client : cp.idx } )
+                    cp.a = a16
+                }  else {
+                    if ( Math.random() > 0.90 ) {
+                        inputs.push( { input : 'firemissile', client : cp.idx } )
+                    }
+                }
+                if ( dist > 50 ){
+                     inputs.push( { input : 'powerup', client : cp.idx } )
+                } else  if ( dist > 25 ){
+                    if ( cp.p < 3 ){
+                        inputs.push( { input : 'powerup', client : cp.idx } )
+                    }
+                } else if ( dist > 20 ) {
+                    if ( cp.p > 10 ){
+                        inputs.push( { input : 'powerdown', client : cp.idx } )
+                    } 
+                    inputs.push( { input : 'nosedown', client : cp.idx } )
+                   
+                } else {
+                    if ( cp.p > 1 ){
+                        inputs.push( { input : 'powerdown', client : cp.idx } )
+                    }
+                }
+            } else {
+                inputs.push( { input : 'nosedown', client : cp.idx } )
+            }  
+            
+        }
+        State.planes.forEach( ( p, i ) => {
+            if ( p.inputId === undefined ){
+             //   if ( i > 0 ){
+                    // ia1( State.planes[ i ], State.planes[ i - 1 ] )
+                    if ( i%2 ){
+                        ia1( State.planes[ i ], State.planes[ 0 ], 300)
+                    } else {
+                        ia1( State.planes[ i ], State.planes[ i - 1 ],2000 )
+                    }
+               // }
+            }
+        })
+      //  ia1( State.planes[ 0 ], State.planes[ State.planes.length - 1 ] )
+        /*
+        {
         let commands = [
             'noseup',
             //'nosedown',
-            //'reverse','powerup',
+            //'reverse',
+            'powerup',
             //'firemissile',
             'firebomb'
         ]
+        
         let clients = State.planes
             .map( (plane,idx) => [plane,idx] )
             .filter( ([plane,idx]) => plane.inputId === undefined )
@@ -882,7 +943,8 @@ export function Game( { tellPlayer, tellScore } ) {
                 inputs.push( { input, client:client[1] } )
             }
         }
-
+        }
+        */
     }
 /*
     function groundOxs(){
