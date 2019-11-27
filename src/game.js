@@ -15,7 +15,7 @@
 // - prime hunting
 // value for shooting plane <- score.total
 //
-// bird + flock  use anim
+// bird + flock use anim
 // collision broken -> coll mask non broken ?
 // set y of ox and target at move step
 // target offset (ground target)?
@@ -36,14 +36,12 @@
 // gun
 // ground cannons
 // balloons
-
 import { ground } from './ground.js'
 import { prepareHitmask, prepareBottomHitmask } from './symbols.js'
 import { Tree, CONTINUE_VISIT, STOP_VISIT } from './coll.js'
 import { clamp, posmod } from './utils.js'
 import { rectangle_intersection } from './rect.js'
 import { ColorSchemes } from './symbols.js'
-
 export const worldSize = {
     x1 : 0,
     x2 : 3000,
@@ -57,18 +55,15 @@ export const PLANE_INPUT_NAMES = [
     'powerup','powerdown',
     'firebomb','firemissile'
 ]
-
 /*
  *
  */
 const directions16 = new Array( 16 ).fill(0)
       .map( (_,i) => ( i * 2 * Math.PI / 16 ) )
       .map( x => [ Math.cos( x ), Math.sin( x ) ] )
-
 const directions8 = new Array( 8 ).fill(0)
       .map( (_,i) => ( i * 2 * Math.PI / 8 ) )
       .map( x => [ Math.cos( x ), Math.sin( x ) ] )
-
 const toFall8 = [7,0,6,4,5,6,6,6]
 const Hitmasks = prepareHitmask()
 const BottomHitmasks = prepareBottomHitmask()
@@ -86,9 +81,8 @@ const Hitmaskfs = {
 const Bhitmaskfs = {
     plane : item => BottomHitmasks.plane[ (item.r)?1:0 ][ item.a ],
     bomb : item => BottomHitmasks.bomb[ item.a ],
-    missile : item => BottomHitmasks.missile[ item.a ],            
+    missile : item => BottomHitmasks.missile[ item.a ]
 }
-
 function available_ttl( items ){
     for ( let i = 0, l = items.length ; i < l ; i++ ){
         if ( items[ i ].ttl <= 0 ){
@@ -97,12 +91,9 @@ function available_ttl( items ){
     }
     return items.length
 }
-
 export function Game( { tellPlayer, tellScore } ) {
-
     tellScore = tellScore || ( _ => _ )
     const State = init_state()
-
     function init_score( idx ){
         return {
             total : 0,
@@ -115,8 +106,7 @@ export function Game( { tellPlayer, tellScore } ) {
             item.score.total += value
         }
     }
-    
-//    const inputs = []
+    // const inputs = []
     function init_falling_plane(){
         return {
             x : Math.floor( 100 + Math.random() * 2500 ),
@@ -140,17 +130,16 @@ export function Game( { tellPlayer, tellScore } ) {
             dir : -1,
             loop : false,
             interv : 15,
-            ttl : -1, 
+            ttl : -1,
             as : 3,
         }
-    }    
+    }
     function init_ox( i , l ){
         return {
             x : Math.floor( 400 + ( i / l ) * 2000 ),
             as : 0,
             destroyed : item => item.as = 1,
             hitmaskf : Hitmaskfs.ox,
-
         }
     }
     function init_bird( i, l ){
@@ -175,7 +164,6 @@ export function Game( { tellPlayer, tellScore } ) {
             destroyed : item => item.ttl = -1
         }
     }
-    
     function init_ground(){
         return ground.map( x => x )
     }
@@ -197,7 +185,7 @@ export function Game( { tellPlayer, tellScore } ) {
             debris : new Array(16).fill(0).map( (_,i) => {
                 return init_debris( i, cs )
             })
-        }       
+        }
     }
     function init_targets(){
         const model = {
@@ -228,7 +216,6 @@ export function Game( { tellPlayer, tellScore } ) {
         })
         return targets
     }
-
     function init_plane(idx){
         return {
             cs : idx%ColorSchemes.length,
@@ -242,12 +229,12 @@ export function Game( { tellPlayer, tellScore } ) {
             y : 100,
             r : false,
             a : 0,
-            p : 2,            
-            //        hitmaskf : item => Hitmasks.plane[ (item.r)?1:0 ][ item.a ],
-            bombs : new Array(8).fill(0).map( (_,i) => ({                
+            p : 2,
+            // hitmaskf : item => Hitmasks.plane[ (item.r)?1:0 ][ item.a ],
+            bombs : new Array(8).fill(0).map( (_,i) => ({
                 cs : idx%ColorSchemes.length,
-                hitmaskf : Hitmaskfs.bomb,                
-                bhitmaskf : Bhitmaskfs.bomb,                
+                hitmaskf : Hitmaskfs.bomb,
+                bhitmaskf : Bhitmaskfs.bomb,
                 x : 1550+i*20,
                 y : 100+i*10,
                 a : i,
@@ -270,7 +257,7 @@ export function Game( { tellPlayer, tellScore } ) {
             missiles : new Array(16).fill(0).map( (_,i) => ({
                 cs : idx%ColorSchemes.length,
                 hitmaskf : Hitmaskfs.missile,
-                bhitmaskf : Bhitmaskfs.missile,                
+                bhitmaskf : Bhitmaskfs.missile,
                 x : 1250+i*40,
                 y : 100+i*10,
                 a : i,
@@ -289,7 +276,6 @@ export function Game( { tellPlayer, tellScore } ) {
                         }
                     }
                 },
-                
             })),
             explosion : init_explosion(idx%ColorSchemes.length),
             falling : init_falling_plane(),
@@ -307,50 +293,42 @@ export function Game( { tellPlayer, tellScore } ) {
             birds : new Array(20).fill(0).map( (_,i,r) => init_bird(i,r.length) ),
             flocks : new Array(4).fill(0).map( (_,i,r) => init_flock(i,r.length) ),
             oxs : new Array(12).fill(0).map( (_,i,r) => init_ox(i,r.length) ),
-            //    pxcoll : { list : [] },
+            // pxcoll : { list : [] },
             version : 0,
             tree : new Tree( 4096, 1024, 16 ),
             showcolls : [],
             showtreecells : [],
         }
     }
-
     function handleinputs(){
-
         State.planes.forEach( plane => {
             if ( plane.ttl >= 0 ){
                 let inputs = plane.inputs
-                
                 let dda = 0
                 let reverse = 0
                 let dds = 0
                 let firebomb = 0
                 let firemissile = 0
-
                 if ( inputs ){
                     dda = ( (inputs.noseup)?1:0 ) + ( (inputs.nosedown)?-1:0 )
                     dds = ( (inputs.powerup)?1:0 ) + ( (inputs.powerdown)?-1:0 )
-                    reverse =  inputs.reverse 
+                    reverse = inputs.reverse
                     firebomb = inputs.firebomb
                     firemissile = inputs.firemissile
                 }
-
                 const { x, y, r, a, p, bombs, missiles } = plane
-
                 plane.a = posmod( a + dda, 16 )
                 plane.p = clamp( p + dds, 0, 4)
                 if ( reverse ){
                     plane.r = !r
                 }
-
-
                 const BombDropAngle = [0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8]
                 const BombDropOffset = [[0,0]]
                 if (firebomb){
                     let avail = available_ttl( bombs )
                     if ( avail !== bombs.length ){
                         let off = BombDropOffset[ a % BombDropOffset.length]
-                        let normal = ( a + (r?4:12) ) % directions16.length 
+                        let normal = ( a + (r?4:12) ) % directions16.length
                         let dir = directions16[ normal ]
                         const bomb = bombs[ avail ]
                         bomb.x = x + off[0] + ( 16 / 2 ) - ( 8 / 2 ) + dir[0] * 8
@@ -365,7 +343,7 @@ export function Game( { tellPlayer, tellScore } ) {
                     let avail = available_ttl( missiles )
                     if ( avail !== missiles.length ){
                         let off = BombDropOffset[ a % BombDropOffset.length]
-                        let normal = ( a + (r?4:12) ) % directions16.length 
+                        let normal = ( a + (r?4:12) ) % directions16.length
                         let dir = directions16[ normal ]
                         const missile = missiles[ avail ]
                         missile.x = x + off[0] + ( 16 / 2 ) - ( 8 / 2 ) + dir[0] * 8
@@ -376,14 +354,10 @@ export function Game( { tellPlayer, tellScore } ) {
                         missile.a = a
                     }
                 }
-                
-                
             }
             plane_init_inputs( plane )
         })
     }
-
-
     function move_explosion( explosion ){
         if ( explosion.ttl > 0 ){
             const debris = explosion.debris
@@ -407,9 +381,8 @@ export function Game( { tellPlayer, tellScore } ) {
         }
     }
     function move_anim( leaving ){
-        
         if ( leaving.ttl > 0 ){
-            if ( leaving.step && ( ( leaving.step  % leaving.interv ) === 0 ) ){
+            if ( leaving.step && ( ( leaving.step % leaving.interv ) === 0 ) ){
                 if ( leaving.loop ){
                     leaving.as = posmod( leaving.as + leaving.dir, leaving.len )
                 } else {
@@ -429,21 +402,17 @@ export function Game( { tellPlayer, tellScore } ) {
             leaving.ttl--
         }
     }
-    
     function move(){
-
         State.planes.forEach( plane => {
             const { x, y, r, a, p, bombs, missiles, explosion, leaving, falling } = plane
             let dx = directions16[ a ][ 0 ] * p * 2
             let dy = directions16[ a ][ 1 ] * p * 2
-            
             if ( plane.ttl >= 0 ){
-
                 plane.x = x + dx
                 plane.y = y + dy
                 if ( plane.y > worldSize.y2 ){ // TODO
                     plane.a = 12
-                    //        State.plane.r = !(State.plane.r)
+                    // State.plane.r = !(State.plane.r)
                 }
                 plane.x = clamp( plane.x, worldSize.x1, worldSize.x2)
                 plane.y = clamp( plane.y, worldSize.y1, worldSize.y2)
@@ -461,11 +430,8 @@ export function Game( { tellPlayer, tellScore } ) {
             if ( falling.ttl > 0 ){
                 falling.y -= falling.p
             }
-            
             ///
-            
             move_explosion( explosion )
-            
             for ( let i = 0, l = bombs.length ; i < l ; i++ ){
                 const bomb = bombs[i]
                 if ( bomb.ttl <= 0 ){
@@ -483,11 +449,8 @@ export function Game( { tellPlayer, tellScore } ) {
                     }
                     bomb.ttl -= 1
                 }
-
-                
                 //const explosion = bomb.explosion
                 move_explosion( bomb.explosion )
-                
             }
             for ( let i = 0, l = missiles.length ; i < l ; i++ ){
                 const missile = missiles[i]
@@ -526,12 +489,11 @@ export function Game( { tellPlayer, tellScore } ) {
             bird.step++
         })
         /*
-        State.targets.forEach( ox => {
-            const { x } = ox
-            const y =  ground[ Math.floor( x ) % ground.length ]
-            ox.y = y
-        })*/
-        
+          State.targets.forEach( ox => {
+          const { x } = ox
+          const y = ground[ Math.floor( x ) % ground.length ]
+          ox.y = y
+          })*/
     }
     function pixel_collision(b,
                              x1,y1,w1,h1,hm1,
@@ -562,29 +524,26 @@ export function Game( { tellPlayer, tellScore } ) {
     function pixel_bottom_collision(fx,y,bhitmask){
         let collides = false
         const ground = State.ground
-        
         const mask = bhitmask.mask
-        const w = bhitmask.w    
+        const w = bhitmask.w
         for ( let i = 0; i < w ; i++ ){
-            let gheight = ground[ ( i + fx )  % ground.length ]
+            let gheight = ground[ ( i + fx ) % ground.length ]
             let m = mask[ i ]
             if ( m < bhitmask.h ){
                 let pheight = y + m
                 if ( pheight <= gheight ){
-                    
                     //if ( State.pxcoll.list.length > 40000 ){
                     //State.pxcoll.list.shift()
                     //}
                     //State.pxcoll.list.push( [ i+fx, pheight,getRandomColor()] )
                     // modify ground
-                    ground[  ( i + fx )  % ground.length ] = pheight
+                    ground[ ( i + fx ) % ground.length ] = pheight
                     collides = true
                 }
             }
         }
         return collides
     }
-    
     function start_explosion( explosion, x, y ){
         explosion.ttl = 10
         explosion.step = 0
@@ -609,12 +568,10 @@ export function Game( { tellPlayer, tellScore } ) {
     }
     function iterateStateObjects( f ){
         //f( 'ground', State.ground )
-
         State.oxs.forEach( ox => f( 'ox', ox ) )
         State.targets.forEach( (target,i) => f( 'target', target ) )
         State.birds.forEach( bird => f( 'bird', bird ) )
         State.flocks.forEach( flock => f( 'flock', flock ) )
-
         State.planes.forEach( plane => {
             const { bombs, missiles, explosion } = plane
             f( 'plane', plane )
@@ -622,41 +579,37 @@ export function Game( { tellPlayer, tellScore } ) {
             bombs.forEach( bomb => {
                 const { explosion } = bomb
                 f( 'bomb', bomb )
-                //     // explosion.debris.forEach( debri => f( 'debris', debri ) )
+                // // explosion.debris.forEach( debri => f( 'debris', debri ) )
             })
             missiles.forEach( missile => {
                 const { explosion } = missile
                 f( 'missile', missile )
-                //     // explosion.debris.forEach( debri => f( 'debris', debri ) )
+                // // explosion.debris.forEach( debri => f( 'debris', debri ) )
             })
-
         })
     }
     function collisions(){
-        //        State.tree = new Tree( 4096, 256, 16 )
-        
+        // State.tree = new Tree( 4096, 256, 16 )
         // to move ?
         State.oxs.forEach( ox => {
             ground_item16( ox )
-//            ox.y = Math.random() * 200
-/*            const { x } = ox
-            const y =  ground[ Math.floor( x ) % ground.length ]            
-            ox.y = y*/
+            // ox.y = Math.random() * 200
+            /* const { x } = ox
+               const y = ground[ Math.floor( x ) % ground.length ]
+               ox.y = y*/
         })
         State.targets.forEach( ox => {
             ground_item16( ox )
             /*const { x } = ox
-            const y =  ground[ Math.floor( x ) % ground.length ]
-            ox.y = y*/
+              const y = ground[ Math.floor( x ) % ground.length ]
+              ox.y = y*/
         })
-        
         State.planes[ 0 ].undescrtu = true
         let c = { }
         let total = 0
         //
         State.showcolls = []
         State.showtreecells = []
-
         const tree = State.tree
         State.version++
         const version = State.version
@@ -668,11 +621,9 @@ export function Game( { tellPlayer, tellScore } ) {
             total++;
             const ct = c[ type ]
             c[ type ] = 1 + (ct?ct:0)
-
             // set hitmask
             const hitmask = item1.hitmaskf( item1 )
             item1._hitmask = hitmask
-
             // test ground
             if ( item1.ttl ){
                 const bhitmask = item1.bhitmaskf( item1 )
@@ -689,8 +640,7 @@ export function Game( { tellPlayer, tellScore } ) {
                         }
                     }
                 }
-            }          
-
+            }
             // insert/collide
             const { x, y } = item1
             let node = tree.insert(
@@ -706,72 +656,58 @@ export function Game( { tellPlayer, tellScore } ) {
                         let hitmask2 = item2._hitmask
                         let o = {}
                         let dont = false
-                        
-                        if ( ( item1.owner !== undefined ) && ( item2.idx !== undefined )){                                    
-                            dont = item1.owner === item2.idx 
-                        } else if ( ( item2.owner !== undefined ) && ( item1.idx !== undefined )){                                    
+                        if ( ( item1.owner !== undefined ) && ( item2.idx !== undefined )){
+                            dont = item1.owner === item2.idx
+                        } else if ( ( item2.owner !== undefined ) && ( item1.idx !== undefined )){
                             dont = dont || ( item2.owner === item1.idx )
-                        } else if ( ( item1.owner !== undefined ) && ( item2.owner !== undefined )){                                    
+                        } else if ( ( item1.owner !== undefined ) && ( item2.owner !== undefined )){
                             dont = dont || ( item1.owner === item2.owner )
                         }
-                        
                         if ( (!dont) && rectangle_intersection( x,y,hitmask.w,hitmask.h,
                                                                 item2.x,item2.y,hitmask2.w,hitmask2.h, o ) ){
-                            
                             State.showcolls.push( o )
                             if ( item1.value || item2.value ){
                                 if ( item1.destroys || item2.destroys ){
                                     if ( item2.destroys ){
                                         /*console.log( (item1.destroys?'have':'no'), item1.cs,item1.value,
-                                                     '||',
-                                                     (item2.destroys?'have':'no'), item2.cs, item2.value )*/
+                                          '||',
+                                          (item2.destroys?'have':'no'), item2.cs, item2.value )*/
                                         item2.destroys( item2, item1 )
                                     }
                                 }
                             }
-                            
-                            
-                            
                             if ( item1.destroyed ) item1.destroyed( item1 )
                             if ( item2.destroyed ) item2.destroyed( item2 )
-
                             if ( item1.cs && item2.cs && ( item1.cs !== item2.cs ) ){
-                            //    console.log( item1.destroys, item2.destroys, item1.cs, item2.cs )
+                                // console.log( item1.destroys, item2.destroys, item1.cs, item2.cs )
                                 /*if ( item1.destroys ){
-                                    console.log('here1',Date.now(),{item1,item2})
-                                }
-                                if ( item2.destroys ){
-                                    console.log('here2',Date.now(),{item1,item2})
-                                }
-                                if ( item1.destroys ) item1.destroys( item1, item2 )
-                                if ( item2.destroys ) item2.destroys( item2, item1 )*/
+                                  console.log('here1',Date.now(),{item1,item2})
+                                  }
+                                  if ( item2.destroys ){
+                                  console.log('here2',Date.now(),{item1,item2})
+                                  }
+                                  if ( item1.destroys ) item1.destroys( item1, item2 )
+                                  if ( item2.destroys ) item2.destroys( item2, item1 )*/
                             }
-                            
                             //
-
                             if ( (!item1.undescrtu) && ( item1.ttl !== undefined ) ){
                                 item1.ttl = -1
                             }
                             if ( (!item2.undescrtu) && ( item2.ttl !== undefined ) ){
                                 item2.ttl = -1
                             }
-                            
                             //
-                            
                             if ( item1.destoys ) item1.destirt
-                            if ( item1.explosion ) {                                
+                            if ( item1.explosion ) {
                                 start_explosion( item1.explosion, x, y )
                             }
                             if ( item2.explosion ) {
                                 start_explosion( item2.explosion, item2.x, item2.y )
                             }
-                          
                             if ( (!item2.undescrtu) ){
                                 item2._node.remove( item2 )
                                 //item2_.node = undefined
                             }
-                            
-
                             return STOP_VISIT
                         } else {
                             return CONTINUE_VISIT
@@ -783,128 +719,83 @@ export function Game( { tellPlayer, tellScore } ) {
                 State.showtreecells.push( node )
                 item1._node = node
             }
-            
-            
         })
-        //console.log(total,c)        
+        //console.log(total,c)
     }
     // function collisions2(){
-    //     State.version++
-
-    //     const version = State.version 
-    //     const tree = State.tree
-    //     let ncoll = 0;
-    //     State.planes.forEach( plane => {
-    //         const { x, y, r, a, p, bombs, missiles, explosion } = plane
-    
-    //         const { xs, tys, hits, broken } = State.targets
-    //         const ground = State.ground
-
-    //         /*
-    //           collisions with items
-    //         */
-    
-    //         ;[ [ [ plane ], item => Hitmasks.plane[ (item.r)?1:0 ][ item.a ] ],
-    //            [ bombs, item => Hitmasks.bomb[ item.a ] ],
-    //            [ missiles, item => Hitmasks.missile[ item.a ] ]
-    //          ].forEach( ([ items, hitmaskf ]) => {
-    //              items.forEach( item => {
-    
-    //                  if (( item.ttl === undefined ) || (item.ttl > 0 )){
-    
-    //                      const explosion = item.explosion               
-    //                      const hitmask = hitmaskf( item )
-    //                      const x = item.x
-    //                      const y = item.y
-    //                      tree.insert(
-    //                          { x,y,w:hitmask.w,h:hitmask.h, item },
-    //                          version,
-    //                          () => { ncoll++ }
-    //                      )
-    
-    //                      //const { x, y, r, a, p, explosion } = item //State.plane
-    //                      for ( let i = 0 ; i < xs.length ; i++ ){
-    //                          const tx = xs[ i ]
-    //                          const ty = ground[ Math.floor( tx ) % ground.length ]
-    //                          const hit = hits[ i ]
-    //                          const ttype = tys[ i ] // type
-    //                          const o = {}
-    //                          if ( rectangle_intersection( x,y,hitmask.w,hitmask.h, tx,ty,16,16, o ) ){
-    //                              if ( pixel_collision( o, x,y,hitmask.w,hitmask.h, hitmask, tx,ty,16,16, Hitmasks.targets[ ttype ]) ){
-    
-    //                                  hits[ i ] = o
-    //                                  broken[ i ] = true
-    //                                  start_explosion( explosion, tx ,ty )
-    //                                  item.ttl = -1
-    //                                  start_falling( item )
-    //                              }
-    //                          } else {
-    //                              //hits[ i ] = false
-    //                              //broken[ i ] = false
-    //                          }
-    //                      }
-    //                  }
-    //              })
-    //          })
-
-    
-    //         /*
-    //          * ground coll
-    //          */
-    
-    //         ;[ [ [ plane ], item => BottomHitmasks.plane[ (item.r)?1:0 ][ item.a ] ],
-    //            [ bombs, item => BottomHitmasks.bomb[ item.a ] ],
-    //            [ missiles, item => BottomHitmasks.missile[ item.a ] ]
-    //          ].forEach( ([ items, bhitmaskf ]) => {
-    //              items.forEach( item => {
-    //                  if ( item.ttl > 0 ){
-    //                      const bhitmask = bhitmaskf( item )
-    //                      const x = item.x
-    //                      const fx = Math.floor(x)
-    //                      const y = item.y
-    //                      let collides = pixel_bottom_collision(fx,y,bhitmask)
-    //                      if ( collides ) {
-    //                          item.ttl = -1
-    //                          start_explosion( item.explosion,fx ,y )
-    //                          start_falling( item )
-    //                      }
-    //                  }
-    //              })
-    //          })
-    
-    //     })
-    //     //        console.log('ncoll',ncoll)
+    // State.version++
+    // const version = State.version
+    // const tree = State.tree
+    // let ncoll = 0;
+    // State.planes.forEach( plane => {
+    // const { x, y, r, a, p, bombs, missiles, explosion } = plane
+    // const { xs, tys, hits, broken } = State.targets
+    // const ground = State.ground
+    // /*
+    // collisions with items
+    // */
+    // ;[ [ [ plane ], item => Hitmasks.plane[ (item.r)?1:0 ][ item.a ] ],
+    // [ bombs, item => Hitmasks.bomb[ item.a ] ],
+    // [ missiles, item => Hitmasks.missile[ item.a ] ]
+    // ].forEach( ([ items, hitmaskf ]) => {
+    // items.forEach( item => {
+    // if (( item.ttl === undefined ) || (item.ttl > 0 )){
+    // const explosion = item.explosion
+    // const hitmask = hitmaskf( item )
+    // const x = item.x
+    // const y = item.y
+    // tree.insert(
+    // { x,y,w:hitmask.w,h:hitmask.h, item },
+    // version,
+    // () => { ncoll++ }
+    // )
+    // //const { x, y, r, a, p, explosion } = item //State.plane
+    // for ( let i = 0 ; i < xs.length ; i++ ){
+    // const tx = xs[ i ]
+    // const ty = ground[ Math.floor( tx ) % ground.length ]
+    // const hit = hits[ i ]
+    // const ttype = tys[ i ] // type
+    // const o = {}
+    // if ( rectangle_intersection( x,y,hitmask.w,hitmask.h, tx,ty,16,16, o ) ){
+    // if ( pixel_collision( o, x,y,hitmask.w,hitmask.h, hitmask, tx,ty,16,16, Hitmasks.targets[ ttype ]) ){
+    // hits[ i ] = o
+    // broken[ i ] = true
+    // start_explosion( explosion, tx ,ty )
+    // item.ttl = -1
+    // start_falling( item )
     // }
-
-
-
+    // } else {
+    // //hits[ i ] = false
+    // //broken[ i ] = false
+    // }
+    // }
+    // }
+    // })
+    // })
     function ia(){
-        
         function ia1( cp, target, maxdist ){
             //cp.undescrtu = true
-            
             function pushButton( name ){
                 cp.inputs[ name ] = true
             }
             //inputs.push( { input : 'nosedown', client : cp.idx } )
-
-            let dist = Math.sqrt( Math.pow( target.x - cp.x, 2),  Math.pow( target.y - cp.y, 2) )
+            let dist = Math.sqrt( Math.pow( target.x - cp.x, 2), Math.pow( target.y - cp.y, 2) )
             if ( dist < maxdist ){
                 let dir = { x : target.x - cp.x, y : target.y - cp.y }
                 let angle = Math.atan2( dir.y, dir.x )
-                let a16 = ( 8 + Math.floor( 16 * ( angle + Math.PI  )/ ( 2 * Math.PI ) ) ) % 16
+                let a16 = ( 8 + Math.floor( 16 * ( angle + Math.PI )/ ( 2 * Math.PI ) ) ) % 16
                 if ( a16 !== cp.a ){
                     // always up looping until right direction
                     //inputs.push( { input : 'noseup', client : cp.idx } )
                     cp.a = a16
-                }  else {
+                } else {
                     if ( Math.random() > 0.90 ) {
                         //inputs.push( { input : 'firemissile', client : cp.idx } )
                     }
                 }
                 if ( dist > 50 ){
                     pushButton('powerup')
-                } else  if ( dist > 25 ){
+                } else if ( dist > 25 ){
                     if ( cp.p < 3 ){
                         pushButton('powerup')
                     }
@@ -921,15 +812,12 @@ export function Game( { tellPlayer, tellScore } ) {
             } else {
                 pushButton('nosedown')
             }
-            
         }
-
         let cp = State.planes[ 1 ]
-        
         State.planes.forEach( ( p, i ) => {
             if ( p.inputId === undefined ){
-             //   if ( i > 0 ){
-                    // ia1( State.planes[ i ], State.planes[ i - 1 ] )
+                // if ( i > 0 ){
+                // ia1( State.planes[ i ], State.planes[ i - 1 ] )
                 if ( !(i%2) ){
                     ia1( State.planes[ i ], State.planes[ 0 ], 300)
                 } else {
@@ -937,52 +825,49 @@ export function Game( { tellPlayer, tellScore } ) {
                 }
             }
         })
-
-      //  ia1( State.planes[ 0 ], State.planes[ State.planes.length - 1 ] )
+        // ia1( State.planes[ 0 ], State.planes[ State.planes.length - 1 ] )
         /*
-        {
-        let commands = [
-            'noseup',
-            //'nosedown',
-            //'reverse',
-            'powerup',
-            //'firemissile',
-            'firebomb'
-        ]
-        
-        let clients = State.planes
-            .map( (plane,idx) => [plane,idx] )
-            .filter( ([plane,idx]) => plane.inputId === undefined )
-
-        if ( clients ){
-            for ( let i = 0 ; i < ( clients.length * 2 ) ; i++ ){
-                let input = commands[ Math.floor( Math.random() * commands.length ) ]
-                let client = clients[ Math.floor( Math.random() * clients.length ) ]
-                inputs.push( { input, client:client[1] } )
-            }
-        }
-        }
+          {
+          let commands = [
+          'noseup',
+          //'nosedown',
+          //'reverse',
+          'powerup',
+          //'firemissile',
+          'firebomb'
+          ]
+          let clients = State.planes
+          .map( (plane,idx) => [plane,idx] )
+          .filter( ([plane,idx]) => plane.inputId === undefined )
+          if ( clients ){
+          for ( let i = 0 ; i < ( clients.length * 2 ) ; i++ ){
+          let input = commands[ Math.floor( Math.random() * commands.length ) ]
+          let client = clients[ Math.floor( Math.random() * clients.length ) ]
+          inputs.push( { input, client:client[1] } )
+          }
+          }
+          }
         */
     }
-/*
-    function groundOxs(){
-        const ground = State.ground
-        const oxs = State.oxs
-        oxs.forEach( ox => {
-            const x = Math.floor( ox.x )
-            let meany = 0;
-            for ( let ii = 0 ; ii < 16 ; ii++ ){
-                let wx = x + ii
-                let h = ground[ Math.floor( wx ) % ground.length ]
-                meany += h/16
-            }        
-            for ( let ii = 0 ; ii < 16 ; ii++ ){
-                let wx = x + ii
-                ground[ Math.floor( wx ) % ground.length ] = meany
-            }
-        })
-    }*/
-    function ground_item16( item ){        
+    /*
+      function groundOxs(){
+      const ground = State.ground
+      const oxs = State.oxs
+      oxs.forEach( ox => {
+      const x = Math.floor( ox.x )
+      let meany = 0;
+      for ( let ii = 0 ; ii < 16 ; ii++ ){
+      let wx = x + ii
+      let h = ground[ Math.floor( wx ) % ground.length ]
+      meany += h/16
+      }
+      for ( let ii = 0 ; ii < 16 ; ii++ ){
+      let wx = x + ii
+      ground[ Math.floor( wx ) % ground.length ] = meany
+      }
+      })
+      }*/
+    function ground_item16( item ){
         const x = Math.floor( item.x )
         const ground = State.ground
         let meany = 0;
@@ -990,7 +875,7 @@ export function Game( { tellPlayer, tellScore } ) {
         for ( let ii = 0 ; ii < 16 ; ii++ ){
             let wx = x + ii
             let h = ground[ Math.floor( wx ) % ground.length ]
-            //                console.log( h )
+            // console.log( h )
             meany += h/16
             miny = Math.min( h, miny )
         }
@@ -1000,11 +885,9 @@ export function Game( { tellPlayer, tellScore } ) {
         }
         item.y = miny
     }
-
     /*
       let PAUSED = false
       let OFFSET = {x:0,y:0}
-
       document.body.addEventListener('keydown', ({ code }) => {
       switch ( code ){
       case 'Pause' : PAUSED = !PAUSED
@@ -1020,26 +903,21 @@ export function Game( { tellPlayer, tellScore } ) {
       }
       })
     */
-//    groundTargets()
-//    groundOxs()
-
+    // groundTargets()
+    // groundOxs()
     // const FPS = 16//16//2//16
     const FPS = 10//2//10//16//5
     State.lastUpdateTime = Date.now()
-
-
     function update(){
         const now = Date.now()
         //
         const dt = (now - State.lastUpdateTime) / 1000;
-        let rfps =  1 / dt / FPS
+        let rfps = 1 / dt / FPS
         if ( ( rfps > 1.5 ) || ( rfps < 0.75 ) ){
             console.error( `update after ${ dt }s, should be ${ 1/FPS }s`,
-                           `${ 1 / dt }fps, should be ${ FPS  }fps  `)
+                           `${ 1 / dt }fps, should be ${ FPS }fps `)
         }
-        
         const controlled_debug_plane = State.planes[0]
-        
         //
         // controlled_debug_plane.x += OFFSET.x
         // controlled_debug_plane.y += OFFSET.y
@@ -1054,18 +932,14 @@ export function Game( { tellPlayer, tellScore } ) {
         //}
         collisions()
         //groundTargets()
-        
         //
         // display.setState( State )
         stateUpdated()
-        
         State.lastUpdateTime = now;
     }
-    
     function gameloop(){
         setInterval( update, 1000/FPS)
     }
-
     ////
     const planeByInputId = {}
     const nameByInputId = {}
@@ -1107,7 +981,7 @@ export function Game( { tellPlayer, tellScore } ) {
         if ( ! inputs ){
             inputs = {}
             plane.inputs = inputs
-        }    
+        }
         PLANE_INPUT_NAMES.forEach( name => {
             inputs[ name ] = false
         })
@@ -1118,16 +992,15 @@ export function Game( { tellPlayer, tellScore } ) {
             plane.inputs[ input ] = true
         }
         /*inputs.push({
-            input,
-            client : State.planes.findIndex( p => plane === p )
-        })*/
-        
+          input,
+          client : State.planes.findIndex( p => plane === p )
+          })*/
     }
     function handleInput( inputId, input ){
         let plane = planeByInputId[ inputId ]
         if ( plane ){
             plane_handle_input( plane, input )
-        }        
+        }
     }
     const leaderboardskip = {
         ttl : 0,
@@ -1142,7 +1015,6 @@ export function Game( { tellPlayer, tellScore } ) {
         } else {
             leaderboardskip.ttl -= 1
         }
-        
         let payload = {
             t : now,
             version : State.version,
@@ -1169,7 +1041,6 @@ export function Game( { tellPlayer, tellScore } ) {
                     const username = nameByInputId[ plane.inputId ]
                     payload.leaderboard.push( { username, score : plane.score.total } )
                 }
-                
             })
         } else {
             payload.leaderboard = undefined
@@ -1194,14 +1065,12 @@ export function Game( { tellPlayer, tellScore } ) {
             let { x, y, as } = ox
             payload.oxs.push( { x, y, as } )
         })
-
         State.planes.forEach( plane => {
             let { ttl, x, y, r, a, p, cs, explosion, leaving, falling } = plane
             let name = '??'
             if ( plane.inputId ){
                 name = nameByInputId[ plane.inputId ]
             }
-
             // TODO
             //if ( ttl > 0 ){
             payload.planes.push( { ttl, x, y, r, a, p, cs, name } )
@@ -1219,17 +1088,14 @@ export function Game( { tellPlayer, tellScore } ) {
                         payload.fallings.push({x,y,as})
                     }
                 }
-                
                 if ( explosion.ttl > 0 ){
                     explosion.debris.forEach( debri => {
                         let { x, y, a, dtype, cs } = debri
                         payload.debris.push( { x, y, a, dtype, cs } )
                     })
                 }
-                
-                
                 plane.bombs.forEach( bomb => {
-                    let { x, y, a, p, cs, ttl,  step, explosion } = bomb
+                    let { x, y, a, p, cs, ttl, step, explosion } = bomb
                     payload.bombs.push( { x, y, a, p, cs, ttl /*, step */ } )
                     if ( explosion.ttl > 0 ){
                         explosion.debris.forEach( debri => {
@@ -1237,7 +1103,6 @@ export function Game( { tellPlayer, tellScore } ) {
                             payload.debris.push( { x, y, a, cs, dtype } )
                         })
                     }
-                    
                 })
                 plane.missiles.forEach( missile => {
                     let { x, y, a, p, cs, ttl, step, explosion } = missile
@@ -1247,11 +1112,10 @@ export function Game( { tellPlayer, tellScore } ) {
                             let { x, y, a, dtype } = debri
                             payload.debris.push( { x, y, a, cs, dtype } )
                         })
-                    }                
+                    }
                 })
             }
         })
-        
         Object.keys( planeByInputId ).forEach( inputId => {
             let plane = planeByInputId[ inputId ]
             let me = {
@@ -1267,7 +1131,5 @@ export function Game( { tellPlayer, tellScore } ) {
         removePlayer,
         handleInput,
         players,
-        
     }
 }
-
