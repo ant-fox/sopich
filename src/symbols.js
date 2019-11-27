@@ -1122,7 +1122,6 @@ const swbstsym = [
 // ]
 
 
-
 // //---------------------------------------------------------------------------
 // //
 // // $Log: swsymbol.c,v $
@@ -1167,7 +1166,7 @@ function symboltoimage(odata,w,h,palette = DefaultPalette){
            })
     }
     $ctx.putImageData(imageData, 0, 0);
-//    document.body.appendChild( $canvas )
+    document.body.appendChild( $canvas )
     
     // return imageData
     

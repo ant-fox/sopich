@@ -111,8 +111,8 @@ export function Game( { tellPlayer, tellScore } ) {
     }
     function init_bird( i, l ){
         return {
-            x : Math.floor( 500 + ( i / l ) * 2000 ),
-            y : Math.floor( 100 + ( i / l ) * 500 ),
+            x : Math.floor( 500 + Math.random() * 2000 ),
+            y : Math.floor( 100 + ( i / l ) * 700 ),
             as : Math.floor( Math.random() * 2 ),
             interv : Math.floor( 3 + Math.random() * 2 ),
             step : 0,
@@ -121,8 +121,8 @@ export function Game( { tellPlayer, tellScore } ) {
     }
     function init_flock(i,l){
         return {
-            x : Math.floor( 500 + ( i / l ) * 2000 ),
-            y : Math.floor( 200 + ( i / l ) * 300 ),
+            x : Math.floor( 500 + Math.random() * 2000 ),
+            y : Math.floor( 100 + ( i / l ) * 500 ),
             as : Math.floor( Math.random() * 2 ),
             interv : Math.floor( 5 + Math.random() * 5 ),
             step : 0,
@@ -865,7 +865,6 @@ export function Game( { tellPlayer, tellScore } ) {
 
 
     function ia(){
-        let cp = State.planes[ 1 ]
         
         function ia1( cp, target, maxdist ){
             //cp.undescrtu = true
@@ -883,7 +882,7 @@ export function Game( { tellPlayer, tellScore } ) {
                     cp.a = a16
                 }  else {
                     if ( Math.random() > 0.90 ) {
-                        inputs.push( { input : 'firemissile', client : cp.idx } )
+                        //inputs.push( { input : 'firemissile', client : cp.idx } )
                     }
                 }
                 if ( dist > 50 ){
@@ -908,7 +907,8 @@ export function Game( { tellPlayer, tellScore } ) {
             }  
             
         }
-        State.planes.forEach( ( p, i ) => {
+          let cp = State.planes[ 1 ]
+      State.planes.forEach( ( p, i ) => {
             if ( p.inputId === undefined ){
              //   if ( i > 0 ){
                     // ia1( State.planes[ i ], State.planes[ i - 1 ] )

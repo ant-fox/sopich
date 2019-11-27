@@ -45,9 +45,10 @@ function LeaderBoardDisplay(){
             .sort( (a,b) => b.score - a.score )
             .slice(0,MAX_DISPLAYED)
             .map( x => ['<p>',
-                        x.username.padEnd( width1,' ' ),
-                        '  ',
-                        x.score.toString().padStart( width2,' '),
+                        ([
+                            x.username.padEnd( width1,' ' ),
+                            x.score.toString().padStart( width2,' ')
+                        ].join(' ')),
                         '</p>'
                        ].join(''))
             .join('')
@@ -96,14 +97,25 @@ export function Display() {
     document.body.appendChild( $canvas )
     const $context = $canvas.getContext('2d')
 
+    
     let State
     function putSprite( image, x, y ){
-        $context.drawImage( image, Math.floor(x)  , Math.floor(y) - image.height  )
+        // $context.drawImage( image, Math.floor(x)  , Math.floor(y) - image.height  )
+        $context.drawImage(
+            image,
+            Math.floor(x),
+            Math.floor(y) - image.height,
+            image.width,
+            image.height,
+        )
     }
     function display(){
 
-        setCanvasDimensions( $canvas )
+        $context.imageSmoothingEnabled = false
         
+        setCanvasDimensions( $canvas )
+
+
         if ( !State ) {
             return
         }
@@ -131,13 +143,14 @@ export function Display() {
         
         const left = clamp(
             // TODO : 8
-            8 + camera_target.x -  $canvas.width / 2, 
+            8 + camera_target.x -  $canvas.width / 2,
             worldSize.x1,
             worldSize.x2 - $canvas.width
         )
-        const right = left +  $canvas.width       
+        const right = left +  $canvas.width
+        
         const bottom = clamp(
-            camera_target.y - $canvas.height / 2,
+            camera_target.y - $canvas.height /  2,
             worldSize.y1,
             worldSize.y2 -  $canvas.height
         )   
@@ -145,8 +158,8 @@ export function Display() {
 
         function world_to_context( x, y ){
             return {
-                x : x - left,
-                y : $canvas.height - y + bottom
+                x : x - left  ,
+                y : $canvas.height - y  + bottom
             }
         }
         /*
@@ -170,7 +183,7 @@ export function Display() {
             let lastwy = 0
             let asLine = false
             for ( let i = 0 ; i <= $canvas.width ; i++ ){
-                let wx = left + i
+                let wx = left  + i
                 let wy = (wx<0)?(Math.random()*10):ground[ Math.floor( wx ) % ground.length ]        
                 let cxy = world_to_context( wx, wy )
                 if ( asLine ){
