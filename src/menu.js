@@ -444,10 +444,27 @@ const keyboardController = DomControllerf(
         }
     }
 )
-
+let hidden = false
+const keyboardControllerHideShow = DomControllerf(
+    document.body,
+    'keydown',
+    ({ code }) => {
+        if ( code === 'Escape' ){
+            if ( hidden ){
+                start()
+                hidden = false
+            } else {
+                stop()
+                hidden = true
+            }
+        }
+    }
+)
+keyboardControllerHideShow.start()
 export function start(){
     menu.show()
     keyboardController.start()
+    keyboardControllerHideShow.start()
     mouseController.start()
 }
 export function stop(){
