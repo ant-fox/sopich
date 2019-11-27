@@ -11,7 +11,7 @@ import { setParentAndDepth,
        } from './childstree.js'
 
 
-const Definitions = chainf( [
+export const Definitions = chainf( [
     setParentAndDepth,
     setPreviousNext,
     setNextAndPreviousSibling
@@ -144,6 +144,7 @@ function nameString( d, selected ){
 
 //
 // Key Value Store
+// for indexed options
 //
 function Store( root ) {
 
@@ -225,7 +226,7 @@ function MenuView( storeGet ){
         }
     }
     function display(pointed){
-
+        if ( !pointed ) return
         let pParent = pointed.parent
         if ( !pParent ) return
         
@@ -256,6 +257,89 @@ function MenuView( storeGet ){
         hide
     }
 }
+function TreeController( pointed,  storeModify ){
+
+    const definitionByLocatorString = toArray( depthFirst )( pointed )
+          .reduce( ( r, x ) => fsetk( r, locatorString( x ), x ), {} )
+    
+    check()
+    
+    function modifyPointed( f, forceMod ){
+        const p = pointed
+        if ( p.childs )
+            return
+        storeModify( p, f, forceMod )
+    }
+    function setPointed( p ){
+        if ( p ){
+            pointed = p
+        }
+        check()
+    }
+    function check(){
+        let p = pointed
+        if ( p.parent === undefined ){
+            setPointed( p.childs[ 0 ] )
+        }
+    }
+    
+    // commands
+    function inc( forceMod ) {
+        modifyPointed( x => x + 1, forceMod )
+    }
+    function dec( forceMod ){
+        modifyPointed( x => x - 1, forceMod )
+    }
+    function parent(){
+        setPointed( pointed.parent )
+    }
+    function previous(){
+        setPointed( pointed.previous )
+    }
+    function next(){
+        setPointed( pointed.next )
+    }
+    function previousSibling(){
+        console.log('up',pointed,pointed.previousSibling)
+        setPointed( pointed.previousSibling )
+    }
+    function nextSibling(){
+        setPointed( pointed.nextSibling )
+    }
+
+ 
+    function at(locator){
+        // point by locator,
+        // then action
+        let p = definitionByLocatorString[ locator ]
+        if ( p ){
+            setPointed( p )
+            action(true)
+        }
+    }
+    function action( forceMod ){
+        // go to first child if folder
+        // else increment
+        let p = pointed
+        if ( p.childs ){
+            setPointed( p.next )
+        } else {
+            inc( forceMod )
+        }
+    }
+    const commands = {
+        inc,
+        dec,
+        action,
+        at,
+        parent,
+        previousSibling,
+        nextSibling,
+        previous,
+        next,
+    }
+    return { commands, getPointed : () => pointed }
+}
 
 //
 // Menu
@@ -263,107 +347,56 @@ function MenuView( storeGet ){
 export function Menu( Definitions, store ){
     
     const state = {
-        root : Definitions,
-        pointed : Definitions.childs[ 0 ].childs[ 2 ],
-        visible : true
+        visible : false
     }
-
-    const definitionByLocatorString = toArray( depthFirst )( state.root )
-          .reduce( ( r, x ) => fsetk( r, locatorString( x ), x ), {} )
-    
     const view = new MenuView( store.get )
     document.body.appendChild( view.$div )
-
-    function display(){
-        view.display( state.pointed )
-    }
-    function hide(){
-        view.hide()
-        state.visible = false
-    }
-    function show(){
-        display()
-        view.show()
-        state.visible = false
-    }
-    function TreeController(  storeModify ){
-        //const state = { pointed }
-
-        function modifyPointed( f, forceMod ){
-            const p = state.pointed
-            if ( p.childs )
-                return
-            storeModify( p, f, forceMod )
-        }
-        function setPointed( p ){
-            if ( p ){
-                state.pointed = p
-            }
-            check()
-        }
-        function check(){
-            let p = state.pointed
-            if ( p.parent === undefined ){
-                setPointed( p.childs[ 0 ] )
-            }
-        }
-        
-        // commands
-        function inc( forceMod ) {
-            modifyPointed( x => x + 1, forceMod )
-        }
-        function dec( forceMod ){
-            modifyPointed( x => x - 1, forceMod )
-        }
-        function parent(){
-            setPointed( state.pointed.parent )
-        }
-        function previous(){
-            setPointed( state.pointed.previous )
-        }
-        function next(){
-            setPointed( state.pointed.next )
-        }
-        function previousSibling(){
-            setPointed( state.pointed.previousSibling )
-        }
-        function nextSibling(){
-            setPointed( state.pointed.nextSibling )
-        }
-        function at(locator){
-            // point by locator,
-            // then action
-            let p = definitionByLocatorString[ locator ]
-            if ( p ){
-                setPointed( p )
-                action(true)
-            }
-        }
-        function action( forceMod ){
-            // go to first child if folder
-            // else increment
-            let p = state.pointed
-            if ( p.childs ){
-                setPointed( p.next )
-            } else {
-                inc( forceMod )
-            }
-        }
-        const commands = {
-            inc,
-            dec,
-            action,
-            at,
-            parent,
-            previousSibling,
-            nextSibling,
-            previous,
-            next,
-        }
-        return { commands }
-    }
-    const treeController = new TreeController( store.modify )
     
+    const treeController = new TreeController( Definitions, store.modify )
+    const keyboardControllerHideShow = DomControllerf(
+        document.body, 'keydown',
+        ({ code }) => {
+            if ( code === 'Escape' ){
+                switchShowHide()
+            }
+        }
+    )
+    const mouseController = DomControllerf(
+        view.$div, 'click',
+        ({ srcElement }) => {
+            if ( srcElement && srcElement.getAttribute ){
+                let locator = srcElement.getAttribute('locator')
+                if ( locator ){
+                    onInput( 'at', locator )
+                }
+            }
+        })
+    const keyboardController = DomControllerf(
+        document.body, 'keydown',
+        ({ code }) => {
+            switch ( code ){
+            case'ArrowUp':onInput('previousSibling');break
+            case'ArrowDown':onInput('nextSibling');break
+            case'ArrowLeft':onInput('previous');break
+            case'ArrowRight':onInput('next');break
+            case'NumpadAdd':onInput('inc');break
+            case'NumpadSubtract':onInput('dec');break
+            case'Enter':onInput('action');break
+            case'Backspace':onInput('parent');break
+            }
+        }
+    )
+    
+    function display(){
+        view.display( treeController.getPointed() )
+    }
+    function switchShowHide(){
+        if  (state.visible){
+            hide()
+        } else {
+            show()
+        }
+    }
     function onInput( type, ...args ){
         const cmd = treeController.commands[ type ]
         if ( cmd ){
@@ -371,76 +404,44 @@ export function Menu( Definitions, store ){
         }
         display()
     }
+
+    function hide(){
+        keyboardController.stop()
+        mouseController.stop()
+        view.hide()
+        state.visible = false
+    }
+    function show(){
+        keyboardController.start()
+        mouseController.start()
+        display()
+        view.show()
+        state.visible = true
+    }
+    function start(){
+        keyboardControllerHideShow.start()
+        if ( state.visible ){
+            show()
+        }
+    }
+    function stop(){
+        hide()
+        keyboardControllerHideShow.stop()
+    }
+    
     return {
-        $div : view.$div,
-        onInput,
         show,
-        hide
+        hide,
+        start,
+        stop,
     }
 }
 
 
-const store = new Store( Definitions )
-const menu = new Menu( Definitions, store  )
-
+export const defaultStore = new Store( Definitions )
+/*
 function onValueChange3( msg, type ){
     console.log('3 message meny say','type?',type, 'msg',msg )
 }
-store.valueChange.addListener( onValueChange3, 'config.sound.mute'  )
-
-const mouseController = DomControllerf(
-    menu.$div,
-    'click',
-    ({ srcElement }) => {
-        if ( srcElement && srcElement.getAttribute ){
-            let locator = srcElement.getAttribute('locator')
-            if ( locator ){
-                menu.onInput( 'at', locator )
-            }
-        }
-    })
-
-const keyboardController = DomControllerf(
-    document.body,
-    'keydown',
-    ({ code }) => {
-        switch ( code ){
-        case'ArrowUp':menu.onInput('previousSibling');break
-        case'ArrowDown':menu.onInput('nextSibling');break
-        case'ArrowLeft':menu.onInput('previous');break
-        case'ArrowRight':menu.onInput('next');break
-        case'NumpadAdd':menu.onInput('inc');break
-        case'NumpadSubtract':menu.onInput('dec');break
-        case'Enter':menu.onInput('action');break
-        case'Backspace':menu.onInput('parent');break
-        }
-    }
-)
-let hidden = false
-const keyboardControllerHideShow = DomControllerf(
-    document.body,
-    'keydown',
-    ({ code }) => {
-        if ( code === 'Escape' ){
-            if ( hidden ){
-                start()
-                hidden = false
-            } else {
-                stop()
-                hidden = true
-            }
-        }
-    }
-)
-keyboardControllerHideShow.start()
-export function start(){
-    menu.show()
-    keyboardController.start()
-    keyboardControllerHideShow.start()
-    mouseController.start()
-}
-export function stop(){
-    menu.hide()
-    keyboardController.stop()
-    mouseController.stop()
-}
+*/
+//store.valueChange.addListener( onValueChange3, 'config.sound.mute'  )

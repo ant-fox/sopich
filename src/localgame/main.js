@@ -7,6 +7,16 @@ import  * as Menu from '../menu.js'
 // import { Tutuut } from './tutuut.js'
 
 if (true){
+  // menu
+    const menu = new Menu.Menu( Menu.Definitions, Menu.defaultStore )
+    
+    function onValueChange3( msg, type ){
+        console.log('3 message meny say','type?',type, 'msg',msg )
+    }
+    Menu.defaultStore.valueChange.addListener( onValueChange3,  'config.sound.mute' )
+   
+    menu.start()
+//    menu.show()
 
     // display 
     const display = new Display()
@@ -16,9 +26,7 @@ if (true){
     const audio = new Audio()
     audio.start()
 
-    // menu
-    // Menu.start()
-
+  
     // game
     function tellPlayer( inputId, state ){
         if ( inputId === '123456'){
