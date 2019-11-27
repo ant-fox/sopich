@@ -12,6 +12,9 @@
 // A team must destroy all opponent (n lives ?)
 // B team must destroy all building
 //
+// - prime hunting
+// value for shooting plane <- score.total
+//
 // bird + flock  use anim
 // collision broken -> coll mask non broken ?
 // set y of ox and target at move step
@@ -31,6 +34,9 @@
 // random sound at init
 // when missile/bomb destroys missile/bomb, last emmited wins
 // gun
+// ground cannons
+// balloons
+
 import { ground } from './ground.js'
 import { prepareHitmask, prepareBottomHitmask } from './symbols.js'
 import { Tree, CONTINUE_VISIT, STOP_VISIT } from './coll.js'
