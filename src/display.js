@@ -213,7 +213,7 @@ export function Display() {
         // stars
 
         if (stars){
-            if (Math.random()>0.5){
+            if (Math.random()>0.95){
                 update_stars( stars )
             }
             const bcolors = [ '#faff', '#a59a', '#0095' ]

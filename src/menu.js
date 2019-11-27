@@ -203,7 +203,6 @@ function MenuView( storeGet ){
         return $div
     }
     const $div = $buildContainer()
-    console.log($div)
     hide()
 
     function hide(){
