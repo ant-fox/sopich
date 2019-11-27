@@ -72,6 +72,22 @@ const directions8 = new Array( 8 ).fill(0)
 const toFall8 = [7,0,6,4,5,6,6,6]
 const Hitmasks = prepareHitmask()
 const BottomHitmasks = prepareBottomHitmask()
+const Hitmaskfs = {
+    plane : item => Hitmasks.plane[ (item.r)?1:0 ][ item.a ],
+    bomb : item => Hitmasks.bomb[ item.a ],
+    missile : item => Hitmasks.missile[ item.a ],
+    flock : item => Hitmasks.flock[ item.as ],
+    bird : item => Hitmasks.bird[ item.as ],
+    target : item => ((item.broken)
+                      ?(Hitmasks.target_hit)
+                      :(Hitmasks.targets[ item.as ])),
+    ox : item => Hitmasks.ox[ item.as ],
+}
+const Bhitmaskfs = {
+    plane : item => BottomHitmasks.plane[ (item.r)?1:0 ][ item.a ],
+    bomb : item => BottomHitmasks.bomb[ item.a ],
+    missile : item => BottomHitmasks.missile[ item.a ],            
+}
 
 function available_ttl( items ){
     for ( let i = 0, l = items.length ; i < l ; i++ ){
@@ -133,10 +149,13 @@ export function Game( { tellPlayer, tellScore } ) {
             x : Math.floor( 400 + ( i / l ) * 2000 ),
             as : 0,
             destroyed : item => item.as = 1,
+            hitmaskf : Hitmaskfs.ox,
+
         }
     }
     function init_bird( i, l ){
         return {
+            hitmaskf : Hitmaskfs.bird,
             x : Math.floor( 500 + Math.random() * 2000 ),
             y : Math.floor( 100 + ( i / l ) * 700 ),
             as : Math.floor( Math.random() * 2 ),
@@ -147,6 +166,7 @@ export function Game( { tellPlayer, tellScore } ) {
     }
     function init_flock(i,l){
         return {
+            hitmaskf : Hitmaskfs.flock,
             x : Math.floor( 500 + Math.random() * 2000 ),
             y : Math.floor( 100 + ( i / l ) * 500 ),
             as : Math.floor( Math.random() * 2 ),
@@ -193,13 +213,12 @@ export function Game( { tellPlayer, tellScore } ) {
 	        3, 0, 2, 1, 1,
 	        3, 3, 0, 0, 1
             ],
-            hits : new Array(20).fill(false),
-            broken : new Array(20).fill(false),
         }
         const targets = model.xs.map( (x,i) => {
             const as = model.tys[ i ]
             // let y = ground[ Math.floor( x ) % ground.length ]
             return {
+                hitmaskf : Hitmaskfs.target,
                 x,as,
                 broken : false,
                 destroyed : item => {
@@ -213,6 +232,8 @@ export function Game( { tellPlayer, tellScore } ) {
     function init_plane(idx){
         return {
             cs : idx%ColorSchemes.length,
+            hitmaskf : Hitmaskfs.plane,
+            bhitmaskf : Bhitmaskfs.plane,
             idx,
             inputs : plane_init_inputs(),
             ttl : 300,
@@ -223,8 +244,10 @@ export function Game( { tellPlayer, tellScore } ) {
             a : 0,
             p : 2,            
             //        hitmaskf : item => Hitmasks.plane[ (item.r)?1:0 ][ item.a ],
-            bombs : new Array(8).fill(0).map( (_,i) => ({
+            bombs : new Array(8).fill(0).map( (_,i) => ({                
                 cs : idx%ColorSchemes.length,
+                hitmaskf : Hitmaskfs.bomb,                
+                bhitmaskf : Bhitmaskfs.bomb,                
                 x : 1550+i*20,
                 y : 100+i*10,
                 a : i,
@@ -246,6 +269,8 @@ export function Game( { tellPlayer, tellScore } ) {
             })),
             missiles : new Array(16).fill(0).map( (_,i) => ({
                 cs : idx%ColorSchemes.length,
+                hitmaskf : Hitmaskfs.missile,
+                bhitmaskf : Bhitmaskfs.missile,                
                 x : 1250+i*40,
                 y : 100+i*10,
                 a : i,
@@ -290,8 +315,6 @@ export function Game( { tellPlayer, tellScore } ) {
         }
     }
 
-    const BombDropAngle = [0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8]
-    const BombDropOffset = [[0,0]]
     function handleinputs(){
 
         State.planes.forEach( plane => {
@@ -321,6 +344,8 @@ export function Game( { tellPlayer, tellScore } ) {
                 }
 
 
+                const BombDropAngle = [0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8]
+                const BombDropOffset = [[0,0]]
                 if (firebomb){
                     let avail = available_ttl( bombs )
                     if ( avail !== bombs.length ){
@@ -337,11 +362,11 @@ export function Game( { tellPlayer, tellScore } ) {
                     }
                 }
                 if (firemissile){
-                    let off = BombDropOffset[ a % BombDropOffset.length]
-                    let normal = ( a + (r?4:12) ) % directions16.length 
-                    let dir = directions16[ normal ]
                     let avail = available_ttl( missiles )
                     if ( avail !== missiles.length ){
+                        let off = BombDropOffset[ a % BombDropOffset.length]
+                        let normal = ( a + (r?4:12) ) % directions16.length 
+                        let dir = directions16[ normal ]
                         const missile = missiles[ avail ]
                         missile.x = x + off[0] + ( 16 / 2 ) - ( 8 / 2 ) + dir[0] * 8
                         missile.y = y + off[1] + ( 16 / 2 ) - ( 8 / 2 ) + dir[1] * 8
@@ -559,16 +584,6 @@ export function Game( { tellPlayer, tellScore } ) {
         }
         return collides
     }
-    /*
-      function collisions2(){
-      State.version++
-
-      const version = State.version 
-      const tree = State.tree
-      let ncoll = 0;
-      
-      }
-    */
     
     function start_explosion( explosion, x, y ){
         explosion.ttl = 10
@@ -592,8 +607,6 @@ export function Game( { tellPlayer, tellScore } ) {
             item.respawn = 30
         }
     }
-    const SOTypes = [ 'plane' ]
-    
     function iterateStateObjects( f ){
         //f( 'ground', State.ground )
 
@@ -647,29 +660,6 @@ export function Game( { tellPlayer, tellScore } ) {
         const tree = State.tree
         State.version++
         const version = State.version
-        const Hitmaskfs = {
-            plane : item => Hitmasks.plane[ (item.r)?1:0 ][ item.a ],
-            bomb : item => Hitmasks.bomb[ item.a ],
-            missile : item => Hitmasks.missile[ item.a ],
-            flock : item => Hitmasks.flock[ item.as ],
-            bird : item => Hitmasks.bird[ item.as ],
-            target : item => ((item.broken)
-                              ?(Hitmasks.target_hit)
-                              :(Hitmasks.targets[ item.as ])),
-            /*target : item => 
-              return {
-              Hitmasks.targets[ 
-              
-              }
-              }
-            */
-            ox : item => Hitmasks.ox[ item.as ],
-        }
-        const Bhitmaskfs = {
-            plane : item => BottomHitmasks.plane[ (item.r)?1:0 ][ item.a ],
-            bomb : item => BottomHitmasks.bomb[ item.a ],
-            missile : item => BottomHitmasks.missile[ item.a ],            
-        }
         iterateStateObjects( (type,item1) => {
             if ( ( item1.ttl !== undefined ) && ( item1.ttl < 0 ) ){
                 return
@@ -680,13 +670,13 @@ export function Game( { tellPlayer, tellScore } ) {
             c[ type ] = 1 + (ct?ct:0)
 
             // set hitmask
-            const hitmask = Hitmaskfs[ type ]( item1 )
+            const hitmask = item1.hitmaskf( item1 )
             item1._hitmask = hitmask
 
             // test ground
             if ( item1.ttl ){
-                if ( Bhitmaskfs[ type ] ){
-                    const bhitmask = Bhitmaskfs[ type ](  item1 )
+                const bhitmask = item1.bhitmaskf( item1 )
+                if ( bhitmask ){
                     const x = item1.x
                     const fx = Math.floor(x)
                     const y = item1.y
@@ -699,9 +689,7 @@ export function Game( { tellPlayer, tellScore } ) {
                         }
                     }
                 }
-            }
-
-            
+            }          
 
             // insert/collide
             const { x, y } = item1
