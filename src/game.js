@@ -5,6 +5,9 @@
 // base destruction -> -200
 // - solo battle
 // (normal count)
+// - solo contest
+//   -> limited time (max score)
+//   -> limited score (min time)
 // - by team
 // like protect fort but with less hq types than players
 // - invasion
@@ -373,17 +376,13 @@ export function Game( { tellPlayer, tellScore } ) {
                 if ( reverse ){
                     plane.r = r?0:1
                 }
-              
                 if (firebomb){
                     if ( reload.step === 0 ){
-                     
                         let avail = available_ttl( bombs )
                         if ( avail !== bombs.length ){
                             fire_bomb_from_plane( bombs[avail], plane )
                             arm_reload( reload )
                         }
-                    } else {
-                        console.log(reload.step)
                     }
                 }
                 if (firemissile){
@@ -837,7 +836,7 @@ export function Game( { tellPlayer, tellScore } ) {
                     cp.a = a16
                 } else {
                     if ( Math.random() > 0.90 ) {
-                        //inputs.push( { input : 'firemissile', client : cp.idx } )
+                        pushButton('firemissile')
                     }
                 }
                 if ( dist > 50 ){
