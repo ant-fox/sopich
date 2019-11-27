@@ -194,10 +194,11 @@ function Store( root ) {
 //
 function MenuView( storeGet ){
     function $buildContainer(){
-        let $div = document.createElement('pre') 
-        $div.style = 'position:fixed;display:block;color:white;z-index:25;'
+        let $div = document.createElement('div') 
+        $div.style = 'position:fixed;display:block;color:white;z-index:22;'
             +'width:100%;height:100%;'
-            +'background-color:black;opacity:0.8;margin:0;padding-left:1em';
+            +'background-color:black;opacity:0.8;margin:0;padding-left:1em;'
+            +'white-space:pre;font-family: mono;'
         $div.classList.add('noselect')
         return $div
     }
@@ -229,14 +230,14 @@ function MenuView( storeGet ){
         if ( !pointed ) return
         let pParent = pointed.parent
         if ( !pParent ) return
-        
+
         let pParents = toArray( parents )( pointed ).reverse()
         let dirs = pParents.map( x => clickable('span', x, x.name )).join(' > ')
 
         let maxNameStringLength = pParent.childs
             .map( c => nameString( c, c === pointed ) )
             .reduce( (r,x) => Math.max( r, x.length ), 0 )
-
+        
         let listing = pParent.childs.map(
             x => clickable('p',x, [
                 nameString( x, x === pointed ).padEnd( maxNameStringLength ),
@@ -261,8 +262,8 @@ function TreeController( pointed,  storeModify ){
 
     const definitionByLocatorString = toArray( depthFirst )( pointed )
           .reduce( ( r, x ) => fsetk( r, locatorString( x ), x ), {} )
-    
-    check()
+
+    pointed = pointed.childs[ 0 ]
     
     function modifyPointed( f, forceMod ){
         const p = pointed
@@ -272,14 +273,9 @@ function TreeController( pointed,  storeModify ){
     }
     function setPointed( p ){
         if ( p ){
-            pointed = p
-        }
-        check()
-    }
-    function check(){
-        let p = pointed
-        if ( p.parent === undefined ){
-            setPointed( p.childs[ 0 ] )
+            if ( p.parent !== null ){
+                pointed = p
+            }
         }
     }
     // commands

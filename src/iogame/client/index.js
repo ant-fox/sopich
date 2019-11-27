@@ -38,9 +38,9 @@ Promise.all([
 }).catch(console.error);
 
 function onGameOver() {
-      menu.stop()
-  stopCapturingInput();
-  stopRendering();
-  playMenu.classList.remove('hidden');
-//  setLeaderboardHidden(true);
+    menu.stop()
+    stopCapturingInput();
+    stopRendering();
+    playMenu.classList.remove('hidden');
+    //  setLeaderboardHidden(true);
 }
