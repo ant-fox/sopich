@@ -17,7 +17,7 @@ if (true){
     audio.start()
 
     // menu
-    Menu.start()
+    // Menu.start()
 
     // game
     function tellPlayer( inputId, state ){

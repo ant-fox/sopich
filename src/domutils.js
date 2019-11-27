@@ -1,11 +1,15 @@
-export function DomControllerf( $e, name, handler ){
+export function DomControllerf( $e, name, handler, started = false ){
     function start(){
+        if ( started ) return
         $e.addEventListener( name, handler )
+        started = true
     }
     function stop(){
+        if ( !started ) return
         $e.removeEventListener( name, handler )
+        started = false
     }
-    return { start, stop }
+    return { start, stop, started }
 }
 
 import { Dispatcher } from './dispatch.js'

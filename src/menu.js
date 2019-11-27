@@ -30,73 +30,14 @@ const Definitions = chainf( [
         ]},
     ]}
 )
-//
-// tree augmentation
-//
-function setParentAndDepth( d, l = 0, parent ){
-    if ( parent ){
-        d.parent = parent
-        d.l = l
-    }
-    if ( d.childs ){
-        d.childs.forEach( c => setParentAndDepth( c, l + 1, d ) )
-    }
-    return d
-}
-function setNextAndPreviousSibling( d ){
-    let previous = undefined
-    if ( d.childs ){
-        d.childs.forEach( c => {
-            if ( previous !== undefined ){
-                c.previousSibling = previous
-                previous.nextSibling = c
-            }
-            previous = c
-            setNextAndPreviousSibling( c )
-        })
-    }
-    return d
-}
-function setPreviousNext( d ){
-    let previous = undefined
-    depthFirst( d, ( d2, l ) => {
-        if ( previous !== undefined ){
-            d2.previous = previous
-            previous.next = d2
-        }
-        previous = d2
-    })
-    return d
-}
-
-//
-// generic tree functions
-//
-function depthFirst( d, f, l = 0 ){
-    f( d, l )
-    if ( d.childs ){
-        d.childs.forEach( c => depthFirst( c, f, l + 1 ) )
-    }
-}
-function parents( d, f ){
-    if ( d.parent ){
-        f( d.parent )
-        parents( d.parent, f )
-    } 
-}
-function parentsOrSelf( d, f ){
-    f( d )
-    if ( d.parent ){
-        parentsOrSelf( d.parent, f )
-    } 
-}
-function toArray( f ){
-    return function( d ){
-        let a = []
-        f( d, x => a.push( x ) )
-        return a
-    }
-}
+import { setParentAndDepth,
+         setNextAndPreviousSibling,
+         setPreviousNext,
+         depthFirst,
+         parents,
+         parentsOrSelf,
+         toArray
+       } from './childstree.js'
 //
 // specific 
 //
