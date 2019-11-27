@@ -88,7 +88,42 @@ function setCanvasDimensions( canvas, previousDimensions ) {
     canvas.height = height
 
 }
+function init_stars(){
+    const count = 100
+    const stars = new Array( count ).fill( 0 ).map( (_,i) => {
+        // evenly spaced plus random
+        const x = worldSize.x1 + ( i / count * worldSize.w )
+              + ( ( Math.random() * 2 - 1 ) * ( worldSize.w / count / 4 ) )
+        // push to top
+        const y = worldSize.y1 + Math.pow( Math.random(), 0.6 ) * worldSize.h
+        const brightness = Math.floor( Math.random() * 3 )
+        return { x, y, brightness }
+    })
+    return stars
+}
+function update_stars( stars ){
+    if (stars){
+        // change one by turn
+        let star = stars[ Math.floor( Math.random() * stars.length ) ]
+        if (star){
+            let b = star.brightness
+            if ( b === 0 ){
+                star.brightness = 1
+            } else if ( b === 2 ){
+                star.brightness = 1
+            } else {
+                if (Math.random()<0.5){
+                    star.brightness = 0
+                } else {
+                    star.brightness = 2
+                }
+            }
+        }
+    }
+}
 export function Display() {
+    
+    const stars = init_stars()
     
     const $canvas = document.createElement('canvas')
     $canvas.classList.add('game')
@@ -175,7 +210,19 @@ export function Display() {
             $context.fillStyle = 'black'//'SkyBlue'
             $context.fillRect(0,0,$canvas.width,$canvas.height)
         }
+        // stars
 
+        if (stars){
+            if (Math.random()>0.5){
+                update_stars( stars )
+            }
+            const bcolors = [ '#faff', '#a59a', '#0095' ]
+            stars.forEach( ({x,y,brightness}) => {
+                let cxy = world_to_context( x, y )
+                $context.fillStyle = bcolors[ brightness ]
+                $context.fillRect( cxy.x, cxy.y, 1,1)                
+            })
+        }
         // ground
         const ground = State.ground
         if ( ground ){

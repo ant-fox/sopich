@@ -313,15 +313,15 @@ export function Game( { tellPlayer, tellScore } ) {
             showtreecells : [],
         }
     }
-   // const BombDropAngle = [0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8]
+    // const BombDropAngle = [0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8]
     const BombDropOffset = [[0,0]]
     const MissileDropOffset = [[0,0]]
     /*
-    const NormalDirection16 = [0,1].map( r => directions16.map( (_,a) => {
-        const v =  ( a + (r?4:12) ) % directions16.length
-        console.log( a,r,directions16.length,v)
-        return v
-    })).reduce( (r,x) => Object.assign(r,x), {} )
+      const NormalDirection16 = [0,1].map( r => directions16.map( (_,a) => {
+      const v =  ( a + (r?4:12) ) % directions16.length
+      console.log( a,r,directions16.length,v)
+      return v
+      })).reduce( (r,x) => Object.assign(r,x), {} )
     */
     function normalDirection16(r,a){
         return ( a + (r?4:12) ) % directions16.length
