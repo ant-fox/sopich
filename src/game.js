@@ -52,6 +52,12 @@ export const worldSize = {
     w : 3000,
     h : 800
 }
+export const PLANE_INPUT_NAMES = [
+    'noseup','nosedown','reverse',
+    'powerup','powerdown',
+    'firebomb','firemissile'
+]
+
 /*
  *
  */
@@ -94,7 +100,7 @@ export function Game( { tellPlayer, tellScore } ) {
         }
     }
     
-    const inputs = []
+//    const inputs = []
     function init_falling_plane(){
         return {
             x : Math.floor( 100 + Math.random() * 2500 ),
@@ -203,17 +209,19 @@ export function Game( { tellPlayer, tellScore } ) {
         })
         return targets
     }
+
     function init_plane(idx){
         return {
             cs : idx%ColorSchemes.length,
             idx,
+            inputs : plane_init_inputs(),
             ttl : 300,
             inputId : undefined,
             x : 250 + idx * 250,
             y : 100,
             r : false,
             a : 0,
-            p : 2,
+            p : 2,            
             //        hitmaskf : item => Hitmasks.plane[ (item.r)?1:0 ][ item.a ],
             bombs : new Array(8).fill(0).map( (_,i) => ({
                 cs : idx%ColorSchemes.length,
@@ -282,88 +290,71 @@ export function Game( { tellPlayer, tellScore } ) {
         }
     }
 
-
-    function init_client_merged_input( plane, planeIdx ){
-        return {
-            plane,
-            planeIdx,
-            dda : 0, reverse : 0, dds : 0, firebomb : 0, firemissile :0
-        }
-    }
-    function init_client_merged_inputs(){
-        return State.planes.map( init_client_merged_input )
-    }
-
     const BombDropAngle = [0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8]
     const BombDropOffset = [[0,0]]
     function handleinputs(){
 
-        let merged_inputs = init_client_merged_inputs()
-        
-        let dda = 0
-        let reverse = 0
-        let dds = 0
-        let firebomb = 0
-        let firemissile = 0
-        while ( inputs.length ){
-            const { input, client } = inputs.shift()
-            let merged_input = merged_inputs[client]
-            if ( merged_input ) {
-                switch ( input ){
-                case 'noseup' : merged_input.dda = 1 ; break
-                case 'nosedown' : merged_input.dda = -1 ; break
-                case 'reverse' : merged_input.reverse = 1 ; break
-                case 'powerup' : merged_input.dds = 1 ; break
-                case 'powerdown' : merged_input.dds = -1 ; break
-                case 'firebomb' : merged_input.firebomb = 1 ; break
-                case 'firemissile' : merged_input.firemissile = 1 ; break
+        State.planes.forEach( plane => {
+            if ( plane.ttl >= 0 ){
+                let inputs = plane.inputs
+                
+                let dda = 0
+                let reverse = 0
+                let dds = 0
+                let firebomb = 0
+                let firemissile = 0
+
+                if ( inputs ){
+                    dda = ( (inputs.noseup)?1:0 ) + ( (inputs.nosedown)?-1:0 )
+                    dds = ( (inputs.powerup)?1:0 ) + ( (inputs.powerdown)?-1:0 )
+                    reverse =  inputs.reverse 
+                    firebomb = inputs.firebomb
+                    firemissile = inputs.firemissile
                 }
-            }
-        }
-        merged_inputs.forEach( ({plane,dda,reverse,dds,firebomb,firemissile}) => {
-            if ( plane.ttl < 0 ){
-                return
-            }
-            const controlled_plane = plane
-            const { x, y, r, a, p, bombs, missiles } = controlled_plane
-            
-            let da = dda
-            controlled_plane.a = posmod( a + da, 16 )
-            if ( reverse ){
-                controlled_plane.r = !(controlled_plane.r)
-            }
-            let ds = dds
-            controlled_plane.p = clamp( controlled_plane.p + ds, 0, 4)
-            if (firebomb){
-                let avail = available_ttl( bombs )
-                if ( avail !== bombs.length ){
+
+                const { x, y, r, a, p, bombs, missiles } = plane
+
+                plane.a = posmod( a + dda, 16 )
+                plane.p = clamp( p + dds, 0, 4)
+                if ( reverse ){
+                    plane.r = !r
+                }
+
+
+                if (firebomb){
+                    let avail = available_ttl( bombs )
+                    if ( avail !== bombs.length ){
+                        let off = BombDropOffset[ a % BombDropOffset.length]
+                        let normal = ( a + (r?4:12) ) % directions16.length 
+                        let dir = directions16[ normal ]
+                        const bomb = bombs[ avail ]
+                        bomb.x = x + off[0] + ( 16 / 2 ) - ( 8 / 2 ) + dir[0] * 8
+                        bomb.y = y + off[1] + ( 16 / 2 ) - ( 8 / 2 ) + dir[1] * 8
+                        bomb.p = clamp( p-1,1,3)
+                        bomb.ttl = 100
+                        bomb.step = 0
+                        bomb.a = a >> 1
+                    }
+                }
+                if (firemissile){
                     let off = BombDropOffset[ a % BombDropOffset.length]
                     let normal = ( a + (r?4:12) ) % directions16.length 
                     let dir = directions16[ normal ]
-                    const bomb = bombs[ avail ]
-                    bomb.x = x + off[0] + ( 16 / 2 ) - ( 8 / 2 ) + dir[0] * 8
-                    bomb.y = y + off[1] + ( 16 / 2 ) - ( 8 / 2 ) + dir[1] * 8
-                    bomb.p = clamp( p-1,1,3)
-                    bomb.ttl = 100
-                    bomb.step = 0
-                    bomb.a = a >> 1
+                    let avail = available_ttl( missiles )
+                    if ( avail !== missiles.length ){
+                        const missile = missiles[ avail ]
+                        missile.x = x + off[0] + ( 16 / 2 ) - ( 8 / 2 ) + dir[0] * 8
+                        missile.y = y + off[1] + ( 16 / 2 ) - ( 8 / 2 ) + dir[1] * 8
+                        missile.ttl = 100
+                        missile.p = 5
+                        missile.step = 0
+                        missile.a = a
+                    }
                 }
+                
+                
             }
-            if (firemissile){
-                let off = BombDropOffset[ a % BombDropOffset.length]
-                let normal = ( a + (r?4:12) ) % directions16.length 
-                let dir = directions16[ normal ]
-                let avail = available_ttl( missiles )
-                if ( avail !== missiles.length ){
-                    const missile = missiles[ avail ]
-                    missile.x = x + off[0] + ( 16 / 2 ) - ( 8 / 2 ) + dir[0] * 8
-                    missile.y = y + off[1] + ( 16 / 2 ) - ( 8 / 2 ) + dir[1] * 8
-                    missile.ttl = 100
-                    missile.p = 5
-                    missile.step = 0
-                    missile.a = a
-                }
-            }
+            plane_init_inputs( plane )
         })
     }
 
@@ -903,7 +894,10 @@ export function Game( { tellPlayer, tellScore } ) {
         
         function ia1( cp, target, maxdist ){
             //cp.undescrtu = true
-
+            
+            function pushButton( name ){
+                cp.inputs[ name ] = true
+            }
             //inputs.push( { input : 'nosedown', client : cp.idx } )
 
             let dist = Math.sqrt( Math.pow( target.x - cp.x, 2),  Math.pow( target.y - cp.y, 2) )
@@ -921,40 +915,41 @@ export function Game( { tellPlayer, tellScore } ) {
                     }
                 }
                 if ( dist > 50 ){
-                     inputs.push( { input : 'powerup', client : cp.idx } )
+                    pushButton('powerup')
                 } else  if ( dist > 25 ){
                     if ( cp.p < 3 ){
-                        inputs.push( { input : 'powerup', client : cp.idx } )
+                        pushButton('powerup')
                     }
                 } else if ( dist > 20 ) {
                     if ( cp.p > 10 ){
-                        inputs.push( { input : 'powerdown', client : cp.idx } )
-                    } 
-                    inputs.push( { input : 'nosedown', client : cp.idx } )
-                   
+                        pushButton('powerdown')
+                    }
+                    pushButton('nosedown')
                 } else {
                     if ( cp.p > 1 ){
-                        inputs.push( { input : 'powerdown', client : cp.idx } )
+                        pushButton('powerdown')
                     }
                 }
             } else {
-                inputs.push( { input : 'nosedown', client : cp.idx } )
-            }  
+                pushButton('nosedown')
+            }
             
         }
-          let cp = State.planes[ 1 ]
-      State.planes.forEach( ( p, i ) => {
+
+        let cp = State.planes[ 1 ]
+        
+        State.planes.forEach( ( p, i ) => {
             if ( p.inputId === undefined ){
              //   if ( i > 0 ){
                     // ia1( State.planes[ i ], State.planes[ i - 1 ] )
                 if ( !(i%2) ){
-                        ia1( State.planes[ i ], State.planes[ 0 ], 300)
-                    } else {
-                        ia1( State.planes[ i ], State.planes[ i - 1 ],2000 )
-                    }
-               // }
+                    ia1( State.planes[ i ], State.planes[ 0 ], 300)
+                } else {
+                    ia1( State.planes[ i ], State.planes[ i - 1 ],2000 )
+                }
             }
         })
+
       //  ia1( State.planes[ 0 ], State.planes[ State.planes.length - 1 ] )
         /*
         {
@@ -1086,6 +1081,10 @@ export function Game( { tellPlayer, tellScore } ) {
     ////
     const planeByInputId = {}
     const nameByInputId = {}
+    const players = {
+        names : () => Object.values( nameByInputId ),
+        scores : () => Object.values( planeByInputId ).map( x => x.score.total ),
+    }
     function addPlayer( inputId, name, total = 0 ){
         console.log('addPlayer', inputId, name, total )
         const plane = State.planes.find( x => x.inputId === undefined )
@@ -1098,6 +1097,7 @@ export function Game( { tellPlayer, tellScore } ) {
             plane.p = 0
             plane.score = init_score( total )
             plane.score.total = total
+            plane_init_inputs( plane )
             return true
         } else {
             return false
@@ -1111,15 +1111,34 @@ export function Game( { tellPlayer, tellScore } ) {
             delete planeByInputId[ inputId ]
             delete nameByInputId[ inputId ]
             plane.inputId = undefined
+            plane_init_inputs( plane )
         }
     }
+    function plane_init_inputs( plane = {} ){
+        let inputs = plane.inputs
+        if ( ! inputs ){
+            inputs = {}
+            plane.inputs = inputs
+        }    
+        PLANE_INPUT_NAMES.forEach( name => {
+            inputs[ name ] = false
+        })
+        return inputs
+    }
+    function plane_handle_input( plane, input ){
+        if ( plane.inputs ){
+            plane.inputs[ input ] = true
+        }
+        /*inputs.push({
+            input,
+            client : State.planes.findIndex( p => plane === p )
+        })*/
+        
+    }
     function handleInput( inputId, input ){
-        let plane  =  planeByInputId[ inputId ]
+        let plane = planeByInputId[ inputId ]
         if ( plane ){
-            inputs.push({
-                input,
-                client : State.planes.findIndex( p => plane === p )
-            })
+            plane_handle_input( plane, input )
         }        
     }
     const leaderboardskip = {
@@ -1259,10 +1278,7 @@ export function Game( { tellPlayer, tellScore } ) {
         addPlayer,
         removePlayer,
         handleInput,
-        players : {
-            names : () => Object.values( nameByInputId ),
-            scores : () => Object.values( planeByInputId ).map( x => x.score.total ),
-        }
+        players,
         
     }
 }
