@@ -1,6 +1,15 @@
 import { Dispatcher } from './dispatch.js'
 import { clamp, chainf, fsetk, defined, posmod, centerText } from './utils.js'
 import { DomControllerf , DomControllerDispatch } from './domutils.js'
+import { setParentAndDepth,
+         setNextAndPreviousSibling,
+         setPreviousNext,
+         depthFirst,
+         parents,
+         parentsOrSelf,
+         toArray
+       } from './childstree.js'
+
 
 const Definitions = chainf( [
     setParentAndDepth,
@@ -30,34 +39,14 @@ const Definitions = chainf( [
         ]},
     ]}
 )
-import { setParentAndDepth,
-         setNextAndPreviousSibling,
-         setPreviousNext,
-         depthFirst,
-         parents,
-         parentsOrSelf,
-         toArray
-       } from './childstree.js'
-//
-// specific 
-//
-function locatorString( d ){
-    return toArray( parentsOrSelf )( d )
-        .reverse()
-        .map( p => p.name.replace(/\s/g,'' ) )
-        .join('.')
-}
-function nameString( d, selected ){
-    return [
-        ( selected?'>':' '),
-        ' ',
-        d.name,
-        ( d.childs?'/':undefined)
-    ].filter( x => x ).join('')
-}
 
 //
-// rendering
+//
+// length : nb of alternative values
+// mod    : 012012 or 012222
+// real   : storable value
+// text   : label string
+//
 //
 function Choice( labels, reals = labels ){
     function length(){
@@ -136,6 +125,24 @@ function Fader( max = 9 ){
     return { text, length, mod, real }
 }
 //
+// specific 
+//
+function locatorString( d ){
+    return toArray( parentsOrSelf )( d )
+        .reverse()
+        .map( p => p.name.replace(/\s/g,'' ) )
+        .join('.')
+}
+function nameString( d, selected ){
+    return [
+        ( selected?'>':' '),
+        ' ',
+        d.name,
+        ( d.childs?'/':undefined)
+    ].filter( x => x ).join('')
+}
+
+//
 // Key Value Store
 //
 function Store( root ) {
@@ -143,7 +150,7 @@ function Store( root ) {
     let version = 1
     
     const valueChange = new Dispatcher()
-  
+    
     const valueByLocatorString = toArray( depthFirst )( root )
           .filter( x => ( x.childs === undefined ) )
           .reduce( ( r, x ) => fsetk( r, locatorString( x ), 0 ), {} )
@@ -182,6 +189,75 @@ function Store( root ) {
     
 }
 //
+// View
+//
+function MenuView( storeGet ){
+    function $buildContainer(){
+        let $div = document.createElement('pre') 
+        $div.style = 'position:fixed;display:block;color:white;z-index:25;'
+            +'width:100%;height:100%;'
+            +'background-color:black;opacity:0.8;margin:0;padding-left:1em';
+        $div.classList.add('noselect')
+        return $div
+    }
+    const $div = $buildContainer()
+    console.log($div)
+    hide()
+
+    function hide(){
+        $div.style.visibility = 'collapse'
+    }
+    function show(){
+        $div.style.visibility = 'visible'
+    }
+    function clickable( tag, d, text ){
+        return `<${tag} locator=${locatorString(d)}>${ text }</${tag}>`  
+    }
+    function valueText( p ){
+        if ( p.childs )
+            return
+        let ls = locatorString( p ) 
+        let v = storeGet( ls ) // TODO
+        if ( p.h && p.h.text ){
+            return p.h.text( v )
+        } else {
+            return v.toString()
+        }
+    }
+    function display(pointed){
+
+        let pParent = pointed.parent
+        if ( !pParent ) return
+        
+        let pParents = toArray( parents )( pointed ).reverse()
+        let dirs = pParents.map( x => clickable('span', x, x.name )).join(' > ')
+
+        let maxNameStringLength = pParent.childs
+            .map( c => nameString( c, c === pointed ) )
+            .reduce( (r,x) => Math.max( r, x.length ), 0 )
+
+        let listing = pParent.childs.map(
+            x => clickable('p',x, [
+                nameString( x, x === pointed ).padEnd( maxNameStringLength ),
+                valueText( x )
+            ].filter( defined ).join(' : ' ) )
+        ).join('')
+        $div.innerHTML = [
+            '<p>'+dirs,
+            listing
+        ].join('')
+    }
+
+
+    return {
+        $div,
+        display,
+        show,
+        hide
+    }
+}
+
+//
 // Menu
 //
 export function Menu( Definitions, store ){
@@ -194,154 +270,109 @@ export function Menu( Definitions, store ){
 
     const definitionByLocatorString = toArray( depthFirst )( state.root )
           .reduce( ( r, x ) => fsetk( r, locatorString( x ), x ), {} )
-
-    const $div = $buildContainer()
-    hide()
-    document.body.appendChild( $div )
-
     
-    function $buildContainer(){
-        let $div = document.createElement('pre') 
-        $div.style = 'position:fixed;display:block;color:white;z-index:25;'
-            +'width:100%;height:100%;'
-            +'background-color:black;opacity:0.8;margin:0;padding-left:1em';
-        $div.classList.add('noselect')
-        return $div
+    const view = new MenuView( store.get )
+    document.body.appendChild( view.$div )
+
+    function display(){
+        view.display( state.pointed )
     }
     function hide(){
+        view.hide()
         state.visible = false
-        $div.style.visibility = 'collapse'
     }
     function show(){
-        state.visible = false
         display()
-        $div.style.visibility = 'visible'
+        view.show()
+        state.visible = false
     }
-    function clickable( tag, d, text ){
-        return `<${tag} locator=${locatorString(d)}>${ text }</${tag}>`  
+    function TreeController(  storeModify ){
+        //const state = { pointed }
+
+        function modifyPointed( f, forceMod ){
+            const p = state.pointed
+            if ( p.childs )
+                return
+            storeModify( p, f, forceMod )
+        }
+        function setPointed( p ){
+            if ( p ){
+                state.pointed = p
+            }
+            check()
+        }
+        function check(){
+            let p = state.pointed
+            if ( p.parent === undefined ){
+                setPointed( p.childs[ 0 ] )
+            }
+        }
+        
+        // commands
+        function inc( forceMod ) {
+            modifyPointed( x => x + 1, forceMod )
+        }
+        function dec( forceMod ){
+            modifyPointed( x => x - 1, forceMod )
+        }
+        function parent(){
+            setPointed( state.pointed.parent )
+        }
+        function previous(){
+            setPointed( state.pointed.previous )
+        }
+        function next(){
+            setPointed( state.pointed.next )
+        }
+        function previousSibling(){
+            setPointed( state.pointed.previousSibling )
+        }
+        function nextSibling(){
+            setPointed( state.pointed.nextSibling )
+        }
+        function at(locator){
+            // point by locator,
+            // then action
+            let p = definitionByLocatorString[ locator ]
+            if ( p ){
+                setPointed( p )
+                action(true)
+            }
+        }
+        function action( forceMod ){
+            // go to first child if folder
+            // else increment
+            let p = state.pointed
+            if ( p.childs ){
+                setPointed( p.next )
+            } else {
+                inc( forceMod )
+            }
+        }
+        const commands = {
+            inc,
+            dec,
+            action,
+            at,
+            parent,
+            previousSibling,
+            nextSibling,
+            previous,
+            next,
+        }
+        return { commands }
     }
+    const treeController = new TreeController( store.modify )
     
-    function setPointed( p ){
-        state.pointed = p
-        //setDirty()
-    }
-    function check(){
-        let p = state.pointed
-        if ( p.parent === undefined ){
-            setPointed( p.childs[ 0 ] )
-        }
-    }
-    function valueText( p ){
-        if ( p.childs )
-            return
-        let ls = locatorString( p ) 
-        let v = store.get( ls )
-        if ( p.h && p.h.text ){
-            return p.h.text( v )
-        } else {
-            return v.toString()
-        }
-    }
-    function display(){
-        check()
-        let pParent = state.pointed.parent
-        let pParents = toArray( parents )( state.pointed ).reverse()
-        let dirs = pParents.map( x => clickable('span', x, x.name )).join(' > ')
-
-        let maxNameStringLength = pParent.childs
-            .map( c => nameString( c, c === state.pointed ) )
-            .reduce( (r,x) => Math.max( r, x.length ), 0 )
-
-        let listing = pParent.childs.map(
-            x => clickable('p',x, [
-                nameString( x, x === state.pointed ).padEnd( maxNameStringLength ),
-                valueText( x )
-            ].filter( defined ).join(' : ' ) )
-        ).join('')
-        $div.innerHTML = [
-            //'<p>'+locatorString( state.pointed ),
-            '<p>'+dirs,
-            listing
-        ].join('')
-    }
-    function changeValue( f, forceMod ){
-        const p = state.pointed
-        if ( p.childs )
-            return
-        store.modify( p, f, forceMod )
-    }
- 
-    // commands
-    function inc( forceMod ) {
-        changeValue( x => x + 1, forceMod )
-    }
-    function dec( forceMod ){
-        changeValue( x => x - 1, forceMod )
-    }
-    function parent(){
-        let p = state.pointed
-        if ( p.parent )
-            setPointed( p.parent )
-    }
-    function previous(){
-        let p = state.pointed
-        if ( p.previous )
-            setPointed( p.previous )
-    }
-    function next(){
-        let p = state.pointed
-        if ( p.next )
-            setPointed( p.next )
-    }
-    function previousSibling(){
-        let p = state.pointed
-        let x = p.previousSibling
-        if ( x ) setPointed( x )
-    }
-    function nextSibling(){
-        let p = state.pointed
-        let x = p.nextSibling
-        if ( x ) setPointed( x )
-    }
-    function at(locator){
-        // point by locator,
-        // then action
-        let p = definitionByLocatorString[ locator ]
-        if ( p ){
-            setPointed( p )
-            action(true)
-        }
-    }
-    function action( forceMod ){
-        // go to first child if folder
-        // else increment
-        let p = state.pointed
-        if ( p.childs ){
-            setPointed( p.next )
-        } else {
-            inc( forceMod )
-        }
-    }
-    const commands = {
-        inc,
-        dec,
-        action,
-        at,
-        parent,
-        previousSibling,
-        nextSibling,
-        previous,
-        next,
-    }
     function onInput( type, ...args ){
-        const cmd = commands[ type ]
+        const cmd = treeController.commands[ type ]
         if ( cmd ){
             cmd( ...args)
         }
         display()
     }
     return {
-        $div,
+        $div : view.$div,
         onInput,
         show,
         hide
