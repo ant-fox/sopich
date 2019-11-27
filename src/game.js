@@ -1,4 +1,17 @@
 //
+// game modes
+// - protect fort
+// evenly spaced hq along x must be protected by same color plane
+// base destruction -> -200
+// - solo battle
+// (normal count)
+// - by team
+// like protect fort but with less hq types than players
+// - invasion
+// all forts belong to A team
+// A team must destroy all opponent (n lives ?)
+// B team must destroy all building
+//
 // bird + flock  use anim
 // collision broken -> coll mask non broken ?
 // set y of ox and target at move step
@@ -17,6 +30,7 @@
 // randomize collision order
 // random sound at init
 // when missile/bomb destroys missile/bomb, last emmited wins
+// gun
 import { ground } from './ground.js'
 import { prepareHitmask, prepareBottomHitmask } from './symbols.js'
 import { Tree, CONTINUE_VISIT, STOP_VISIT } from './coll.js'
@@ -205,6 +219,16 @@ export function Game( { tellPlayer, tellScore } ) {
                 step : 0,
                 explosion : init_explosion(idx%ColorSchemes.length),
                 owner : idx,
+                destroys : ( me, other ) => {
+                    if ( other.value ){
+                        give_points( me.owner, other.value )
+                        if ( other.idx !== undefined){
+                            give_points( other.idx, -5 )
+                        } else if ( other.owner !== undefined){
+                            give_points( other.owner, -1 )
+                        }
+                    }
+                },
             })),
             missiles : new Array(16).fill(0).map( (_,i) => ({
                 cs : idx%ColorSchemes.length,
@@ -239,7 +263,7 @@ export function Game( { tellPlayer, tellScore } ) {
     function init_state(){
         return {
             ground : init_ground(),
-            planes : new Array(2).fill(0).map( (_,i) => init_plane(i) ),
+            planes : new Array(20).fill(0).map( (_,i) => init_plane(i) ),
             targets : init_targets(),
             birds : new Array(20).fill(0).map( (_,i,r) => init_bird(i,r.length) ),
             flocks : new Array(4).fill(0).map( (_,i,r) => init_flock(i,r.length) ),
@@ -713,9 +737,9 @@ export function Game( { tellPlayer, tellScore } ) {
                             if ( item1.value || item2.value ){
                                 if ( item1.destroys || item2.destroys ){
                                     if ( item2.destroys ){
-                                        console.log( (item1.destroys?'have':'no'), item1.cs,item1.value,
+                                        /*console.log( (item1.destroys?'have':'no'), item1.cs,item1.value,
                                                      '||',
-                                                     (item2.destroys?'have':'no'), item2.cs, item2.value )
+                                                     (item2.destroys?'have':'no'), item2.cs, item2.value )*/
                                         item2.destroys( item2, item1 )
                                     }
                                 }
