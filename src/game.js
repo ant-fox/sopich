@@ -219,6 +219,11 @@ export function Game( { tellPlayer, tellScore } ) {
                 destroys : ( me, other ) => {
                     if ( other.value ){
                         give_points( me.owner, other.value )
+                        if ( other.idx !== undefined){
+                            give_points( other.idx, -5 )
+                        } else if ( other.owner !== undefined){
+                            give_points( other.owner, -1 )
+                        }
                     }
                 },
                 
@@ -234,7 +239,7 @@ export function Game( { tellPlayer, tellScore } ) {
     function init_state(){
         return {
             ground : init_ground(),
-            planes : new Array(20).fill(0).map( (_,i) => init_plane(i) ),
+            planes : new Array(2).fill(0).map( (_,i) => init_plane(i) ),
             targets : init_targets(),
             birds : new Array(20).fill(0).map( (_,i,r) => init_bird(i,r.length) ),
             flocks : new Array(4).fill(0).map( (_,i,r) => init_flock(i,r.length) ),
