@@ -12,15 +12,18 @@ import { initState } from './state';
 // write your own CSS.
 //import 'bootstrap/dist/css/bootstrap.min.css';
 import './css/main.css';
+import  * as Menu from '../../menu.js'
 
 const playMenu = document.getElementById('play-menu');
 const playButton = document.getElementById('play-button');
 const usernameInput = document.getElementById('username-input');
-
+const menu = new Menu.Menu( Menu.Definitions, Menu.defaultStore )
+ 
 Promise.all([
   connect(onGameOver),
 //  downloadAssets(),
 ]).then(() => {
+    menu.start()
     playMenu.classList.remove('hidden');
     usernameInput.focus();
     playButton.onclick = () => {
@@ -35,6 +38,7 @@ Promise.all([
 }).catch(console.error);
 
 function onGameOver() {
+      menu.stop()
   stopCapturingInput();
   stopRendering();
   playMenu.classList.remove('hidden');

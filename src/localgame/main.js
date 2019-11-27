@@ -10,10 +10,16 @@ if (true){
   // menu
     const menu = new Menu.Menu( Menu.Definitions, Menu.defaultStore )
     
-    function onValueChange3( msg, type ){
+     function onValueChange3( msg, type ){
         console.log('3 message meny say','type?',type, 'msg',msg )
     }
+     function onValueChange( msg, type ){
+        console.log('! message meny say','type?',type, 'msg',msg )
+    }
     Menu.defaultStore.valueChange.addListener( onValueChange3,  'config.sound.mute' )
+    Menu.defaultStore.valueChange.addListener(
+        onValueChange,
+    )
    
     menu.start()
 //    menu.show()

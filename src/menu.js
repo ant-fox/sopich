@@ -282,7 +282,6 @@ function TreeController( pointed,  storeModify ){
             setPointed( p.childs[ 0 ] )
         }
     }
-    
     // commands
     function inc( forceMod ) {
         modifyPointed( x => x + 1, forceMod )
@@ -300,14 +299,11 @@ function TreeController( pointed,  storeModify ){
         setPointed( pointed.next )
     }
     function previousSibling(){
-        console.log('up',pointed,pointed.previousSibling)
         setPointed( pointed.previousSibling )
     }
     function nextSibling(){
         setPointed( pointed.nextSibling )
     }
-
- 
     function at(locator){
         // point by locator,
         // then action
