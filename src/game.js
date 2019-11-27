@@ -204,7 +204,6 @@ export function Game( { tellPlayer, tellScore } ) {
         }
         const targets = model.xs.map( (x,i) => {
             const as = model.tys[ i ]
-            // let y = ground[ Math.floor( x ) % ground.length ]
             return {
                 hitmaskf : Hitmaskfs.target,
                 x,as,
@@ -215,6 +214,14 @@ export function Game( { tellPlayer, tellScore } ) {
             }
         })
         return targets
+    }
+    function move_reload( reload ){
+        if ( reload.step > 0  ){
+            reload.step--
+        }
+    }
+    function arm_reload( reload ){
+        reload.step = reload.t
     }
     function init_plane(idx){
         return {
@@ -227,10 +234,13 @@ export function Game( { tellPlayer, tellScore } ) {
             inputId : undefined,
             x : 250 + idx * 250,
             y : 100,
-            r : false,
+            r : 0,
             a : 0,
             p : 2,
-            // hitmaskf : item => Hitmasks.plane[ (item.r)?1:0 ][ item.a ],
+            reload : {
+                t : 6,
+                step : 0
+            },
             bombs : new Array(8).fill(0).map( (_,i) => ({
                 cs : idx%ColorSchemes.length,
                 hitmaskf : Hitmaskfs.bomb,
@@ -252,7 +262,7 @@ export function Game( { tellPlayer, tellScore } ) {
                             give_points( other.owner, -1 )
                         }
                     }
-                },
+                },                
             })),
             missiles : new Array(16).fill(0).map( (_,i) => ({
                 cs : idx%ColorSchemes.length,
@@ -300,6 +310,47 @@ export function Game( { tellPlayer, tellScore } ) {
             showtreecells : [],
         }
     }
+   // const BombDropAngle = [0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8]
+    const BombDropOffset = [[0,0]]
+    const MissileDropOffset = [[0,0]]
+    /*
+    const NormalDirection16 = [0,1].map( r => directions16.map( (_,a) => {
+        const v =  ( a + (r?4:12) ) % directions16.length
+        console.log( a,r,directions16.length,v)
+        return v
+    })).reduce( (r,x) => Object.assign(r,x), {} )
+    */
+    function normalDirection16(r,a){
+        return ( a + (r?4:12) ) % directions16.length
+    }
+    function fire_bomb_from_plane( bomb, from ){
+        const { x, y, p, r, a } = from
+        let off = BombDropOffset[ a % BombDropOffset.length]
+        //let normal = NormalDirection16[ r * ( a + 1 )  ]
+        let normal = normalDirection16(r,a)
+        let dir = directions16[ normal ]
+        const dist = 8                        
+        bomb.x = x + off[0] + ( 16 / 2 ) - ( 8 / 2 ) + dir[0] * dist
+        bomb.y = y + off[1] + ( 16 / 2 ) - ( 8 / 2 ) + dir[1] * dist
+        bomb.p = clamp( p-2,1,2)
+        bomb.ttl = 100
+        bomb.step = 0
+        bomb.a = a >> 1
+    }
+    function fire_missile_from_plane( missile, from ){
+        const { x, y, p, r, a } = from
+        let off = MissileDropOffset[ a % MissileDropOffset.length]
+        //let normal = NormalDirection16[ r * ( a + 1 )  ]
+        let normal = normalDirection16(r,a)
+        let dir = directions16[ normal ]
+        const dist = 8                        
+        missile.x = x + off[0] + ( 16 / 2 ) - ( 8 / 2 ) + dir[0] * dist
+        missile.y = y + off[1] + ( 16 / 2 ) - ( 8 / 2 ) + dir[1] * dist
+        missile.ttl = 100
+        missile.p = 5
+        missile.step = 0
+        missile.a = a 
+    }
     function handleinputs(){
         State.planes.forEach( plane => {
             if ( plane.ttl >= 0 ){
@@ -316,42 +367,32 @@ export function Game( { tellPlayer, tellScore } ) {
                     firebomb = inputs.firebomb
                     firemissile = inputs.firemissile
                 }
-                const { x, y, r, a, p, bombs, missiles } = plane
+                const { x, y, r, a, p, bombs, missiles, reload } = plane
                 plane.a = posmod( a + dda, 16 )
                 plane.p = clamp( p + dds, 0, 4)
                 if ( reverse ){
-                    plane.r = !r
+                    plane.r = r?0:1
                 }
-                const BombDropAngle = [0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8]
-                const BombDropOffset = [[0,0]]
+              
                 if (firebomb){
-                    let avail = available_ttl( bombs )
-                    if ( avail !== bombs.length ){
-                        let off = BombDropOffset[ a % BombDropOffset.length]
-                        let normal = ( a + (r?4:12) ) % directions16.length
-                        let dir = directions16[ normal ]
-                        const bomb = bombs[ avail ]
-                        bomb.x = x + off[0] + ( 16 / 2 ) - ( 8 / 2 ) + dir[0] * 8
-                        bomb.y = y + off[1] + ( 16 / 2 ) - ( 8 / 2 ) + dir[1] * 8
-                        bomb.p = clamp( p-1,1,3)
-                        bomb.ttl = 100
-                        bomb.step = 0
-                        bomb.a = a >> 1
+                    if ( reload.step === 0 ){
+                     
+                        let avail = available_ttl( bombs )
+                        if ( avail !== bombs.length ){
+                            fire_bomb_from_plane( bombs[avail], plane )
+                            arm_reload( reload )
+                        }
+                    } else {
+                        console.log(reload.step)
                     }
                 }
                 if (firemissile){
-                    let avail = available_ttl( missiles )
-                    if ( avail !== missiles.length ){
-                        let off = BombDropOffset[ a % BombDropOffset.length]
-                        let normal = ( a + (r?4:12) ) % directions16.length
-                        let dir = directions16[ normal ]
-                        const missile = missiles[ avail ]
-                        missile.x = x + off[0] + ( 16 / 2 ) - ( 8 / 2 ) + dir[0] * 8
-                        missile.y = y + off[1] + ( 16 / 2 ) - ( 8 / 2 ) + dir[1] * 8
-                        missile.ttl = 100
-                        missile.p = 5
-                        missile.step = 0
-                        missile.a = a
+                    if ( reload.step === 0 ){
+                        let avail = available_ttl( missiles )
+                        if ( avail !== missiles.length ){
+                            fire_missile_from_plane( missiles[avail], plane )
+                            arm_reload( reload )
+                        }
                     }
                 }
             }
@@ -430,8 +471,11 @@ export function Game( { tellPlayer, tellScore } ) {
             if ( falling.ttl > 0 ){
                 falling.y -= falling.p
             }
-            ///
             move_explosion( explosion )
+            ///
+
+            move_reload( plane.reload )
+
             for ( let i = 0, l = bombs.length ; i < l ; i++ ){
                 const bomb = bombs[i]
                 if ( bomb.ttl <= 0 ){
@@ -488,6 +532,9 @@ export function Game( { tellPlayer, tellScore } ) {
             }
             bird.step++
         })
+
+        ////////////
+        
         /*
           State.targets.forEach( ox => {
           const { x } = ox
