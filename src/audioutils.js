@@ -33,16 +33,6 @@ export function waitAudioContext( checkInterval = 500 ){
 // AudioNodeOptions
 // AudioParam
 
-function creatorName( nodeName ){
-    let head = nodeName.substring(0,1).toUpperCase()
-    let tail = nodeName.substring(1)
-    return `create${ head  }${ tail }`
-}
-
-let _id = 1
-function id(){
-    return _id++
-}
 function modulePath( path ){
     return path.replace(/#\d+$/,'')
 }
@@ -66,6 +56,15 @@ export function resolvePath( o, path ){
     },o)
 }
 
+function creatorName( nodeName ){
+    let head = nodeName.substring(0,1).toUpperCase()
+    let tail = nodeName.substring(1)
+    return `create${ head  }${ tail }`
+}
+let _id = 1
+function id(){
+    return _id++
+}
 export function instanciateModule( ctx, module ){
 
     const instance = {
@@ -77,7 +76,7 @@ export function instanciateModule( ctx, module ){
         outputs : [],
         connect : undefined,
         start : undefined,
-        resolvePath : undefined,
+        get : undefined,
         connections : [],
     }
     const nodes = []
@@ -85,9 +84,13 @@ export function instanciateModule( ctx, module ){
         const desc = module.audioNodes[ handle ]
         if ( desc.node ){
             const nname = desc.node
-            const params = desc.params || []
+            const cparams = desc.cparams || []
             const fname = creatorName( nname )
-            const node = ctx[ fname  ]( ...params  )
+            const node = ctx[ fname  ]( ...cparams  )
+            const params =  desc.params || {}
+            Object.keys( params ).forEach( k => {
+                node[ k ] = params[ k ]
+            })
             instance.nodes[ handle ] = node
         } else if ( desc.module ){
             const md = desc.module
@@ -102,7 +105,7 @@ export function instanciateModule( ctx, module ){
     if ( module.inputs ){
         module.inputs.forEach( handle => {
             instance.inputs.push( instance.nodes[ handle ] ) 
-       })
+        })
     }
     instance.connect = function( dst, outputIndex, inputIndex ){
         instance.outputs.forEach( src => {
@@ -148,70 +151,66 @@ export function instanciateModule( ctx, module ){
         })
     }
     instance.stop = () => instance.start( true )
-    instance.resolvePath = path => resolvePath( instance, path )
+    instance.get = path => resolvePath( instance, path )
     return instance
 
 }
 
 /////////////
 /////////////
+function example(){
+    // def
+    const mixer2module = {
+        audioNodes : {
+            in1 : { node : 'gain' },
+            in2 : { node : 'gain' }
+        },
+        outputs : ['in1','in2'],
+    }
+    const module1 = {
+        audioNodes : {
+            osc1 : { node : 'oscillator', params : { type : 'square' } },
+            comp1 : { node : 'dynamicsCompressor' },
+            gain1 : { node : 'gain' }
+        },
+        connections : [
+            ['osc1','comp1','gain1'],
+        ],
+        outputs : ['gain1'],
+    }
+    const recmodule = {
+        audioNodes : {
+            odg1 : { module : module1 },
+            odg2 : { module : module1 },
+            m : { module : mixer2module }
+        },
+        connections : [
+            ['odg1','m.in1'],
+            ['odg2','m.in2']
+        ],
+        outputs : ['m']
+    }
 
-// def
-const mixer2module = {
-    audioNodes : {
-        in1 : { node : 'gain' },
-        in2 : { node : 'gain' }
-    },
-    outputs : ['in1','in2'],
-}
-const module1 = {
-    name : 'module1',
-    outputs : ['gain1'],
-    audioNodes : {
-        osc1 : { node : 'oscillator' },
-        comp1 : { node : 'dynamicsCompressor' },
-        gain1 : { node : 'gain' }
-    },
-    connections : [
-        ['osc1#0','comp1','gain1'],
-    ]
-}
-const recmodule = {
-    name : 'recmodule',
-    audioNodes : {
-        odg1 : { module : module1 },
-        odg2 : { module : module1 },
-        m : { module : mixer2module }
-    },
-    connections : [
-        ['odg1','m.in1'],
-        ['odg2','m.in2']
-    ],
-    outputs : ['m']
-}
-
-waitAudioContext()
-    .then( ctx => {
-        const whole = instanciateModule( ctx, recmodule )
-               
-        console.log('whole',whole)
-
-        whole.connect( ctx.destination )
-        whole.start()
-
-        const in1 = resolvePath( whole, 'm.in1' )
-        const in2 = whole.resolvePath( 'm.in2' )
-        console.log('path in1',in1.gain.setValueAtTime(0,ctx.currentTime))
-        console.log('path in2',in2.gain.setValueAtTime(0.2,ctx.currentTime))
-        
-        setTimeout( () => {
-            whole.stop()
-        },500)
-
-        /*
-          const path = 'odg1.comp1'
-          console.log('for path', path, ':',resolvePath( whole, path ))
-        */
+    waitAudioContext()
+        .then( ctx => {
+            const synth = instanciateModule( ctx, recmodule )
             
-    })
+            console.log('synth',synth)
 
+            synth.connect( ctx.destination )
+            synth.start()
+
+            const in1 = resolvePath( synth, 'm.in1' )
+            const in2 = synth.get( 'm.in2' )
+            console.log('path in1',in1.gain.setValueAtTime(0.5,ctx.currentTime))
+            console.log('path in2',in2.gain.setValueAtTime(0,ctx.currentTime))
+            synth.get( 'odg1.osc1' ).type = 'square'
+            synth.get( 'odg2.osc1' ).type = 'triangle'
+            setTimeout( () => {
+                synth.stop()
+            },500)
+
+            
+        })
+
+}
