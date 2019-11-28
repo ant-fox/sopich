@@ -194,23 +194,22 @@ function example(){
     waitAudioContext()
         .then( ctx => {
             const synth = instanciateModule( ctx, recmodule )
+
             
-            console.log('synth',synth)
-
-            synth.connect( ctx.destination )
-            synth.start()
-
             const in1 = resolvePath( synth, 'm.in1' )
             const in2 = synth.get( 'm.in2' )
             console.log('path in1',in1.gain.setValueAtTime(0.5,ctx.currentTime))
             console.log('path in2',in2.gain.setValueAtTime(0,ctx.currentTime))
             synth.get( 'odg1.osc1' ).type = 'square'
             synth.get( 'odg2.osc1' ).type = 'triangle'
+
+            synth.connect( ctx.destination )
+            synth.start()
             setTimeout( () => {
                 synth.stop()
             },500)
 
-            
+            console.log('synth',synth)
         })
 
 }
