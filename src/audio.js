@@ -1,31 +1,7 @@
-//
-function waitAudioContext( checkInterval = 500 ){
+import { waitAudioContext, } from './audioutils.js'
 
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    
-    return new Promise( resolve => {        
-        
-        const ctx = new AudioContext();
-        ctx.onstatechange = running
-        function running(){
-            if ( ctx.state === 'running' ){
-                ctx.onstatechange = undefined
-                console.info('Audio Context is now running')
-                resolve( ctx )
-            }
-        }
-        function check(){
-            if ( ctx.state !== 'running' ){
-                ctx.resume()
-                setTimeout( check, checkInterval )
-            }
-        }
-        check()
-    })
-}
-
+// wave-tables
 const GOOD = ["Wurlitzer","Brit_Blues"]
-
 function nameToUrl( name ){
     const url = ['','wave-tables',name].join('/')
     return url
@@ -205,7 +181,7 @@ export function Audio(){
         .then( ([ wavetables, ctx ]) => {
             synth = new Synth( ctx, wavetables )
             if ( ON.state ){
-                synth.start()
+                //synth.start()
             }
             
             window.addEventListener('mousemove',e => {
@@ -267,32 +243,11 @@ export function Audio(){
                l.forEach( x => {
                    if ( x.justFired ){
                        const e = x.justFired
-                       treatEvent( e, () => console.log('--', e ) )
+                       treatEvent( e, () => 0/*sole.log('--', e ) */)
                    }
                })
            })
-        /*
-        if ( State.bombs ){
-            State.bombs.forEach( x => {
-            })
-        }
-        if ( State.missiles ){
-            State.missiles.forEach( x => {
-                if ( x.justFired ){
-                    const e = x.justFired
-                    treatEvent( e, () => console.log('--', e ) )
-                }
-            })
-        }
-        if ( State.explosions ){
-            State.explosions.forEach( x => {
-                if ( x.justFired ){
-                    const e = x.justFired
-                    treatEvent( e, () => console.log('--', e ) )
-                }
-            })
-        }
-*/
+     
         if ( !synth ){
             return 
         }
@@ -394,6 +349,7 @@ export function Audio(){
         }
         
     }
+
     return {
         setState : mix,
         start,
