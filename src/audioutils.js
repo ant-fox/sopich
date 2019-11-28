@@ -51,7 +51,7 @@ const module1 = {
         gain1 : { node : 'gain' }
     },
     connections : [
-        ['osc1','comp1','gain1'],
+        ['osc1#0','comp1','gain1'],
     ]
 }
 const recmodule = {
@@ -67,6 +67,8 @@ const recmodule = {
     ],
     outputs : ['m']
 }
+
+// synth helpers
 function creatorName( nodeName ){
     let head = nodeName.substring(0,1).toUpperCase()
     let tail = nodeName.substring(1)
@@ -77,19 +79,30 @@ let _id = 1
 function id(){
     return _id++
 }
+function modulePath( path ){
+    return path.replace(/#\d+$/,'')
+}
+function portPath( path ){
+    if ( path ){
+        let idx = path.lastIndexOf( '#' )
+        if ( idx >= 0 ){
+            return path.substring( idx )
+        }
+    }
+} 
 function resolvePath( o, path ){
-    // console.log('require path',path,'on',o)
     if ( ! path ) return
     if ( ! o ) return
-    const oo = path.split('.').reduce( (r,x,i) => {
-        return r.nodes[ x ]
+    return modulePath( path ).split('.').reduce( (r,x,i) => {
+        if ( r && r.nodes && r.nodes[ x ] ){
+            return r.nodes[ x ]
+        } else {
+            throw new Error(`bad path ${ path } : ${ x }`)
+        }
     },o)
-    // console.log('found for path',path,oo)
-    return oo
 }
 
 function instanciateModule( ctx, module, name ){
-    console.log('= instance', module.name )
 
     const instance = {
         isModule : true,
@@ -99,11 +112,11 @@ function instanciateModule( ctx, module, name ){
         inputs : [],
         outputs : [],
         connect : undefined,
-        start : undefined
+        start : undefined,
+        connections : [],
     }
     const nodes = []
     for ( let handle in module.audioNodes ){
-        console.log('*', module.name, 'has handle',handle)
         const desc = module.audioNodes[ handle ]
         if ( desc.node ){
             const nname = desc.node
@@ -111,95 +124,83 @@ function instanciateModule( ctx, module, name ){
             const node = ctx[ fname  ]()
             instance.nodes[ handle ] = node
         } else if ( desc.module ){
-            console.log('~> going to', handle )
             const md = desc.module
             instance.nodes[ handle ] = instanciateModule( ctx, md )
         }
     }
-    console.log('~> back at', module.name )
     if ( module.outputs ){
         module.outputs.forEach( handle => {
             instance.outputs.push( instance.nodes[ handle ] )
-            console.log('>output',handle)
         })
     }
     if ( module.inputs ){
         module.inputs.forEach( handle => {
             instance.inputs.push( instance.nodes[ handle ] ) 
-            console.log('>input',handle)
        })
     }
-    instance.connect = function( dst ){
+    instance.connect = function( dst, outputIndex, inputIndex ){
         instance.outputs.forEach( src => {
             if ( dst.isModule ){
                 // the destination is a module
                 dst.inputs.forEach( dst => {
-                    src.connect( dst )
+                    src.connect( dst, outputIndex, inputIndex )                    
                 })
             } else {
                 // the destination is a web audio node
-                src.connect( dst )
+                src.connect( dst, outputIndex, inputIndex )
             }
         })
         return dst
     }
     if ( module.connections ){
         module.connections.forEach( cons => {
-            console.log('setting connexions for',module.name,':',cons)
             if ( cons ) {
                 cons.reduce( (r,x) => {
                     if ( r !== undefined ){
-                        const src = resolvePath(instance,r)
-                        const dst = resolvePath(instance,x)
-                        console.log('<-> connect',{src,dst})
-                        src.connect( dst )
+                        const src = resolvePath( instance, r )
+                        const dst = resolvePath( instance, x )
+                        const srcPort = portPath( r )
+                        const dstPort = portPath( x )
+                        instance.connections.push( {
+                            src : { path : r, instance : src },
+                            dst : { path : x, instance : dst },
+                        } )
+                        src.connect( dst, srcPort, dstPort )
                     }
                     return x
                 },undefined)
             }
         })
     }
-    instance.start = function(){
+    instance.start = function( stop = false ){
         Object.values( instance.nodes ).forEach( node => {
-            if ( node.isModule ){
-                console.log('start module',node)
+            if ( stop ){
+                if ( node.stop ) node.stop()
             } else {
-                console.log('start WEBAUDIO module',node)
+                if ( node.start ) node.start()
             }
-            if ( node.start ) node.start()
         })
     }
+    instance.stop = () => instance.start( true )
     return instance
 
 }
 waitAudioContext()
     .then( ctx => {
-        /*
-        const mod1 = instanciateModule( ctx,  module1 )
-        {
-            mod1.nodes.osc1.type = 'square'
-            mod1.start()
-        }
-        const mod2 = instanciateModule( ctx,  module1 )
-        {
-            mod2.nodes.osc1.type = 'sinus'
-            mod2.start()
-        }
-        const mod3 = instanciateModule( ctx, mixer2module )
-        mod1.connect( mod3.nodes.in1 )
-        mod2.connect( mod3.nodes.in2 )
-        mod3.connect(ctx.destination)
-        
-        
-        setTimeout( () => {
-            mod1.nodes.osc1.stop()
-            mod2.nodes.osc1.stop()
-        },200)
-        */
         const whole = instanciateModule( ctx, recmodule )
+               
+        console.log('whole',whole)
+
         whole.connect( ctx.destination )
         whole.start()
-        console.log(whole)
-        
+        setTimeout( () => {
+            whole.stop()
+        },500)
+
+        /*
+          const path = 'odg1.comp1'
+          console.log('for path', path, ':',resolvePath( whole, path ))
+        */
+            
     })
 
