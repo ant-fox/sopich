@@ -88,6 +88,8 @@ function setCanvasDimensions( canvas, previousDimensions ) {
     canvas.height = height
 
 }
+
+// fixed points needed when the ground is not visible
 function init_stars(){
     const count = 100
     const stars = new Array( count ).fill( 0 ).map( (_,i) => {

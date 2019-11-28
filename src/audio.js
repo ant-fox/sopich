@@ -1,5 +1,5 @@
 //
-function waitAudioContext(){
+function waitAudioContext( checkInterval = 500 ){
 
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     
@@ -10,14 +10,14 @@ function waitAudioContext(){
         function running(){
             if ( ctx.state === 'running' ){
                 ctx.onstatechange = undefined
-                console.info('Audio Context is running')
+                console.info('Audio Context is now running')
                 resolve( ctx )
             }
         }
         function check(){
             if ( ctx.state !== 'running' ){
                 ctx.resume()
-                setTimeout( check, 500 )
+                setTimeout( check, checkInterval )
             }
         }
         check()
@@ -30,9 +30,6 @@ function nameToUrl( name ){
     const url = ['','wave-tables',name].join('/')
     return url
 }
-// let bad = []  // 52
-// let good = [] // 53
-// console.log('NNN',NAMES) // 105
 function fetchWaveTable( url ){
     return fetch( url )
         .then( x => x.text() )
@@ -255,7 +252,47 @@ export function Audio(){
             synth.stop()            
         }
     }
+    let lastTreatedEventNum = -1
+    function treatEvent( e, f ){
+        if ( !e ) return
+        if ( e.num > lastTreatedEventNum ){            
+            f()
+            lastTreatedEventNum = e.num
+        }
+    }
     function mix( State ){
+        ;[ State.bombs,
+           State.missiles,
+           State.explosions ].forEach( l => {
+               l.forEach( x => {
+                   if ( x.justFired ){
+                       const e = x.justFired
+                       treatEvent( e, () => console.log('--', e ) )
+                   }
+               })
+           })
+        /*
+        if ( State.bombs ){
+            State.bombs.forEach( x => {
+            })
+        }
+        if ( State.missiles ){
+            State.missiles.forEach( x => {
+                if ( x.justFired ){
+                    const e = x.justFired
+                    treatEvent( e, () => console.log('--', e ) )
+                }
+            })
+        }
+        if ( State.explosions ){
+            State.explosions.forEach( x => {
+                if ( x.justFired ){
+                    const e = x.justFired
+                    treatEvent( e, () => console.log('--', e ) )
+                }
+            })
+        }
+*/
         if ( !synth ){
             return 
         }

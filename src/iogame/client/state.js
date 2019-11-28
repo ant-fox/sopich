@@ -14,9 +14,28 @@ export function initState() {
     gameStart = 0;
     firstServerTimestamp = 0;
 }
+/*function saveOneTimeEvents( update ){
+    oneTimeEvents.length = 0
+    if ( !update) return
+    if ( update.bombs ){
+        update.bombs.forEach( x => {
+            if ( x.justFired ){
+                oneTimeEvents.push( x )
+                //console.log('bomb')
+            }
+        })
+        update.missiles.forEach( x => {
+            if ( x.justFired ){
+                oneTimeEvents.push( x )
+            }
+        })
+    }               
 
+}*/
 export function processGameUpdate(update) {
 
+   // saveOneTimeEvents( update )
+    
     if (!firstServerTimestamp) {
         firstServerTimestamp = update.t;
         gameStart = Date.now();
@@ -59,7 +78,8 @@ export function getCurrentState() {
     // If base is the most recent update we have, use its state.
     // Otherwise, interpolate between its state and the state of (base + 1).
     if (base < 0 || base === gameUpdates.length - 1) {
-        return gameUpdates[gameUpdates.length - 1]
+        const update = gameUpdates[gameUpdates.length - 1]
+        return update
         
     } else {
         const baseUpdate = gameUpdates[base];
@@ -102,14 +122,17 @@ function interpolateState( s1, s2, ratio ){
                         let vsk1 = s1[ k2 ][ vi2 ]
                         if ( vsk1 ){
                             //if ( ( vsk1.ttl === undefined ) || ( vsk1.ttl >= 0 ) ){
-                                if ( (item.x!==undefined) && (item.y!==undefined) ){
-                                    item.x = linearInterpolation( vsk1.x, vsk2.x, ratio )
-                                    item.y = linearInterpolation( vsk1.y, vsk2.y, ratio )                                
-                                }
-                                if ( (item.a!==undefined) && (item.a!==undefined) ){
-                                    item.a = a816Interpolation( vsk1.a, vsk2.a, ratio )
-                                }
-                        //}
+                            if ( (item.x!==undefined) && (item.y!==undefined) ){
+                                item.x = linearInterpolation( vsk1.x, vsk2.x, ratio )
+                                item.y = linearInterpolation( vsk1.y, vsk2.y, ratio )                                
+                            }
+                            if ( (item.a!==undefined) ){
+                                item.a = a816Interpolation( vsk1.a, vsk2.a, ratio )
+                            }
+                            if ( vsk1.justFired ){
+                                item.justFired = vsk1.justFired
+                            }
+                            item.justFired = item.justFired || vsk1.justFired
                         }
                     }
                     return item
