@@ -27,48 +27,12 @@ export function waitAudioContext( checkInterval = 500 ){
     })
 }
 
+// synth helpers
+
 // introsp ?
 // AudioNodeOptions
 // AudioParam
 
-const mixer2module = {
-    name : 'mixer2module',
-    audioNodes : {
-        in1 : { node : 'gain' },
-        in2 : { node : 'gain' }
-    },
-    outputs : ['in1','in2'],
-    connections : []
-}
-// def
-const module1 = {
-    name : 'module1',
-//    input : ['osc1'],
-    outputs : ['gain1'],
-    audioNodes : {
-        osc1 : { node : 'oscillator' },
-        comp1 : { node : 'dynamicsCompressor' },
-        gain1 : { node : 'gain' }
-    },
-    connections : [
-        ['osc1#0','comp1','gain1'],
-    ]
-}
-const recmodule = {
-    name : 'recmodule',
-    audioNodes : {
-        odg1 : { module : module1 },
-        odg2 : { module : module1 },
-        m : { module : mixer2module }
-    },
-    connections : [
-        ['odg1','m.in1'],
-        ['odg2','m.in2']
-    ],
-    outputs : ['m']
-}
-
-// synth helpers
 function creatorName( nodeName ){
     let head = nodeName.substring(0,1).toUpperCase()
     let tail = nodeName.substring(1)
@@ -82,7 +46,7 @@ function id(){
 function modulePath( path ){
     return path.replace(/#\d+$/,'')
 }
-function portPath( path ){
+export function portPath( path ){
     if ( path ){
         let idx = path.lastIndexOf( '#' )
         if ( idx >= 0 ){
@@ -90,7 +54,7 @@ function portPath( path ){
         }
     }
 } 
-function resolvePath( o, path ){
+export function resolvePath( o, path ){
     if ( ! path ) return
     if ( ! o ) return
     return modulePath( path ).split('.').reduce( (r,x,i) => {
@@ -102,7 +66,7 @@ function resolvePath( o, path ){
     },o)
 }
 
-function instanciateModule( ctx, module, name ){
+export function instanciateModule( ctx, module ){
 
     const instance = {
         isModule : true,
@@ -113,6 +77,7 @@ function instanciateModule( ctx, module, name ){
         outputs : [],
         connect : undefined,
         start : undefined,
+        resolvePath : undefined,
         connections : [],
     }
     const nodes = []
@@ -120,8 +85,9 @@ function instanciateModule( ctx, module, name ){
         const desc = module.audioNodes[ handle ]
         if ( desc.node ){
             const nname = desc.node
+            const params = desc.params || []
             const fname = creatorName( nname )
-            const node = ctx[ fname  ]()
+            const node = ctx[ fname  ]( ...params  )
             instance.nodes[ handle ] = node
         } else if ( desc.module ){
             const md = desc.module
@@ -182,9 +148,48 @@ function instanciateModule( ctx, module, name ){
         })
     }
     instance.stop = () => instance.start( true )
+    instance.resolvePath = path => resolvePath( instance, path )
     return instance
 
 }
+
+/////////////
+/////////////
+
+// def
+const mixer2module = {
+    audioNodes : {
+        in1 : { node : 'gain' },
+        in2 : { node : 'gain' }
+    },
+    outputs : ['in1','in2'],
+}
+const module1 = {
+    name : 'module1',
+    outputs : ['gain1'],
+    audioNodes : {
+        osc1 : { node : 'oscillator' },
+        comp1 : { node : 'dynamicsCompressor' },
+        gain1 : { node : 'gain' }
+    },
+    connections : [
+        ['osc1#0','comp1','gain1'],
+    ]
+}
+const recmodule = {
+    name : 'recmodule',
+    audioNodes : {
+        odg1 : { module : module1 },
+        odg2 : { module : module1 },
+        m : { module : mixer2module }
+    },
+    connections : [
+        ['odg1','m.in1'],
+        ['odg2','m.in2']
+    ],
+    outputs : ['m']
+}
+
 waitAudioContext()
     .then( ctx => {
         const whole = instanciateModule( ctx, recmodule )
@@ -193,6 +198,12 @@ waitAudioContext()
 
         whole.connect( ctx.destination )
         whole.start()
+
+        const in1 = resolvePath( whole, 'm.in1' )
+        const in2 = whole.resolvePath( 'm.in2' )
+        console.log('path in1',in1.gain.setValueAtTime(0,ctx.currentTime))
+        console.log('path in2',in2.gain.setValueAtTime(0.2,ctx.currentTime))
+        
         setTimeout( () => {
             whole.stop()
         },500)
