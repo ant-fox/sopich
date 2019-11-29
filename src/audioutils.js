@@ -71,30 +71,34 @@ function getConnectionPairs( module ){
                 return x
             },undefined)
         })
-        return pairs;
     }
+    return pairs;
 }
-function getWanOutputs( src, audioNodes, modules, accum = [] ){
-    if ( audioNodes[ src ] ){
+function getWanOutputs( src, audioNodes, audioParams, modules, accum = [] ){
+    if ( audioParams[ src ] ){
+        accum.push( src )    
+    } else if ( audioNodes[ src ] ){
         accum.push( src )    
     } else {
         const module = modules[ src ]
         if ( module &&  module.outputs ){
             module.outputs.forEach(
-                x => getWanOutputs( [src,x].filter( x => x ).join('.'), audioNodes, modules, accum )
+                x => getWanOutputs( [src,x].filter( x => x ).join('.'), audioNodes, audioParams, modules, accum )
             )
         }
     }
     return accum
 }
-function getWanInputs( src, audioNodes, modules, accum = [] ){
-    if ( audioNodes[ src ] ){
+function getWanInputs( src, audioNodes, audioParams, modules, accum = [] ){
+      if ( audioParams[ src ] ){
+        accum.push( src )    
+    } else if ( audioNodes[ src ] ){
         accum.push( src )    
     } else {
         const module = modules[ src ]
         if ( module &&  module.inputs ){
             module.inputs.forEach(
-                x => getWanInputs( [src,x].filter( x => x ).join('.'), audioNodes, modules, accum )
+                x => getWanInputs( [src,x].filter( x => x ).join('.'), audioNodes, audioParams, modules, accum )
             )
         }
     }
@@ -139,13 +143,17 @@ export function instanciateModule( ctx, module ){
         }        
     })
     connections.forEach( ( { src, dst } ) => {
-        const wansrc = getWanOutputs( src, waNodes, moduleNodes )
-        const wandst = getWanInputs( dst, waNodes, moduleNodes )
+        const wansrc = getWanOutputs( src, waNodes, waParams, moduleNodes )
+        const wandst = getWanInputs( dst, waNodes, waParams, moduleNodes )
         wansrc.forEach( s => wandst.forEach( d => waConnections.push( [s,d] ) ) )
     })
     function doInnerConnections(){
         waConnections.forEach( ([src,dst]) => {
-            waNodes[ src ].connect( waNodes[ dst ] )
+            if ( waNodes[ dst ] ){
+                waNodes[ src ].connect( waNodes[ dst ] )
+            } else {
+                waNodes[ src ].connect( waParams[ dst ] )
+            }
         })
     }
     function doStart(){
@@ -174,13 +182,36 @@ export function instanciateModule( ctx, module ){
 
 /////////////
 /////////////
-async function example(  ){
+async function examples(  ){
 
     const [ wavetable, ctx ] = await Promise.all( [
         fetchWaveTable('/wave-tables/Wurlitzer'),
         waitAudioContext()
     ])
-    
+    function example2(){
+
+        const model = {
+            nodes : {
+                osc1 : { node : 'oscillator' },
+                osc2 : { node : 'oscillator' },
+                gain : { node : 'gain' },
+            },
+            connections : [
+                ['osc1','gain'],
+                ['osc2','gain/gain'],
+            ]
+        }
+        let m = instanciateModule( ctx, model )
+        m.audioNodes['gain'].connect( ctx.destination )
+        console.log( m )
+        setTimeout( () => {
+            m.audioNodes['gain'].disconnect( ctx.destination )
+        },1000)
+        m.audioParam('osc1/frequency').value = 500
+        m.audioParam('osc2/frequency').value = 20
+        m.start()
+    }
+    function example1(){
     function monoWhiteNoiseBuffer( duration ){
         const bufferSize = ctx.sampleRate * duration
         const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
@@ -273,7 +304,8 @@ async function example(  ){
     
     // var AudioParam = AudioParam.cancelScheduledValues(startTime)
     // var audioParam = AudioParam.cancelAndHoldAtTime(cancelTime)
-
+    }
+    example2()
 }
 
 export function fetchWaveTable( url ){
@@ -289,4 +321,4 @@ export function fetchWaveTable( url ){
 }
 
 
-example()
+examples()
