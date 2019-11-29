@@ -113,7 +113,7 @@ function walkModule( module, f, path = [] ){
         })
     }
 }
-function instanciateModule( ctx, module ){
+export function instanciateModule( ctx, module ){
     const waNodes = {}
     const waParams = {}
     const moduleNodes = {}
@@ -174,8 +174,13 @@ function instanciateModule( ctx, module ){
 
 /////////////
 /////////////
-function example( ctx, wavetable ){
+async function example(  ){
 
+    const [ wavetable, ctx ] = await Promise.all( [
+        fetchWaveTable('/wave-tables/Wurlitzer'),
+        waitAudioContext()
+    ])
+    
     function monoWhiteNoiseBuffer( duration ){
         const bufferSize = ctx.sampleRate * duration
         const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
@@ -254,6 +259,8 @@ function example( ctx, wavetable ){
     m.start()
     console.log( Object.keys( m.audioParams ).join("\n") )
     m.audioParam('compression.post/gain').linearRampToValueAtTime(0, ctx.currentTime + 5)
+    m.audioParam('noise.bandpass/Q').linearRampToValueAtTime(0, ctx.currentTime + 5)
+    m.audioParam('noise.bandpass/frequency').linearRampToValueAtTime(4000, ctx.currentTime + 5)
     
     // occurs between previous scheduled event and <endTime>
     // var AudioParam = AudioParam.linearRampToValueAtTime(value, endTime)
@@ -269,13 +276,7 @@ function example( ctx, wavetable ){
 
 }
 
-/**/
-const GOOD = ["Wurlitzer","Brit_Blues"]
-function nameToUrl( name ){
-    const url = ['','wave-tables',name].join('/')
-    return url
-}
-function fetchWaveTable( url ){
+export function fetchWaveTable( url ){
     return fetch( url )
         .then( x => x.text() )
         .then( x => x.replace(/\s/g,'')
@@ -286,17 +287,6 @@ function fetchWaveTable( url ){
         .then( JSON.parse )
         .catch( x => console.error( 'bad wavetable', url ) )
 }
-function fetchWaveTables(){
-    return Promise
-        .all( GOOD.map( nameToUrl  ).map( fetchWaveTable ) )
-        .then( all => all.reduce( (r,x,i) => {
-            r[ GOOD[ i ] ] = x
-            return r
-        },{}) )
-}
-/**/
-Promise
-    .all( [ fetchWaveTables(),  waitAudioContext() ] )
-    .then( ([ wavetables, ctx ]) => {
-        example( ctx, wavetables.Wurlitzer )
-    })
+
+
+example()
