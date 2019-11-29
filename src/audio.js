@@ -95,7 +95,8 @@ function Synth( ctx, wavetables ){
     
     function periodicWaveOscillatorGain( name ){
         const wavetable = wavetables[ name ]
-        const wave = ctx.createPeriodicWave(new Float32Array(wavetable.real), new Float32Array(wavetable.imag));
+        const wave = ctx.createPeriodicWave(new Float32Array(wavetable.real),
+                                            new Float32Array(wavetable.imag));
         const osc = ctx.createOscillator();
         osc.frequency.setValueAtTime( 0.0, ctx.currentTime )
         osc.setPeriodicWave(wave);

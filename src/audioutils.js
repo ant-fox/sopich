@@ -29,31 +29,9 @@ export function waitAudioContext( checkInterval = 500 ){
 
 // synth helpers
 
-// introsp ?
-// AudioNodeOptions
-// AudioParam
-
-function modulePath( path ){
-    return path.replace(/#\d+$/,'')
-}
-export function portPath( path ){
-    if ( path ){
-        let idx = path.lastIndexOf( '#' )
-        if ( idx >= 0 ){
-            return path.substring( idx )
-        }
-    }
-} 
-export function resolvePath( o, path ){
-    if ( ! path ) return
-    if ( ! o ) return
-    return modulePath( path ).split('.').reduce( (r,x,i) => {
-        if ( r && r.nodes && r.nodes[ x ] ){
-            return r.nodes[ x ]
-        } else {
-            throw new Error(`bad path ${ path } : ${ x }`)
-        }
-    },o)
+let _id = 1
+function id(){
+    return _id++
 }
 
 function creatorName( nodeName ){
@@ -61,155 +39,264 @@ function creatorName( nodeName ){
     let tail = nodeName.substring(1)
     return `create${ head  }${ tail }`
 }
-let _id = 1
-function id(){
-    return _id++
+function createWebAudioNode( ctx, { node, c = [], p = {}, f } ){
+    // create with optional parameters
+    const waNode = ctx[ creatorName( node )  ]( ...c  )
+    // set attributes
+    Object.keys( p ).forEach( k => { waNode[ k ] = p[ k ] } )
+    // apply custom f
+    if ( f ){ f( waNode ) }
+    return waNode
 }
-export function instanciateModule( ctx, module ){
-
-    const instance = {
-        isModule : true,
-        model : module,
-        id : id(),
-        nodes : [],
-        inputs : [],
-        outputs : [],
-        connect : undefined,
-        start : undefined,
-        get : undefined,
-        connections : [],
-    }
-    const nodes = []
-    for ( let handle in module.audioNodes ){
-        const desc = module.audioNodes[ handle ]
-        if ( desc.node ){
-            const nname = desc.node
-            const cparams = desc.cparams || []
-            const fname = creatorName( nname )
-            const node = ctx[ fname  ]( ...cparams  )
-            const params =  desc.params || {}
-            Object.keys( params ).forEach( k => {
-                node[ k ] = params[ k ]
-            })
-            instance.nodes[ handle ] = node
-        } else if ( desc.module ){
-            const md = desc.module
-            instance.nodes[ handle ] = instanciateModule( ctx, md )
+function getWebAudioNodeAudioParams( wan ){
+    // inspect wan properties for AudioParams
+    const waps = {}
+    for ( let propname in wan ){
+        const maybeAp = wan[propname]
+        if ( maybeAp instanceof AudioParam ){
+            waps[ propname ] = maybeAp
         }
     }
-    if ( module.outputs ){
-        module.outputs.forEach( handle => {
-            instance.outputs.push( instance.nodes[ handle ] )
-        })
-    }
-    if ( module.inputs ){
-        module.inputs.forEach( handle => {
-            instance.inputs.push( instance.nodes[ handle ] ) 
-        })
-    }
-    instance.connect = function( dst, outputIndex, inputIndex ){
-        instance.outputs.forEach( src => {
-            if ( dst.isModule ){
-                // the destination is a module
-                dst.inputs.forEach( dst => {
-                    src.connect( dst, outputIndex, inputIndex )                    
-                })
-            } else {
-                // the destination is a web audio node
-                src.connect( dst, outputIndex, inputIndex )
-            }
-        })
-        return dst
-    }
+    return waps
+}
+function getConnectionPairs( module ){
+    // [ [a,b,c], [d,e] ] -> [a,b],[b,c],[d,e]
+    const pairs = []
     if ( module.connections ){
-        module.connections.forEach( cons => {
-            if ( cons ) {
-                cons.reduce( (r,x) => {
-                    if ( r !== undefined ){
-                        const src = resolvePath( instance, r )
-                        const dst = resolvePath( instance, x )
-                        const srcPort = portPath( r )
-                        const dstPort = portPath( x )
-                        instance.connections.push( {
-                            src : { path : r, instance : src },
-                            dst : { path : x, instance : dst },
-                        } )
-                        src.connect( dst, srcPort, dstPort )
-                    }
-                    return x
-                },undefined)
-            }
+        module.connections.filter( numplet => numplet.length > 1 ).forEach( nuplet => {
+            nuplet.reduce( (r,x) => {
+                if ( r !== undefined ){
+                    pairs.push([r,x])
+                }
+                return x
+            },undefined)
         })
+        return pairs;
     }
-    instance.start = function( stop = false ){
-        Object.values( instance.nodes ).forEach( node => {
-            if ( stop ){
-                if ( node.stop ) node.stop()
+}
+function getWanOutputs( src, audioNodes, modules, accum = [] ){
+    if ( audioNodes[ src ] ){
+        accum.push( src )    
+    } else {
+        const module = modules[ src ]
+        if ( module &&  module.outputs ){
+            module.outputs.forEach(
+                x => getWanOutputs( [src,x].filter( x => x ).join('.'), audioNodes, modules, accum )
+            )
+        }
+    }
+    return accum
+}
+function getWanInputs( src, audioNodes, modules, accum = [] ){
+    if ( audioNodes[ src ] ){
+        accum.push( src )    
+    } else {
+        const module = modules[ src ]
+        if ( module &&  module.inputs ){
+            module.inputs.forEach(
+                x => getWanInputs( [src,x].filter( x => x ).join('.'), audioNodes, modules, accum )
+            )
+        }
+    }
+    return accum
+}
+function walkModule( module, f, path = [] ){
+    f(module, path)
+    if ( module.nodes ){
+        Object.entries( module.nodes ).forEach( ([h,def]) => {
+            const entryPath = [ ...path, h ]
+            if ( def.module ){
+                walkModule( def.module, f, entryPath )
             } else {
-                if ( node.start ) node.start()
+                f(def,entryPath)
             }
         })
     }
-    instance.stop = () => instance.start( true )
-    instance.get = path => resolvePath( instance, path )
-    return instance
-
 }
-
-/////////////
-/////////////
-function example(){
-    // def
-    const mixer2module = {
-        audioNodes : {
-            in1 : { node : 'gain' },
-            in2 : { node : 'gain' }
-        },
-        outputs : ['in1','in2'],
-    }
-    const module1 = {
-        audioNodes : {
-            osc1 : { node : 'oscillator', params : { type : 'square' } },
-            comp1 : { node : 'dynamicsCompressor' },
-            gain1 : { node : 'gain' }
-        },
-        connections : [
-            ['osc1','comp1','gain1'],
-        ],
-        outputs : ['gain1'],
-    }
-    const recmodule = {
-        audioNodes : {
-            odg1 : { module : module1 },
-            odg2 : { module : module1 },
-            m : { module : mixer2module }
-        },
-        connections : [
-            ['odg1','m.in1'],
-            ['odg2','m.in2']
-        ],
-        outputs : ['m']
-    }
-
-    waitAudioContext()
-        .then( ctx => {
-            const synth = instanciateModule( ctx, recmodule )
-
-            
-            const in1 = resolvePath( synth, 'm.in1' )
-            const in2 = synth.get( 'm.in2' )
-            console.log('path in1',in1.gain.setValueAtTime(0.5,ctx.currentTime))
-            console.log('path in2',in2.gain.setValueAtTime(0,ctx.currentTime))
-            synth.get( 'odg1.osc1' ).type = 'square'
-            synth.get( 'odg2.osc1' ).type = 'triangle'
-
-            synth.connect( ctx.destination )
-            synth.start()
-            setTimeout( () => {
-                synth.stop()
-            },500)
-
-            console.log('synth',synth)
+function instanciateModule( ctx, module ){
+    const waNodes = {}
+    const waParams = {}
+    const moduleNodes = {}
+    const connections = []
+    const waConnections = []
+    walkModule( module, (module,path) => {
+        const strPath = path.join('.')
+        if ( module.node ){
+            const wan = createWebAudioNode( ctx, module )
+            waNodes[ strPath  ] = wan
+            const aps = getWebAudioNodeAudioParams( wan )
+            Object.entries( aps ).forEach( ( [ pname, ap ] ) => {
+                const paramPath = [ strPath, pname ].join('/')
+                waParams[ paramPath ] = ap
+            })
+        } else {
+            const wan = 0
+            moduleNodes[ strPath ] = module
+            getConnectionPairs( module ).forEach( ([src,dst]) => {
+                connections.push( { src : [ strPath, src ].filter( x => x).join('.'),
+                                    dst : [ strPath, dst ].filter( x => x).join('.') })
+            })
+        }        
+    })
+    connections.forEach( ( { src, dst } ) => {
+        const wansrc = getWanOutputs( src, waNodes, moduleNodes )
+        const wandst = getWanInputs( dst, waNodes, moduleNodes )
+        wansrc.forEach( s => wandst.forEach( d => waConnections.push( [s,d] ) ) )
+    })
+    function doInnerConnections(){
+        waConnections.forEach( ([src,dst]) => {
+            waNodes[ src ].connect( waNodes[ dst ] )
         })
+    }
+    function doStart(){
+        Object.values( waNodes ).forEach( wan => {
+            if ( wan.start ){
+                wan.start()
+            }
+        })
+    }
+    return {
+        audioNodes : waNodes,
+        audioParams : waParams,
+        audioConnections : waConnections,
+        modules : moduleNodes,
+        connections : connections,
+        audioOutputs : getWanOutputs( '', waNodes, moduleNodes ).map( x => waNodes[ x ] ),
+        audioInputs : getWanInputs( '', waNodes, moduleNodes ).map( x => waNodes[ x ] ),
+        start : () => {
+            doInnerConnections()
+            doStart()
+        },
+        audioParam : path =>  waParams[ path ]
+    }
 
 }
+
+/////////////
+/////////////
+function example( ctx, wavetable ){
+
+    function monoWhiteNoiseBuffer( duration ){
+        const bufferSize = ctx.sampleRate * duration
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+        let data = buffer.getChannelData(0)
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+        return buffer
+    }
+
+    function setPeriodicWavef( wavetable ){
+        const wave = ctx.createPeriodicWave(
+            new Float32Array(wavetable.real),
+            new Float32Array(wavetable.imag)
+        )
+        return function( node ){
+            node.setPeriodicWave( wave )
+        }
+    }
+    function setupCompressor( dynamicsCompressorNode ){
+        const c = dynamicsCompressorNode
+        c.knee.setValueAtTime(40, ctx.currentTime);  // [ 0, 40 ] 30
+        c.ratio.setValueAtTime(12, ctx.currentTime); // [ 1, 20 ] 12
+        c.attack.setValueAtTime(0, ctx.currentTime);
+    }
+    const periodicWaveOscillatorGain = {
+        nodes : {
+            osc : { node : 'oscillator' , f : setPeriodicWavef( wavetable ) },
+            gain : { node : 'gain' }
+        },
+        connections : [ ['osc','gain'] ],
+        outputs : [ 'gain' ]    
+    }
+    const whiteNoiseBandPassGain = {
+        nodes : {
+            whitenoise : { node : 'bufferSource', p : {
+                buffer : monoWhiteNoiseBuffer(1),
+                loop : true
+            }},
+            bandpass : { node : 'biquadFilter', p : { type : 'bandpass' } },
+            gain : { node : 'gain' },
+        },
+        connections: [['whitenoise','bandpass','gain']],
+        outputs : ['gain']
+    }
+    const compressorGain = {
+        nodes : {
+            pre : { node : 'gain' },
+            compressor : { node : 'dynamicsCompressor', f : setupCompressor },
+            post : { node : 'gain' },
+        },
+        connections: [['pre','compressor','post']],
+        inputs : [ 'pre'],
+        outputs : [ 'post' ]
+    }
+    const brahoum = {
+        nodes : {
+            noise : { module : whiteNoiseBandPassGain },
+            compression : { module : compressorGain }
+        },
+        connections : [['noise','compression']],
+        outputs : ['compression']
+    }
+
+    /*
+      const mixer2module = {
+      nodes : {
+      in1 : { node : 'gain' },
+      in2 : { node : 'gain' }
+      },
+      outputs : ['in1','in2'],
+      }  
+    */
+    let m = instanciateModule( ctx, brahoum )
+    m.audioOutputs.forEach( wan => wan.connect( ctx.destination ) )
+    m.start()
+    console.log( Object.keys( m.audioParams ).join("\n") )
+    m.audioParam('compression.post/gain').linearRampToValueAtTime(0, ctx.currentTime + 5)
+    
+    // occurs between previous scheduled event and <endTime>
+    // var AudioParam = AudioParam.linearRampToValueAtTime(value, endTime)
+    // var AudioParam = AudioParam.exponentialRampToValueAtTime(value, endTime)
+    
+    // occurs at <startTime>
+    // var AudioParam = AudioParam.setValueAtTime(value, startTime)
+    // var AudioParam = AudioParam.setTargetAtTime(target, startTime, timeConstant);  
+    // var AudioParam = AudioParam.setValueCurveAtTime(values, startTime, duration);
+    
+    // var AudioParam = AudioParam.cancelScheduledValues(startTime)
+    // var audioParam = AudioParam.cancelAndHoldAtTime(cancelTime)
+
+}
+
+/**/
+const GOOD = ["Wurlitzer","Brit_Blues"]
+function nameToUrl( name ){
+    const url = ['','wave-tables',name].join('/')
+    return url
+}
+function fetchWaveTable( url ){
+    return fetch( url )
+        .then( x => x.text() )
+        .then( x => x.replace(/\s/g,'')
+               .replace(/'/g, '"')
+               .replace(/'/g, '"') 
+               .replace(/,]/g, ']') 
+               .replace(/,}/g, '}') )
+        .then( JSON.parse )
+        .catch( x => console.error( 'bad wavetable', url ) )
+}
+function fetchWaveTables(){
+    return Promise
+        .all( GOOD.map( nameToUrl  ).map( fetchWaveTable ) )
+        .then( all => all.reduce( (r,x,i) => {
+            r[ GOOD[ i ] ] = x
+            return r
+        },{}) )
+}
+/**/
+Promise
+    .all( [ fetchWaveTables(),  waitAudioContext() ] )
+    .then( ([ wavetables, ctx ]) => {
+        example( ctx, wavetables.Wurlitzer )
+    })
