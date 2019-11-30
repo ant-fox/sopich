@@ -1,3 +1,4 @@
+const IA_DOES_NOT_FIRE = true
 //
 // game modes
 // - protect fort
@@ -864,7 +865,13 @@ export function Game( { tellPlayer, tellScore } ) {
                     cp.a = a16
                 } else {
                     if ( Math.random() > 0.90 ) {
-                        pushButton('firemissile')
+                        if (! IA_DOES_NOT_FIRE ){
+                            if ( Math.random() > 0.5 ){
+                                pushButton('firemissile')
+                            } else {
+                                pushButton('firebomb')
+                            }
+                        }
                     }
                 }
                 if ( dist > 50 ){

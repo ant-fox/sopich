@@ -26,7 +26,19 @@ const wavetableNames = ["Wurlitzer","Brit_Blues"]
 function wavetableUrl( name ) { return ['','wave-tables',name].join('/') }
 
 // buffers
+function prepareBuffer( ctx, duration, f ){
+    const bufferSize = ctx.sampleRate * duration
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+    let data = buffer.getChannelData(0)
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = f(data,i)
+    }
+    return buffer
+}
 function whiteNoiseBuffer( ctx ){
+    /*return prepareBuffer( ctx, 1, (data,i) => {
+        data[i] = Math.random() * 2 - 1;
+    })*/
     const noiseDuration = 1;
     const bufferSize = ctx.sampleRate * noiseDuration
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
@@ -35,8 +47,10 @@ function whiteNoiseBuffer( ctx ){
         data[i] = Math.random() * 2 - 1;
     }
     return buffer
-}
 
+}
+function diracBuffer( ctx ){
+}
 // synth
 const model1 = {
     nodes : {
@@ -126,7 +140,6 @@ export function Audio(){
             end : 0,
         }
     }
-    const Delay = 0.1
     function setState( state ){
         honorRunning()
         if ( !audioState.synth) return
@@ -151,7 +164,7 @@ export function Audio(){
                     const side = ( playerItem.x > justfired.x )?0:1
                     const sd =  Math.pow( ( playerItem.x - justfired.x ) / pixelPerMeter, 2 )
                           + Math.pow( ( playerItem.y - justfired.y ) / pixelPerMeter, 2 )
-                    if ( sd < (800*800) ) {
+                    if ( sd < (100*100) ) {
                         const invertsqdist = 1 / sd
                         const rd = dist( playerItem, justfired )
                         fired[ justfired.type ][ side ] += invertsqdist
@@ -167,37 +180,28 @@ export function Audio(){
                 if ( fx.missile.end < ctx.currentTime ){
                     
                     const vol = Math.pow(
-                        clamp(( fired.missile[0] + fired.missile[1] ),0,1),
-                        0.3
+                        0.5 + clamp(( fired.missile[0] + fired.missile[1] ),0,1),
+                        0.5
                     )
-                    //console.log(vol)
-                   //console.log( fired.missile.map( format18 ))
-                    //const vol = 1
-                    /*
-                    const mult = 1
-                    const offsets = [0,1,2,3 ].map( x => mult * x )
-                    const rel0 = offsets.reduce( (r,x) => {
-                        r.push( r[r.length -1] + x )
-                        return r
-                    }, [0] ).slice(1)
+                    const Delay = 0.0
 
-                    const duration = rel0[ rel0.length - 1 ]
-                    
-                    const times = rel0
-                          .map( x => x + Delay ) // differ effect
-                          .map( x => x + ctx.currentTime )
-                    */
                     const part = [
-                        [ 0, 'fader/gain', 'cancel' ],
+                        /*[ 0, 'fader/gain', 'cancel' ],
                         [ 0, 'bandpass/Q', 'cancel' ],
-                        [ 0, 'bandpass/frequency', 'cancel' ],
-                        [ 10, 'fader/gain', 1 ],
-                        [ 10, 'bandpass/Q', 100 ],
-                        [ 20, 'fader/gain', 0 ],
-                        [ 20, 'bandpass/Q', 0.02 ],
+                        [ 0, 'bandpass/frequency', 'cancel' ],*/
+                        [ 3, 'fader/gain', vol ],
+                        [ 3, 'bandpass/Q', 4 ],
+                        [ 3, 'bandpass/frequency', 400 ],
+                        [ 7, 'bandpass/frequency', 800 ],
+                        [ 10, 'fader/gain', 0 ],
+                        [ 10, 'bandpass/Q', 1000 ],
+                        [ 11, 'bandpass/frequency', 800 ],
+                        [ 12, 'bandpass/frequency', 8000 ],
+                        //[ 20, 'bandpass/Q', 0.02 ],
                     ]
+                    const multf = 50
                     const apart = part
-                          .map( ([ h, ...t ]) => ([ h / 100, ...t ]))
+                          .map( ([ h, ...t ]) => ([ multf * h / 1000, ...t ]))
                           .map( ([ h, ...t ]) => ([ h + ctx.currentTime + Delay, ...t ]))
                     
                     readPart( s, apart )
