@@ -201,7 +201,7 @@ export function instanciateModule( ctx, module, { wavetables = {}, buffers = {} 
     }
     function connect( dst, disconnect = false ){
         module.outputs.forEach( srcadd => {
-            let srcs = getWanOutputs( srcadd, waNodes, moduleNodes ).map( x => waNodes[ x ] )
+            let srcs = getWanOutputs( srcadd, waNodes, waParams, moduleNodes ).map( x => waNodes[ x ] )
             srcs.forEach( src => {
                 if ( dst instanceof AudioNode ){
                     if ( disconnect ){
@@ -369,19 +369,23 @@ function examples(  ){
     })
 }
 
-export function readPart( s, part ){
+export function readPart( s, part, offset = 0, prefix ){
     part.forEach( event => {
         const [ time, path, p1, p2 ] = event
-        const ap = s.audioParam( path )
+
+        const ppath = ( prefix )?( prefix+'.'+path ):( path )
+        const ap = s.audioParam( ppath )
+
         if ( p1 === 'cancel' ){
-            ap.cancelScheduledValues( time )
+            ap.cancelScheduledValues( time + offset)
         } else if ( p2 !== 'set' ){
-            ap.linearRampToValueAtTime( p1, time )
+            ap.linearRampToValueAtTime( p1, time + offset)
         } else {
-            ap.setValueAtTime(p1, time )
+            ap.setValueAtTime(p1, time + offset)
         }
     })
-    
+  
+    return part[0][0] + offset
 }
 
 //examples()
