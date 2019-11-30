@@ -60,7 +60,7 @@ function setWavetable( node, wavetable ){
     ))
 }
 
-function createWebAudioNode( ctx, { node, c = [], ap = {}, p = {}, wavetable, f }, { wavetables } ){
+function createWebAudioNode( ctx, { node, c = [], ap = {}, p = {}, wavetable, buffer, f }, { wavetables, buffers } ){
     // create with optional parameters
     const waNode = ctx[ creatorName( node )  ]( ...c  )
     // set audio parameters
@@ -71,6 +71,11 @@ function createWebAudioNode( ctx, { node, c = [], ap = {}, p = {}, wavetable, f 
     if ( waNode instanceof OscillatorNode ){
         if ( wavetables && wavetable ){
             setWavetable( waNode, wavetables[ wavetable ] )
+        }
+    }
+    if ( waNode instanceof AudioBufferSourceNode ){
+        if ( buffers && buffer ){
+            waNode.buffer = buffers[ buffer ]
         }
     }
     // apply custom f
@@ -146,7 +151,7 @@ function walkModule( module, f, path = [] ){
         })
     }
 }
-export function instanciateModule( ctx, module, { wavetables = {} } = {} ){
+export function instanciateModule( ctx, module, { wavetables = {}, buffers = {} } = {} ){
     const waNodes = {}
     const waParams = {}
     const moduleNodes = {}
@@ -155,7 +160,7 @@ export function instanciateModule( ctx, module, { wavetables = {} } = {} ){
     walkModule( module, (module,path) => {
         const strPath = path.join('.')
         if ( module.node ){
-            const wan = createWebAudioNode( ctx, module, { wavetables } )
+            const wan = createWebAudioNode( ctx, module, { wavetables, buffers } )
             waNodes[ strPath  ] = wan
             const aps = getWebAudioNodeAudioParams( wan )
             Object.entries( aps ).forEach( ( [ pname, ap ] ) => {
@@ -364,6 +369,19 @@ function examples(  ){
     })
 }
 
-
+export function readPart( s, part ){
+    part.forEach( event => {
+        const [ time, path, p1, p2 ] = event
+        const ap = s.audioParam( path )
+        if ( p1 === 'cancel' ){
+            ap.cancelScheduledValues( time )
+        } else if ( p2 !== 'set' ){
+            ap.linearRampToValueAtTime( p1, time )
+        } else {
+            ap.setValueAtTime(p1, time )
+        }
+    })
+    
+}
 
 //examples()

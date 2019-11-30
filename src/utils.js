@@ -70,3 +70,6 @@ export function sqdist( a, b ){
 export function manhattan( a, b ){
     return Math.abs( a.x - b.x ) + Math.abs( a.y - b.y )
 }
+export function zip( a, b ){
+    return a.map( ( x, i ) => ( [ x, b[ i ] ] ) )
+}

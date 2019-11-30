@@ -1,7 +1,19 @@
-import { waitAudioContext, fetchWaveTable, instanciateModule } from './audioutils.js'
+import { waitAudioContext, fetchWaveTable, instanciateModule, readPart } from './audioutils.js'
 import { dist, sqdist, clamp } from './utils.js'
+function format( a,b,c,d ){
+    const nf = Intl.NumberFormat( 'en-EN', {
+        minimumIntegerDigits : a,
+        maximumIntegerDigits : b,
+        minimumFractionDigits : c,
+        maximumFractionDigits : d
+    })
+    return x => nf.format(x)
+}
+const format12 = format(1,1,2,2) 
+const format14 = format(1,1,4,4)
+const format18 = format(1,1,8,8)
+   
 // wave-tables
-function wavetableUrl( name ) { return ['','wave-tables',name].join('/') }
 function fetchWaveTables( wavetableNames ){
     return Promise
         .all( wavetableNames.map( wavetableUrl ).map( fetchWaveTable ) )
@@ -11,12 +23,28 @@ function fetchWaveTables( wavetableNames ){
         },{}) )
 }
 const wavetableNames = ["Wurlitzer","Brit_Blues"]
+function wavetableUrl( name ) { return ['','wave-tables',name].join('/') }
+
+// buffers
+function whiteNoiseBuffer( ctx ){
+    const noiseDuration = 1;
+    const bufferSize = ctx.sampleRate * noiseDuration
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+    let data = buffer.getChannelData(0)
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+    return buffer
+}
+
+// synth
 const model1 = {
-    nodes : { osc1 : { node : 'oscillator', ap : { frequency : 400 }},
-              osc2 : { node : 'oscillator', ap : { frequency : 20 }},
-              gain : { node : 'gain' },
-              fader : { node : 'gain' },
-            },
+    nodes : {
+        osc1 : { node : 'oscillator', ap : { frequency : 400 }},
+        osc2 : { node : 'oscillator', ap : { frequency : 20 }},
+        gain : { node : 'gain' },
+        fader : { node : 'gain', ap : { gain : 0 } },
+    },
     connections : [
         ['osc1','gain'],
         ['osc2','gain/gain'],
@@ -24,12 +52,27 @@ const model1 = {
     ],
     outputs : [ 'fader' ]
 }
-const model = {
+const model2 = {
     nodes : {
-        osc1 : { node : 'oscillator', wavetable : 'Brit_Blues' }
+        noisegen : { node : 'bufferSource', buffer : 'whitenoise', p : { loop : true } },
+        bandpass : { node : 'biquadFilter', p : { type : 'bandpass' }, ap : { Q : 0.01, frequency : 800 } }, 
+        fader : { node : 'gain', ap : { gain : 0 } },
     },
-    outputs : [ 'osc1' ]
+    connections : [
+        [ 'noisegen', 'bandpass', 'fader' ]
+    ],
+    outputs : ['fader']
 }
+const model3 = {
+    nodes : {
+        osc1 : { node : 'oscillator', wavetable : 'Brit_Blues' },
+        fader : { node : 'gain', ap : { gain : 0 } },
+    },
+    connections : [ ['gain','fader'] ],
+    outputs : [ 'fader' ]
+}
+
+// audio
 export function Audio(){
     const audioState = {
         synth : undefined,
@@ -40,19 +83,13 @@ export function Audio(){
         Promise
             .all( [ waitAudioContext(), fetchWaveTables( wavetableNames ) ] )
             .then ( ( [ ctx, wavetables ] ) => {
-                const s = instanciateModule( ctx, model1, { wavetables } )
+                const buffers = {
+                    whitenoise : whiteNoiseBuffer( ctx )
+                }
+                const s = instanciateModule( ctx, model2, { wavetables, buffers } )
                 console.log('synth',s)
                 s.start()
                 audioState.synth = s
-                /*
-                  s.audioParam('osc2/frequency').linearRampToValueAtTime(10, ctx.currentTime + 0)
-                  s.audioParam('osc2/frequency').linearRampToValueAtTime(30, ctx.currentTime + 5)
-                  s.audioParam('osc2/frequency').linearRampToValueAtTime(2, ctx.currentTime + 10)
-                  s.audioParam('osc2/frequency').linearRampToValueAtTime(60, ctx.currentTime + 15)
-                  s.audioParam('osc2/frequency').linearRampToValueAtTime(0.1, ctx.currentTime + 75)
-                */
-                s.audioParam('fader/gain').linearRampToValueAtTime(0.2, ctx.currentTime)
-                //            s.audioParam('fader/gain').linearRampToValueAtTime(1, ctx.currentTime + 3)
             })
     }
     function start(){
@@ -75,7 +112,21 @@ export function Audio(){
         }
         audioState.connected = r
     }
-    let lastJustfiredNum = -1
+    const firedState = {
+        last : -1,
+    }
+    const fx = {        
+        missile : {
+            end : 0,
+        },
+        bomb : {
+            end : 0,
+        },
+        explosion: {
+            end : 0,
+        }
+    }
+    const Delay = 0.1
     function setState( state ){
         honorRunning()
         if ( !audioState.synth) return
@@ -83,22 +134,98 @@ export function Audio(){
         const s = audioState.synth
         const ctx = s.ctx
         {
+            const fired = {
+                bomb : [0,0],
+                missile : [0,0],
+                explosion : [0,0]
+            }
             const me = state.me
             if ( !me ) return
             if ( !( state[ me.type ] ) ) return
             const playerItem = state[ me.type ][ me.idx ]
             if ( !playerItem ) return
-            let maxJustfiredNum = lastJustfiredNum
+            let maxJustfiredNum = firedState.last
             state.justfired.forEach( justfired => {
-                if ( justfired.num > lastJustfiredNum ){
+                if ( justfired.num > firedState.last ){
+                    const pixelPerMeter = 3
+                    const side = ( playerItem.x > justfired.x )?0:1
+                    const sd =  Math.pow( ( playerItem.x - justfired.x ) / pixelPerMeter, 2 )
+                          + Math.pow( ( playerItem.y - justfired.y ) / pixelPerMeter, 2 )
+                    if ( sd < (800*800) ) {
+                        const invertsqdist = 1 / sd
+                        const rd = dist( playerItem, justfired )
+                        fired[ justfired.type ][ side ] += invertsqdist
+                    }
                     // first time
-                    console.log( justfired )
+                    // console.log( justfired )
                     if ( justfired.num > maxJustfiredNum ){
                         maxJustfiredNum = justfired.num
                     }
                 }
             })
-            lastJustfiredNum = maxJustfiredNum
+            if ( fired.missile[0] || fired.missile[1] ){
+                if ( fx.missile.end < ctx.currentTime ){
+                    
+                    const vol = Math.pow(
+                        clamp(( fired.missile[0] + fired.missile[1] ),0,1),
+                        0.3
+                    )
+                    //console.log(vol)
+                   //console.log( fired.missile.map( format18 ))
+                    //const vol = 1
+                    /*
+                    const mult = 1
+                    const offsets = [0,1,2,3 ].map( x => mult * x )
+                    const rel0 = offsets.reduce( (r,x) => {
+                        r.push( r[r.length -1] + x )
+                        return r
+                    }, [0] ).slice(1)
+
+                    const duration = rel0[ rel0.length - 1 ]
+                    
+                    const times = rel0
+                          .map( x => x + Delay ) // differ effect
+                          .map( x => x + ctx.currentTime )
+                    */
+                    const part = [
+                        [ 0, 'fader/gain', 'cancel' ],
+                        [ 0, 'bandpass/Q', 'cancel' ],
+                        [ 0, 'bandpass/frequency', 'cancel' ],
+                        [ 10, 'fader/gain', 1 ],
+                        [ 10, 'bandpass/Q', 100 ],
+                        [ 20, 'fader/gain', 0 ],
+                        [ 20, 'bandpass/Q', 0.02 ],
+                    ]
+                    const apart = part
+                          .map( ([ h, ...t ]) => ([ h / 100, ...t ]))
+                          .map( ([ h, ...t ]) => ([ h + ctx.currentTime + Delay, ...t ]))
+                    
+                    readPart( s, apart )
+                    /*
+                    s.audioParam('fader/gain')
+                        .cancelScheduledValues( times[0] )
+                        .linearRampToValueAtTime( 0.2, times[1] )
+                        .linearRampToValueAtTime( vol, times[2] )
+                        .linearRampToValueAtTime( 0.0, times[3] )
+                    s.audioParam('bandpass/frequency')
+                        .cancelScheduledValues(times[0] )
+                        .linearRampToValueAtTime(100+Math.random()*100, times[1] )
+                        .linearRampToValueAtTime(800+Math.random()*800, times[2] )
+                        .linearRampToValueAtTime(0.0, times[3] )
+                    s.audioParam('bandpass/Q')
+                        .cancelScheduledValues( times[0] )
+                        .linearRampToValueAtTime(10, times[1] )
+                        .linearRampToValueAtTime(50, times[2] )
+                        .linearRampToValueAtTime(10, times[3] )
+                    */
+                    fx.missile.end = apart[ apart.length - 1 ][ 0 ]
+                    
+                }
+            }
+
+
+            
+            firedState.last = maxJustfiredNum
         //     if ( state.explosions ){
         //         const explosions = state.explosions
         //         let total = 0
