@@ -110,7 +110,9 @@ function interpolateState( s1, s2, ratio ){
         let vs2 = s2[ k2 ]
         let copy_cs2
         if ( vs2.length ){
-            if ( k2 === 'ground' ){
+            if ( k2 === 'justfired' ){
+                copy_cs2 = vs2.concat( s1[ k2 ] )
+            } else  if ( k2 === 'ground' ){
                 copy_cs2 = vs2.map( (h2,ig2) => {
                     let h1 = s1.ground[ ig2 ]
                     return linearInterpolation( h1, h2, ratio )
@@ -129,7 +131,7 @@ function interpolateState( s1, s2, ratio ){
                             if ( (item.a!==undefined) ){
                                 item.a = a816Interpolation( vsk1.a, vsk2.a, ratio )
                             }
-                            item.justfired = item.justfired || vsk1.justfired
+                            //item.justfired = item.justfired || vsk1.justfired
                         }
                     }
                     return item
