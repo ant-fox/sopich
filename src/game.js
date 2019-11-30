@@ -19,6 +19,7 @@
 // value for shooting plane <- score.total
 //
 // bird + flock use anim
+// timeout before beeing killable when respawning
 // collision broken -> coll mask non broken ?
 // set y of ox and target at move step
 // target offset (ground target)?
@@ -186,6 +187,8 @@ export function Game( { tellPlayer, tellScore } ) {
     }
     function init_explosion( cs ){
         return {
+            x : 0,
+            y : 0,
             cs,
             p : 4,
             ttl : -1,
@@ -193,7 +196,7 @@ export function Game( { tellPlayer, tellScore } ) {
             debris : new Array(16).fill(0).map( (_,i) => {
                 return init_debris( i, cs )
             }),
-            
+            justfired : init_justfired('explosion')
         }
     }
     function init_targets(){
@@ -271,7 +274,8 @@ export function Game( { tellPlayer, tellScore } ) {
                             give_points( other.owner, -1 )
                         }
                     }
-                },                
+                },
+                justfired : init_justfired('bomb')
             })),
             missiles : new Array(16).fill(0).map( (_,i) => ({
                 cs : idx%ColorSchemes.length,
@@ -295,6 +299,7 @@ export function Game( { tellPlayer, tellScore } ) {
                         }
                     }
                 },
+                justfired : init_justfired('missile')
             })),
             explosion : init_explosion(idx%ColorSchemes.length),
             falling : init_falling_plane(),
@@ -332,6 +337,18 @@ export function Game( { tellPlayer, tellScore } ) {
     function normalDirection16(r,a){
         return ( a + (r?4:12) ) % directions16.length
     }
+    function init_justfired( type ){
+        return {
+            type,
+            num : undefined,
+            ttl : -1,
+        }
+    }
+    function justfire( justfired ){
+        // justfired.type = type
+        justfired.ttl = 1
+        justfired.num = event_num()
+    }
     function fire_bomb_from_plane( bomb, from ){
         const { x, y, p, r, a } = from
         let off = BombDropOffset[ a % BombDropOffset.length]
@@ -345,10 +362,7 @@ export function Game( { tellPlayer, tellScore } ) {
         bomb.ttl = 100
         bomb.step = 0
         bomb.a = a >> 1
-        bomb.justFired = {
-            type : 'bomb',
-            num : event_num()
-        }
+        justfire( bomb.justfired )
     }
     function fire_missile_from_plane( missile, from ){
         const { x, y, p, r, a } = from
@@ -363,10 +377,7 @@ export function Game( { tellPlayer, tellScore } ) {
         missile.p = 5
         missile.step = 0
         missile.a = a 
-        missile.justFired = {
-            type : 'missile',
-            num : event_num()
-        }
+        justfire( missile.justfired )
     }
     function handleinputs(){
         State.planes.forEach( plane => {
@@ -608,17 +619,15 @@ export function Game( { tellPlayer, tellScore } ) {
         explosion.ttl = 10
         explosion.step = 0
         explosion.p = 2
+        explosion.x = x
+        explosion.y = y
         const debris = explosion.debris
         for ( let j = 0, ll = debris.length ; j < ll ; j++ ){
             const debri = debris[ j ]
             debri.x = x
             debri.y = y
         }
-        explosion.justFired = {
-            type : 'explosion',
-            num : event_num()
-        }
-
+        justfire( explosion.justfired )
     }
     function start_falling( item ){
         if ( item.falling ){
@@ -971,20 +980,20 @@ export function Game( { tellPlayer, tellScore } ) {
     // groundTargets()
     // groundOxs()
     // const FPS = 16//16//2//16
-    function turninit_just_fired( x ){
-        if ( x.justFired ){
-            x.justFired = {}
+    function turninit_justfired( x ){
+        if ( x.justfired ){
+            x.justfired.ttl = -1
         }
     }
     function turninit(){
         State.planes.forEach( ({ttl,bombs,missiles}) => {
             bombs.forEach( x => {
-                turninit_just_fired( x )
-                turninit_just_fired( x.explosion )
+                turninit_justfired( x )
+                turninit_justfired( x.explosion )
             })
             missiles.forEach( x => {
-                turninit_just_fired( x )
-                turninit_just_fired( x.explosion )
+                turninit_justfired( x )
+                turninit_justfired( x.explosion )
             })
         })
     }
@@ -1101,6 +1110,7 @@ export function Game( { tellPlayer, tellScore } ) {
         let payload = {
             t : now,
             version : State.version,
+            justfired : [],
             planes : [],
             explosions : [],
             bombs : [],
@@ -1158,54 +1168,73 @@ export function Game( { tellPlayer, tellScore } ) {
             //if ( ttl > 0 ){
             payload.planes.push( { ttl, x, y, r, a, p, cs, name } )
             //}
-            if ( true ){
-                {
-                    const {x,y,as,ttl} = leaving
-                    if ( ttl > 0 ){
-                        payload.leavings.push({x,y,as})
-                    }
+            {
+                const {x,y,as,ttl} = leaving
+                if ( ttl > 0 ){
+                    payload.leavings.push({x,y,as})
                 }
-                {
-                    const {x,y,as,ttl} = falling
-                    if ( ttl > 0 ){
-                        payload.fallings.push({x,y,as})
-                    }
+            }
+            {
+                const {x,y,as,ttl} = falling
+                if ( ttl > 0 ){
+                    payload.fallings.push({x,y,as})
                 }
-                if ( explosion.ttl > 0 ){
-                    let { x,y,justFired } = explosion
-                    payload.explosions.push( { x,y,justFired } )
-                    explosion.debris.forEach( debri => {
-                        let { x, y, a, dtype, cs } = debri
-                        payload.debris.push( { x, y, a, dtype, cs } )
-                    })
-                }
-                plane.bombs.forEach( bomb => {
-                    let { x, y, a, p, cs, ttl, step, explosion, justFired } = bomb
-                    payload.bombs.push( { x, y, a, p, cs, ttl, justFired /*, step */ } )
-                    if ( explosion.ttl > 0 ){
-                        let { x,y,justFired } = explosion
-                        payload.explosions.push( { x,y,justFired } )
+            }
+            if ( explosion.ttl > 0 ){
+                let { x,y,justfired } = explosion
 
-                        explosion.debris.forEach( debri => {
-                            let { x, y, a, cs, dtype } = debri
-                            payload.debris.push( { x, y, a, cs, dtype } )
-                        })
-                    }
-                })
-                plane.missiles.forEach( missile => {
-                    let { x, y, a, p, cs, ttl, step, explosion, justFired } = missile
-                    payload.missiles.push( { x, y, a, p, cs, ttl, justFired /*, step */ } )
-                    if ( explosion.ttl > 0 ){
-                        let { x,y,justFired } = explosion
-                        payload.explosions.push( { x,y,justFired } )
-
-                        explosion.debris.forEach( debri => {
-                            let { x, y, a, dtype } = debri
-                            payload.debris.push( { x, y, a, cs, dtype } )
-                        })
-                    }
+                if ( justfired.ttl > 0 ){
+                    payload.justfired.push({ x,y, type : justfired.type,
+                                             num : justfired.num } )
+                }
+                
+                explosion.debris.forEach( debri => {
+                    let { x, y, a, dtype, cs } = debri
+                    payload.debris.push( { x, y, a, dtype, cs } )
                 })
             }
+            plane.bombs.forEach( bomb => {
+                let { x, y, a, p, cs, ttl, step, explosion, justfired } = bomb
+
+                if ( justfired.ttl > 0 ){
+                    payload.justfired.push( { x,y, type : justfired.type, num : justfired.num } )
+                }
+                
+                payload.bombs.push( { x, y, a, p, cs, ttl /*, step */ } )
+                if ( explosion.ttl > 0 ){
+                    let { x,y,justfired } = explosion
+
+                    if ( justfired.ttl > 0 ){
+                        payload.justfired.push( { x,y, type : justfired.type, num : justfired.num } )
+                    }
+
+                    explosion.debris.forEach( debri => {
+                        let { x, y, a, cs, dtype } = debri
+                        payload.debris.push( { x, y, a, cs, dtype } )
+                    })
+                }
+            })
+            plane.missiles.forEach( missile => {
+                let { x, y, a, p, cs, ttl, step, explosion, justfired } = missile
+                payload.missiles.push( { x, y, a, p, cs, ttl, justfired /*, step */ } )
+                if ( justfired.ttl > 0 ){
+                    payload.justfired.push( { x,y, type : justfired.type, num : justfired.num } )
+                }
+                
+                if ( explosion.ttl > 0 ){
+                    let { x,y,justfired } = explosion
+
+                    
+                    if ( justfired.ttl > 0 ){
+                        payload.justfired.push( { x,y, type : justfired.type, num : justfired.num } )
+                    }
+                    explosion.debris.forEach( debri => {
+                        let { x, y, a, dtype } = debri
+                        payload.debris.push( { x, y, a, cs, dtype } )
+                    })
+                }
+            })
+            
         })
         Object.keys( planeByInputId ).forEach( inputId => {
             let plane = planeByInputId[ inputId ]

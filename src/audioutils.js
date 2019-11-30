@@ -29,23 +29,50 @@ export function waitAudioContext( checkInterval = 500 ){
 
 // synth helpers
 
-let _id = 1
-function id(){
-    return _id++
+export function fetchWaveTable( url ){
+    return fetch( url )
+        .then( x => x.text() )
+        .then( x => x.replace(/\s/g,'')
+               .replace(/'/g, '"')
+               .replace(/'/g, '"') 
+               .replace(/,]/g, ']') 
+               .replace(/,}/g, '}') )
+        .then( JSON.parse )
+        .catch( x => console.error( 'bad wavetable', url ) )
 }
+
+
+// let _id = 1
+// function id(){
+//     return _id++
+// }
 
 function creatorName( nodeName ){
     let head = nodeName.substring(0,1).toUpperCase()
     let tail = nodeName.substring(1)
     return `create${ head  }${ tail }`
 }
-function createWebAudioNode( ctx, { node, c = [], ap = {}, p = {}, f } ){
+
+function setWavetable( node, wavetable ){
+    node.setPeriodicWave( node.context.createPeriodicWave(
+        new Float32Array(wavetable.real),
+        new Float32Array(wavetable.imag)
+    ))
+}
+
+function createWebAudioNode( ctx, { node, c = [], ap = {}, p = {}, wavetable, f }, { wavetables } ){
     // create with optional parameters
     const waNode = ctx[ creatorName( node )  ]( ...c  )
     // set audio parameters
     Object.keys( ap ).forEach( k => { waNode[ k ].value = ap[ k ] } )
     // set attributes
     Object.keys( p ).forEach( k => { waNode[ k ] = p[ k ] } )
+    // special cases 
+    if ( waNode instanceof OscillatorNode ){
+        if ( wavetables && wavetable ){
+            setWavetable( waNode, wavetables[ wavetable ] )
+        }
+    }
     // apply custom f
     if ( f ){ f( waNode ) }
     return waNode
@@ -119,7 +146,7 @@ function walkModule( module, f, path = [] ){
         })
     }
 }
-export function instanciateModule( ctx, module ){
+export function instanciateModule( ctx, module, { wavetables = {} } = {} ){
     const waNodes = {}
     const waParams = {}
     const moduleNodes = {}
@@ -128,7 +155,7 @@ export function instanciateModule( ctx, module ){
     walkModule( module, (module,path) => {
         const strPath = path.join('.')
         if ( module.node ){
-            const wan = createWebAudioNode( ctx, module )
+            const wan = createWebAudioNode( ctx, module, { wavetables } )
             waNodes[ strPath  ] = wan
             const aps = getWebAudioNodeAudioParams( wan )
             Object.entries( aps ).forEach( ( [ pname, ap ] ) => {
@@ -158,19 +185,25 @@ export function instanciateModule( ctx, module ){
             }
         })
     }
-    function doStart(){
+    function doStart( doStop = false ){
         Object.values( waNodes ).forEach( wan => {
-            if ( wan.start ){
-                wan.start()
+            if ( doStop ){
+                if ( wan.stop ) wan.stop()
+            } else {
+                if ( wan.start ) wan.start()
             }
         })
     }
-    function connect( dst ){
+    function connect( dst, disconnect = false ){
         module.outputs.forEach( srcadd => {
             let srcs = getWanOutputs( srcadd, waNodes, moduleNodes ).map( x => waNodes[ x ] )
             srcs.forEach( src => {
                 if ( dst instanceof AudioNode ){
-                    src.connect( dst )
+                    if ( disconnect ){
+                        src.disconnect( dst )
+                    } else {
+                        src.connect( dst )
+                    }
                 } else {
                     throw new Error('n/i')
                 }
@@ -190,151 +223,147 @@ export function instanciateModule( ctx, module ){
             doInnerConnections()
             doStart()
         },
+        stop : () => {
+            doStart( true )
+        },
         audioParam : path =>  waParams[ path ],
-        audioNode : path =>  waNodes[ path ],connect
+        audioNode : path =>  waNodes[ path ],
+        connect,
+        disconnect : dst => connect( dst, true ),
+        ctx
     }
 
 }
 
 /////////////
 /////////////
-async function examples(  ){
+function examples(  ){
 
-    const [ wavetable, ctx ] = await Promise.all( [
+    const [ wavetable, ctx ] = Promise.all( [
         fetchWaveTable('/wave-tables/Wurlitzer'),
         waitAudioContext()
-    ])
-    function example2(){
+    ]).then( ([wavetable,ctx]) => {
+        function example2(){
 
-        const model = {
-            nodes : {
-                osc1 : { node : 'oscillator', ap : { frequency : 400 }},
-                osc2 : { node : 'oscillator', ap : { frequency : 20 }},
-                gain : { node : 'gain' },
-            },
-            connections : [
-                ['osc1','gain'],
-                ['osc2','gain/gain'],
-            ],
-            outputs : [ 'gain' ]
-        }
-        let m = instanciateModule( ctx, model )
-        
-        m.audioParam('osc2/frequency').linearRampToValueAtTime(0, ctx.currentTime + 5)
-        m.connect( ctx.destination )
-        setTimeout( () => {
-            m.audioNodes['gain'].disconnect( ctx.destination )
-        },5000)
-        m.start()
-    }
-    function example1(){
-        function monoWhiteNoiseBuffer( duration ){
-            const bufferSize = ctx.sampleRate * duration
-            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
-            let data = buffer.getChannelData(0)
-            for (let i = 0; i < bufferSize; i++) {
-                data[i] = Math.random() * 2 - 1;
+            const model = {
+                nodes : {
+                    osc1 : { node : 'oscillator', ap : { frequency : 400 }},
+                    osc2 : { node : 'oscillator', ap : { frequency : 20 }},
+                    gain : { node : 'gain' },
+                },
+                connections : [
+                    ['osc1','gain'],
+                    ['osc2','gain/gain'],
+                ],
+                outputs : [ 'gain' ]
             }
-            return buffer
+            let m = instanciateModule( ctx, model )
+            
+            m.audioParam('osc2/frequency').linearRampToValueAtTime(0, ctx.currentTime + 5)
+            m.connect( ctx.destination )
+            setTimeout( () => {
+                m.audioNodes['gain'].disconnect( ctx.destination )
+            },5000)
+            m.start()
         }
-
-        function setPeriodicWavef( wavetable ){
-            const wave = ctx.createPeriodicWave(
-                new Float32Array(wavetable.real),
-                new Float32Array(wavetable.imag)
-            )
-            return function( node ){
-                node.setPeriodicWave( wave )
+        function example1(){
+            function monoWhiteNoiseBuffer( duration ){
+                const bufferSize = ctx.sampleRate * duration
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+                let data = buffer.getChannelData(0)
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                return buffer
             }
-        }
-        function setupCompressor( dynamicsCompressorNode ){
-            const c = dynamicsCompressorNode
-            c.knee.setValueAtTime(40, ctx.currentTime);  // [ 0, 40 ] 30
-            c.ratio.setValueAtTime(12, ctx.currentTime); // [ 1, 20 ] 12
-            c.attack.setValueAtTime(0, ctx.currentTime);
-        }
-        const periodicWaveOscillatorGain = {
-            nodes : {
-                osc : { node : 'oscillator' , f : setPeriodicWavef( wavetable ) },
-                gain : { node : 'gain' }
-            },
-            connections : [ ['osc','gain'] ],
-            outputs : [ 'gain' ]    
-        }
-        const whiteNoiseBandPassGain = {
-            nodes : {
-                whitenoise : { node : 'bufferSource', p : {
-                    buffer : monoWhiteNoiseBuffer(1),
-                    loop : true
-                }},
-                bandpass : { node : 'biquadFilter', p : { type : 'bandpass' } },
-                gain : { node : 'gain' },
-            },
-            connections: [['whitenoise','bandpass','gain']],
-            outputs : ['gain']
-        }
-        const compressorGain = {
-            nodes : {
-                pre : { node : 'gain' },
-                compressor : { node : 'dynamicsCompressor', f : setupCompressor },
-                post : { node : 'gain' },
-            },
-            connections: [['pre','compressor','post']],
-            inputs : [ 'pre'],
-            outputs : [ 'post' ]
-        }
-        const brahoum = {
-            nodes : {
-                noise : { module : whiteNoiseBandPassGain },
-                compression : { module : compressorGain }
-            },
-            connections : [['noise','compression']],
-            outputs : ['compression']
-        }
 
-        /*
-          const mixer2module = {
-          nodes : {
-          in1 : { node : 'gain' },
-          in2 : { node : 'gain' }
-          },
-          outputs : ['in1','in2'],
-          }  
-        */
-        let m = instanciateModule( ctx, brahoum )
-        m.audioOutputs.forEach( wan => wan.connect( ctx.destination ) )
-        m.start()
-        console.log( Object.keys( m.audioParams ).join("\n") )
-        m.audioParam('compression.post/gain').linearRampToValueAtTime(0, ctx.currentTime + 5)
-        m.audioParam('noise.bandpass/Q').linearRampToValueAtTime(0, ctx.currentTime + 5)
-        m.audioParam('noise.bandpass/frequency').linearRampToValueAtTime(4000, ctx.currentTime + 5)
-        
-        // occurs between previous scheduled event and <endTime>
-        // var AudioParam = AudioParam.linearRampToValueAtTime(value, endTime)
-        // var AudioParam = AudioParam.exponentialRampToValueAtTime(value, endTime)
-        
-        // occurs at <startTime>
-        // var AudioParam = AudioParam.setValueAtTime(value, startTime)
-        // var AudioParam = AudioParam.setTargetAtTime(target, startTime, timeConstant);  
-        // var AudioParam = AudioParam.setValueCurveAtTime(values, startTime, duration);
-        
-        // var AudioParam = AudioParam.cancelScheduledValues(startTime)
-        // var audioParam = AudioParam.cancelAndHoldAtTime(cancelTime)
-    }
-    example2()
-}
+            function setPeriodicWavef( wavetable ){
+                const wave = ctx.createPeriodicWave(
+                    new Float32Array(wavetable.real),
+                    new Float32Array(wavetable.imag)
+                )
+                return function( node ){
+                    node.setPeriodicWave( wave )
+                }
+            }
+            function setupCompressor( dynamicsCompressorNode ){
+                const c = dynamicsCompressorNode
+                c.knee.setValueAtTime(40, ctx.currentTime);  // [ 0, 40 ] 30
+                c.ratio.setValueAtTime(12, ctx.currentTime); // [ 1, 20 ] 12
+                c.attack.setValueAtTime(0, ctx.currentTime);
+            }
+            const periodicWaveOscillatorGain = {
+                nodes : {
+                    osc : { node : 'oscillator' , f : setPeriodicWavef( wavetable ) },
+                    gain : { node : 'gain' }
+                },
+                connections : [ ['osc','gain'] ],
+                outputs : [ 'gain' ]    
+            }
+            const whiteNoiseBandPassGain = {
+                nodes : {
+                    whitenoise : { node : 'bufferSource', p : {
+                        buffer : monoWhiteNoiseBuffer(1),
+                        loop : true
+                    }},
+                    bandpass : { node : 'biquadFilter', p : { type : 'bandpass' } },
+                    gain : { node : 'gain' },
+                },
+                connections: [['whitenoise','bandpass','gain']],
+                outputs : ['gain']
+            }
+            const compressorGain = {
+                nodes : {
+                    pre : { node : 'gain' },
+                    compressor : { node : 'dynamicsCompressor', f : setupCompressor },
+                    post : { node : 'gain' },
+                },
+                connections: [['pre','compressor','post']],
+                inputs : [ 'pre'],
+                outputs : [ 'post' ]
+            }
+            const brahoum = {
+                nodes : {
+                    noise : { module : whiteNoiseBandPassGain },
+                    compression : { module : compressorGain }
+                },
+                connections : [['noise','compression']],
+                outputs : ['compression']
+            }
 
-export function fetchWaveTable( url ){
-    return fetch( url )
-        .then( x => x.text() )
-        .then( x => x.replace(/\s/g,'')
-               .replace(/'/g, '"')
-               .replace(/'/g, '"') 
-               .replace(/,]/g, ']') 
-               .replace(/,}/g, '}') )
-        .then( JSON.parse )
-        .catch( x => console.error( 'bad wavetable', url ) )
+            /*
+              const mixer2module = {
+              nodes : {
+              in1 : { node : 'gain' },
+              in2 : { node : 'gain' }
+              },
+              outputs : ['in1','in2'],
+              }  
+            */
+            let m = instanciateModule( ctx, brahoum )
+            m.audioOutputs.forEach( wan => wan.connect( ctx.destination ) )
+            m.start()
+            console.log( Object.keys( m.audioParams ).join("\n") )
+            m.audioParam('compression.post/gain').linearRampToValueAtTime(0, ctx.currentTime + 5)
+            m.audioParam('noise.bandpass/Q').linearRampToValueAtTime(0, ctx.currentTime + 5)
+            m.audioParam('noise.bandpass/frequency').linearRampToValueAtTime(4000, ctx.currentTime + 5)
+            
+            // occurs between previous scheduled event and <endTime>
+            // var AudioParam = AudioParam.linearRampToValueAtTime(value, endTime)
+            // var AudioParam = AudioParam.exponentialRampToValueAtTime(value, endTime)
+            
+            // occurs at <startTime>
+            // var AudioParam = AudioParam.setValueAtTime(value, startTime)
+            // var AudioParam = AudioParam.setTargetAtTime(target, startTime, timeConstant);  
+            // var AudioParam = AudioParam.setValueCurveAtTime(values, startTime, duration);
+            
+            // var AudioParam = AudioParam.cancelScheduledValues(startTime)
+            // var audioParam = AudioParam.cancelAndHoldAtTime(cancelTime)
+        }
+        example2()
+    })
 }
 
 
-// examples()
+
+//examples()

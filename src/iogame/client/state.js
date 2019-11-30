@@ -19,13 +19,13 @@ export function initState() {
     if ( !update) return
     if ( update.bombs ){
         update.bombs.forEach( x => {
-            if ( x.justFired ){
+            if ( x.justfired ){
                 oneTimeEvents.push( x )
                 //console.log('bomb')
             }
         })
         update.missiles.forEach( x => {
-            if ( x.justFired ){
+            if ( x.justfired ){
                 oneTimeEvents.push( x )
             }
         })
@@ -129,10 +129,7 @@ function interpolateState( s1, s2, ratio ){
                             if ( (item.a!==undefined) ){
                                 item.a = a816Interpolation( vsk1.a, vsk2.a, ratio )
                             }
-                            if ( vsk1.justFired ){
-                                item.justFired = vsk1.justFired
-                            }
-                            item.justFired = item.justFired || vsk1.justFired
+                            item.justfired = item.justfired || vsk1.justfired
                         }
                     }
                     return item

@@ -43,7 +43,7 @@ if (true){
         }
     }
     let game = new Game( { tellPlayer } )
-    game.addPlayer('123456','vivien')
+    game.addPlayer('123456','mick')
     game.addPlayer('1234567','joe')
     game.addPlayer('123467','zav')
 
