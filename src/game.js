@@ -228,6 +228,9 @@ export function Game( { tellPlayer, tellScore } ) {
         })
         return targets
     }
+    function init_reload( t ){
+        return { t, step : 0}
+    }
     function move_reload( reload ){
         if ( reload.step > 0  ){
             reload.step--
@@ -235,6 +238,60 @@ export function Game( { tellPlayer, tellScore } ) {
     }
     function arm_reload( reload ){
         reload.step = reload.t
+    }
+    function init_bomb( i, owner ){
+        const idx = owner
+        return {
+            cs : idx%ColorSchemes.length,
+            hitmaskf : Hitmaskfs.bomb,
+            bhitmaskf : Bhitmaskfs.bomb,
+            x : 1550+i*20,
+            y : 100+i*10,
+            a : i,
+                p : 1,
+            ttl : -1,
+            step : 0,
+            explosion : init_explosion(idx%ColorSchemes.length),
+            owner : idx,
+            destroys : ( me, other ) => {
+                if ( other.value ){
+                    give_points( me.owner, other.value )
+                    if ( other.idx !== undefined){
+                        give_points( other.idx, -5 )
+                    } else if ( other.owner !== undefined){
+                        give_points( other.owner, -1 )
+                    }
+                    }
+            },
+            justfired : init_justfired('bomb')
+        }
+    }
+    function init_missile( i, owner ){
+        const idx = owner
+        return {
+            cs : idx%ColorSchemes.length,
+            hitmaskf : Hitmaskfs.missile,
+            bhitmaskf : Bhitmaskfs.missile,
+            x : 1250+i*40,
+            y : 100+i*10,
+            a : i,
+            p : 3,
+            ttl : -1,
+            step : 0,
+            explosion : init_explosion(idx%ColorSchemes.length),
+            owner : idx,
+                destroys : ( me, other ) => {
+                    if ( other.value ){
+                        give_points( me.owner, other.value )
+                        if ( other.idx !== undefined){
+                            give_points( other.idx, -5 )
+                        } else if ( other.owner !== undefined){
+                            give_points( other.owner, -1 )
+                        }
+                    }
+                },
+            justfired : init_justfired('missile')
+        }
     }
     function init_plane(idx){
         return {
@@ -250,58 +307,9 @@ export function Game( { tellPlayer, tellScore } ) {
             r : 0,
             a : 0,
             p : 2,
-            reload : {
-                t : 6,
-                step : 0
-            },
-            bombs : new Array(8).fill(0).map( (_,i) => ({
-                cs : idx%ColorSchemes.length,
-                hitmaskf : Hitmaskfs.bomb,
-                bhitmaskf : Bhitmaskfs.bomb,
-                x : 1550+i*20,
-                y : 100+i*10,
-                a : i,
-                p : 1,
-                ttl : -1,
-                step : 0,
-                explosion : init_explosion(idx%ColorSchemes.length),
-                owner : idx,
-                destroys : ( me, other ) => {
-                    if ( other.value ){
-                        give_points( me.owner, other.value )
-                        if ( other.idx !== undefined){
-                            give_points( other.idx, -5 )
-                        } else if ( other.owner !== undefined){
-                            give_points( other.owner, -1 )
-                        }
-                    }
-                },
-                justfired : init_justfired('bomb')
-            })),
-            missiles : new Array(16).fill(0).map( (_,i) => ({
-                cs : idx%ColorSchemes.length,
-                hitmaskf : Hitmaskfs.missile,
-                bhitmaskf : Bhitmaskfs.missile,
-                x : 1250+i*40,
-                y : 100+i*10,
-                a : i,
-                p : 3,
-                ttl : -1,
-                step : 0,
-                explosion : init_explosion(idx%ColorSchemes.length),
-                owner : idx,
-                destroys : ( me, other ) => {
-                    if ( other.value ){
-                        give_points( me.owner, other.value )
-                        if ( other.idx !== undefined){
-                            give_points( other.idx, -5 )
-                        } else if ( other.owner !== undefined){
-                            give_points( other.owner, -1 )
-                        }
-                    }
-                },
-                justfired : init_justfired('missile')
-            })),
+            reload : init_reload( 6 ),
+            bombs : new Array(8).fill(0).map( (_,i) => init_bomb( i, idx ) ),
+            missiles : new Array(16).fill(0).map( (_,i) => init_missile( i, idx ) ),
             explosion : init_explosion(idx%ColorSchemes.length),
             falling : init_falling_plane(),
             leaving : init_leaving_plane(),

@@ -172,7 +172,7 @@ function Interpretor( synth ){
         // reduce all justfired to stereo sum / squared distance
         let maxJustfiredNum = firedState.last
         state.justfired.forEach( justfired => {
-            // we dont want to see the same event twice
+            // we dont want to see the same event twice because of interpolation
             if ( justfired.num > firedState.last ){
                 const side = ( playerItem.x > justfired.x )?0:1
                 const rd = dist( playerItem, justfired )
