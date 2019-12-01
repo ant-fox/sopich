@@ -375,13 +375,16 @@ export function readPart( s, part, offset = 0, prefix ){
 
         const ppath = ( prefix )?( prefix+'.'+path ):( path )
         const ap = s.audioParam( ppath )
-
-        if ( p1 === 'cancel' ){
-            ap.cancelScheduledValues( time + offset)
-        } else if ( p2 !== 'set' ){
-            ap.linearRampToValueAtTime( p1, time + offset)
-        } else {
-            ap.setValueAtTime(p1, time + offset)
+        try {
+            if ( p1 === 'cancel' ){
+                ap.cancelScheduledValues( time + offset)
+            } else if ( p2 !== 'set' ){
+                ap.linearRampToValueAtTime( p1, time + offset)
+            } else {
+                ap.setValueAtTime(p1, time + offset)
+            }
+        } catch(e){
+            console.error('cannot read event',event,'at ',"'"+ppath+"'",'with params',{ s, part, offset, prefix},e)
         }
     })
   

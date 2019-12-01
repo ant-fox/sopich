@@ -1,4 +1,4 @@
-const IA_DOES_NOT_FIRE = true
+const IA_DOES_NOT_FIRE = false
 //
 // game modes
 // - protect fort

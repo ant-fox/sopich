@@ -58,10 +58,10 @@ const model1 = {
     ],
     outputs : [ 'fader' ]
 }
-const model2 = {
+const model2 = { // missile just fired
     nodes : {
         noisegen : { node : 'bufferSource', buffer : 'whitenoise', p : { loop : true } },
-        bandpass : { node : 'biquadFilter', p : { type : 'bandpass' }, ap : { Q : 0.01, frequency : 800 } }, 
+        bandpass : { node : 'biquadFilter', p : { type : 'bandpass' }, ap : { Q : 4, frequency : 100 } }, 
         fader : { node : 'gain', ap : { gain : 0 } },
     },
     connections : [ [ 'noisegen', 'bandpass', 'fader' ] ],
@@ -75,33 +75,41 @@ const model3 = {
     connections : [ ['gain','fader'] ],
     outputs : [ 'fader' ]
 }
-const model4 = {
+const model4 = { // bomb just fired
     nodes : {
-        gen : { node : 'bufferSource', buffer : 'dirac', p : { loop : true } },
-        fader : { node : 'gain', ap : { gain : 0.0 } },
+        osc1 : { node : 'oscillator' },
+        osc2 : { node : 'oscillator' },
+        fader : { node : 'gain' , ap : { gain : 0 } },
     },
     connections : [
-        [ 'gen', 'fader' ]
+        [ 'osc1', 'fader' ],
+        [ 'osc2', 'fader' ]
     ],
-    outputs : ['fader']
+    outputs : ['fader' ]
 }
-const model5 = {
+const model5 = { //explosion
     nodes : {
-        lfo1 : { node : 'oscillator', /*p : { type : 'square' }, */ap : { frequency : 21 } },
+        gen : { node : 'bufferSource', buffer : 'whitenoise', p : { loop : true } },
+    //lfo1 : { node : 'oscillator', /*p : { type : 'square' }, */ap : { frequency : 21 } },
         //gen : { node : 'bufferSource', buffer : 'dirac', p : { loop : true } },
-        gen : { node : 'oscillator', /*p : { type : 'square' }, */ap : { frequency : 200 } },
+        //gen : { node : 'oscillator', /*p : { type : 'square' }, */ap : { frequency : 200 } },
 
         //lfo1 : { node : 'oscillator',  ap : { frequency : 60 } },
-        //delay1 : { node : 'delay', ap : { delayTime : 0.01 } },
-        //delay2 : { node : 'delay', ap : { delayTime : 0.02 } },
-        //delay3 : { node : 'delay', ap : { delayTime : 0.03 } },        
-        lfo : { node : 'oscillator', p : { type : 'square' }, ap : { frequency : 2 } },
-        fader : { node : 'gain' /*,ap : { gain : 0.5 } */},
+        /*delay1 : { node : 'delay', ap : { delayTime : 0.1 } },
+        delay2 : { node : 'delay', ap : { delayTime : 0.2 } },
+        delay3 : { node : 'delay', ap : { delayTime : 0.3} },        
+*/
+        //lfo : { node : 'oscillator', p : { type : 'square' }, ap : { frequency : 2 } },
+        fader : { node : 'gain' ,ap : { gain : 0 } },
     },
     connections : [
-        [ 'lfo1', 'gen/frequency' ],
-        [ 'lfo', 'fader/gain' ],
-        [ 'gen',/* 'delay1', 'delay2', 'delay3',*/ 'fader' ]
+        //[ 'lfo1', 'gen/frequency' ],
+        //[ 'lfo', 'fader/gain' ],
+        //[ 'gen', 'delay1', 'delay2', 'delay3' ],
+        [ 'gen', 'fader' ],
+        /*[ 'delay1', 'fader' ],
+        [ 'delay2', 'fader' ],
+        [ 'delay3', 'fader' ],*/
     ],
     outputs : ['fader']
 }
@@ -109,9 +117,15 @@ const model = {
     nodes : {
         missilejustfired : { module : model2 },
         bombjustfired : { module : model4 },
-        explosionjustfired : { module : model5 }
+        explosionjustfired : { module : model5 },
+        fader : { node : 'gain' },
     },
-    outputs : ['missilejustfired','bombjustfired','explosionjustfired']
+    connections : [
+        ['missilejustfired','fader'],
+        ['bombjustfired','fader'],
+        ['explosionjustfired','fader']
+    ],
+    outputs : ['fader']
 }
 function Interpretor( synth ){
 
@@ -180,12 +194,13 @@ function Interpretor( synth ){
         if ( fx.missile.end < ctx.currentTime ){
 
             if ( stereoFired.missile[0] || stereoFired.missile[1] ){
-
+                /*
                 const vol = Math.pow(
-                    0.3 + clamp(( stereoFired.missile[0] + stereoFired.missile[1] ),0,1),
-                    0.5
+                    clamp(( 0.3 + stereoFired.missile[0] + stereoFired.missile[1] ),0,1),
+                    0.2
                 )
-                
+                */
+                const vol = 1
                 const part = [
                     /*[ 0, 'fader/gain', 'cancel' ],
                       [ 0, 'bandpass/Q', 'cancel' ],
@@ -197,7 +212,7 @@ function Interpretor( synth ){
                     [ 10, 'fader/gain', 0 ],
                     [ 10, 'bandpass/Q', 1000 ],
                     [ 11, 'bandpass/frequency', 800 ],
-                    [ 12, 'bandpass/frequency', 8000 ],
+                    [ 12, 'bandpass/frequency', 100 ],
                     //[ 20, 'bandpass/Q', 0.02 ],
                 ]
                 
@@ -208,28 +223,32 @@ function Interpretor( synth ){
             }
         }
         if ( fx.explosion.end < ctx.currentTime ){
-            /*if ( stereoFired.explosion[0] || stereoFired.explosion[1] ){
+            if ( stereoFired.explosion[0] || stereoFired.explosion[1] ){
                 const part = [
-                    [0,'fader/gain',0],
-                    [1,'fader/gain',1],
-                    [2,'fader/gain',0],
+                    [0.02,'fader/gain',0.01],
+                    [0.001,'fader/gain',0.08], 
+                    [0.8,'fader/gain',0],
                 ]
                 startfx( 'explosion', part , 'explosionjustfired' )
-            }
-            */
+            }            
         }
         if ( fx.bomb.end < ctx.currentTime ){
-            /*
+            
               if ( stereoFired.bomb[0] || stereoFired.bomb[1] ){
                 const part = [
-                    [0,'fader/gain',0],
-                    [0.1,'fader/gain',1],
-                    [0.2,'fader/gain',0],
-                ]
+                    [0.01,'fader/gain',0],
+                    [0.011,'osc1/frequency', 1000, 'set'],
+                    [0.011,'osc2/frequency', 10, 'set'],
+                    [0.1,'fader/gain',0.05],
+                    //[0.2,'osc1/frequency',50],
+                    [0.3,'fader/gain',0],
+                    [0.3,'osc1/frequency', 0], 
+                    [0.3,'osc2/frequency', 0],
+               ]
                 startfx( 'bomb', part , 'bombjustfired' )
 
             }
-            */
+            
         }
 
         

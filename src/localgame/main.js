@@ -4,9 +4,9 @@ import { Game } from '../game.js'
 import { Audio } from '../audio.js'
 import  * as Menu from '../menu.js'
 
- import { Tutuut } from './tutuut.js'
+// import { Tutuut } from './tutuut.js'
 
-if (false){
+if (true){
   // menu
     const menu = new Menu.Menu( Menu.Definitions, Menu.defaultStore )
     
