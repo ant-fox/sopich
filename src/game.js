@@ -48,7 +48,6 @@ import { Tree, CONTINUE_VISIT, STOP_VISIT } from './coll.js'
 import { clamp, posmod } from './utils.js'
 import { rectangle_intersection, rectangle_intersection_bool } from './rect.js'
 import { ColorSchemes } from './symbols.js'
-console.log( 'ColorSchemes',ColorSchemes)
 export const worldSize = {
     x1 : 0,
     x2 : 3000,

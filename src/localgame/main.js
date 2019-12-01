@@ -8,18 +8,19 @@ import  * as Menu from '../menu.js'
 
 if (true){
   // menu
-    const menu = new Menu.Menu( Menu.Definitions, Menu.defaultStore )
+
+    const menuStore = Menu.defaultStore
+    const menu = new Menu.Menu( Menu.Definitions, menuStore  )
     
-     function onValueChange3( msg, type ){
+    function onValueChange3( msg, type ){
         console.log('3 message meny say','type?',type, 'msg',msg )
     }
-     function onValueChange( msg, type ){
+    function onValueChange( msg, type ){
         console.log('! message meny say','type?',type, 'msg',msg )
     }
-    Menu.defaultStore.valueChange.addListener( onValueChange3,  'config.sound.mute' )
-    Menu.defaultStore.valueChange.addListener(
-        onValueChange,
-    )
+    //
+    menuStore.valueChange.addListener( onValueChange )
+
    
     menu.start()
 //    menu.show()
@@ -32,7 +33,35 @@ if (true){
     const audio = new Audio()
     audio.start()
 
-  
+
+    function onConfigSoundMute({value}){
+        if ( value ){
+            audio.stop()
+        } else {
+            audio.start()
+        }
+    }
+    function onConfigMix({value}, location ){
+        let dest = location.replace(/.*\./,'')
+        audio.mix( value, dest )
+    }
+    menuStore.valueChange.addListener( onConfigSoundMute,  'config.sound.mute' )
+    menuStore.valueChange.addListener( onConfigMix,  'config.sound.general' )
+//    menuStore.valueChange.addListener( onConfigMix,  'config.sound.detail.engine' )
+    menuStore.valueChange.addListener( onConfigMix,  'config.sound.detail.missile' )
+    menuStore.valueChange.addListener( onConfigMix,  'config.sound.detail.bomb' )
+    menuStore.valueChange.addListener( onConfigMix,  'config.sound.detail.explosion' )
+
+    menuStore.load([
+        [ 'config.sound.general', 9 ],
+        [ 'config.sound.detail.engine', 9 ],
+        [ 'config.sound.detail.missile', 9 ],
+        [ 'config.sound.detail.bomb' , 5 ],
+        [ 'config.sound.detail.explosion', 9 ],
+    ])
+        
+
+    
     // game
     function tellPlayer( inputId, state ){
         if ( inputId === '123456'){

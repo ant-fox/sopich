@@ -116,16 +116,19 @@ const model5 = { //explosion
 const model = {
     nodes : {
         missilejustfired : { module : model2 },
+        missile : { node : 'gain' },
         bombjustfired : { module : model4 },
+        bomb : { node : 'gain' },
         explosionjustfired : { module : model5 },
-        fader : { node : 'gain' },
+        explosion : { node : 'gain' },
+        general : { node : 'gain' },
     },
     connections : [
-        ['missilejustfired','fader'],
-        ['bombjustfired','fader'],
-        ['explosionjustfired','fader']
+        ['missilejustfired','missile','general'],
+        ['bombjustfired','bomb','general'],
+        ['explosionjustfired','explosion','general']
     ],
-    outputs : ['fader']
+    outputs : ['general']
 }
 function Interpretor( synth ){
 
@@ -262,7 +265,14 @@ export function Audio(){
         synth : undefined,
         interpretor : undefined,
         running : false,
-        connected : false
+        connected : false,
+        mix : {
+            'general' : { modified : true, value : 1 },
+//            'engine' : { modified : true, value : 1 },
+            'missile' : { modified : true, value : 1 },
+            'bomb' : { modified : true, value : 1 },
+            'explosion' : { modified : true, value : 1 },
+        }
     }
     function initialize(){
         Promise
@@ -298,19 +308,32 @@ export function Audio(){
             s.disconnect( s.ctx.destination )
         }
         audioState.connected = r
+        Object.entries( audioState.mix ).forEach( ([k,v]) => {
+            if ( v.modified ){
+                const ap = s.audioNodes[ k ].gain
+                console.log('audio:','set',k,'gain','to',v.value)
+                ap.setTargetAtTime(v.value, s.ctx.currentTime, 0.05);
+                v.modified = false
+            }
+        })
+        
     }
     function setState( state ){
         honorRunning()
         if ( !audioState.synth) return
         if ( !audioState.running ) return
         audioState.interpretor.setState( state )
+    }    
+    function mix(value,type){
+        audioState.mix[ type ].value = value
+        audioState.mix[ type ].modified = true
     }
-
     initialize()
     return {
         setState,
         start,
         stop,
+        mix,
     }
 }
 // function Synth( ctx, wavetables ){

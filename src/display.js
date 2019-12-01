@@ -324,17 +324,6 @@ export function Display() {
                 let rgb = `rgb(${col[0]},${col[1]},${col[2]})`
                 $context.fillStyle = rgb
 
-                const threshold = 100
-                let prefix
-                /*if (  && ( camera_target_to_center_dist > threshold ) ){
-                    let size = 10 + clamp( (Math.floor(camera_target_to_center_dist) - threshold) / 20, 0,10)
-                    $context.font = `${ size  }px monospace`;
-                    prefix = '➹'
-                } else {
-                    $context.font = "10px monospace";
-                    prefix = ''
-                }
-                */
                 const is_target_plane = (  me.idx === planeIdx )
                 function target_helper( position_helper_ttl, position_helper_max_ttl ){
                     const remain = position_helper_max_ttl -  position_helper_ttl
@@ -350,16 +339,15 @@ export function Display() {
                     $context.closePath()
                     $context.fill()                    
                 }
-                if (  is_target_plane && position_helper_ttl > 0 ){
+                if (  is_target_plane && ( position_helper_ttl > 0 ) ){
                     target_helper( position_helper_ttl, position_helper_max_ttl)
-                    $context.font = `${ 10 + clamp( position_helper_ttl,0,30)  }px monospace`;
+                    //$context.font = `${ 10 + clamp( position_helper_ttl,0,30)  }px monospace`;
                     /*$context.fillText(`▲`,
                       wxy.x ,  wxy.y + 18 )*/
-                    prefix = '?'
+                    //prefix = '?'
                 } else {
                     $context.font = `${ 10  }px monospace`;
-                    prefix = ''
-                    $context.fillText(`${ prefix}${ name }(${p})${score.total}/${value}`,
+                    $context.fillText(`${ name }(${p})${score.total}/${value}`,
                                       wxy.x + 8 , wxy.y + 18 )
                 }
                 

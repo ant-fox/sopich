@@ -159,8 +159,21 @@ function Store( root ) {
     const get = ls => valueByLocatorString[ ls ]
     const set = (ls, value) => valueByLocatorString[ ls ] = value
     const uptodateVersion = v => ( version === v )
-    function tell( location, realOldValue, realNewValue ){
-        valueChange.dispatch( { realOldValue, realNewValue, version }, location )
+    
+    function load( settings ){
+        settings.forEach( ([locatorString,indexValue]) => {
+            console.info( 'load', locatorString, '=', indexValue )
+            if ( get( locatorString ) === undefined ){
+                throw new Error('bad locator string : '+locatorString )
+            } else {
+                set( locatorString, indexValue )
+                tell( locatorString, undefined, indexValue )
+            }
+        })
+    }
+    
+    function tell( location, oldValue, value ){
+        valueChange.dispatch( { oldValue, value, version }, location )
     }
     function modify( p, f, forceMod ){
         const location = locatorString( p )
@@ -185,7 +198,7 @@ function Store( root ) {
         }
     }
     return {
-        get, modify, valueChange
+        load, get, modify, valueChange
     }
     
 }
