@@ -64,9 +64,7 @@ const model2 = {
         bandpass : { node : 'biquadFilter', p : { type : 'bandpass' }, ap : { Q : 0.01, frequency : 800 } }, 
         fader : { node : 'gain', ap : { gain : 0 } },
     },
-    connections : [
-        [ 'noisegen', 'bandpass', 'fader' ]
-    ],
+    connections : [ [ 'noisegen', 'bandpass', 'fader' ] ],
     outputs : ['fader']
 }
 const model3 = {
@@ -80,19 +78,40 @@ const model3 = {
 const model4 = {
     nodes : {
         gen : { node : 'bufferSource', buffer : 'dirac', p : { loop : true } },
-        fader : { node : 'gain', ap : { gain : 0 } },
+        fader : { node : 'gain', ap : { gain : 0.0 } },
     },
     connections : [
         [ 'gen', 'fader' ]
     ],
     outputs : ['fader']
 }
+const model5 = {
+    nodes : {
+        lfo1 : { node : 'oscillator', /*p : { type : 'square' }, */ap : { frequency : 21 } },
+        //gen : { node : 'bufferSource', buffer : 'dirac', p : { loop : true } },
+        gen : { node : 'oscillator', /*p : { type : 'square' }, */ap : { frequency : 200 } },
+
+        //lfo1 : { node : 'oscillator',  ap : { frequency : 60 } },
+        //delay1 : { node : 'delay', ap : { delayTime : 0.01 } },
+        //delay2 : { node : 'delay', ap : { delayTime : 0.02 } },
+        //delay3 : { node : 'delay', ap : { delayTime : 0.03 } },        
+        lfo : { node : 'oscillator', p : { type : 'square' }, ap : { frequency : 2 } },
+        fader : { node : 'gain' /*,ap : { gain : 0.5 } */},
+    },
+    connections : [
+        [ 'lfo1', 'gen/frequency' ],
+        [ 'lfo', 'fader/gain' ],
+        [ 'gen',/* 'delay1', 'delay2', 'delay3',*/ 'fader' ]
+    ],
+    outputs : ['fader']
+}
 const model = {
     nodes : {
         missilejustfired : { module : model2 },
-        bombjustfired : { module : model4 }
+        bombjustfired : { module : model4 },
+        explosionjustfired : { module : model5 }
     },
-    outputs : ['missilejustfired','bombjustfired']
+    outputs : ['missilejustfired','bombjustfired','explosionjustfired']
 }
 function Interpretor( synth ){
 
@@ -189,10 +208,29 @@ function Interpretor( synth ){
             }
         }
         if ( fx.explosion.end < ctx.currentTime ){
-            
-            
+            /*if ( stereoFired.explosion[0] || stereoFired.explosion[1] ){
+                const part = [
+                    [0,'fader/gain',0],
+                    [1,'fader/gain',1],
+                    [2,'fader/gain',0],
+                ]
+                startfx( 'explosion', part , 'explosionjustfired' )
+            }
+            */
         }
-        
+        if ( fx.bomb.end < ctx.currentTime ){
+            /*
+              if ( stereoFired.bomb[0] || stereoFired.bomb[1] ){
+                const part = [
+                    [0,'fader/gain',0],
+                    [0.1,'fader/gain',1],
+                    [0.2,'fader/gain',0],
+                ]
+                startfx( 'bomb', part , 'bombjustfired' )
+
+            }
+            */
+        }
 
         
         //     if ( state.explosions ){
