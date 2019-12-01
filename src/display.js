@@ -309,7 +309,7 @@ export function Display() {
         const planes = State.planes
         if ( planes ){
             State.planes.forEach( (plane,planeIdx) => {
-                const { ttl, x, y, r, a, p, cs, score, value,  name } = plane
+                const { age, ttl, x, y, r, a, p, cs, score, value,  name } = plane
                 if ( ttl < 0 ){
                     return
                 }
@@ -347,7 +347,7 @@ export function Display() {
                     //prefix = '?'
                 } else {
                     $context.font = `${ 10  }px monospace`;
-                    $context.fillText(`${ name }(${p})${score.total}/${value}`,
+                    $context.fillText(`${ name }[${age}](${p})${score.total}/${value}`,
                                       wxy.x + 8 , wxy.y + 18 )
                 }
                 
@@ -363,10 +363,16 @@ export function Display() {
         if ( bombs ) {
             for ( let i = 0, l = bombs.length ; i < l ; i++ ){        
                 const bomb = bombs[i]
-                const { x, y, a, p, ttl, cs, explosion } = bomb
+                const { x, y, age, a, p, ttl, cs, explosion } = bomb
                 if ( ttl > 0 ){
                     let wxy = world_to_context( x, y )
-                    putSprite( Images.bomb[cs][a], wxy.x , wxy.y ) 
+                    putSprite( Images.bomb[cs][a], wxy.x , wxy.y )
+                    if ( age !=== undefined ){
+                        // dbg
+                        $context.fillStyle = 'white'
+                        $context.font = `${ 10  }px monospace`;
+                        $context.fillText(`[${age}]`, wxy.x , wxy.y + 9 )
+                    }
                 }
             }
         }
@@ -374,10 +380,16 @@ export function Display() {
         if ( missiles ){
             for ( let i = 0, l = missiles.length ; i < l ; i++ ){        
                 const missile = missiles[i]
-                const { x, y, a, p, ttl, cs, explosion } = missile
+                const { x, y, age, a, p, ttl, cs, explosion } = missile
                 if ( ttl > 0 ){
                     let wxy = world_to_context( x, y )
-                    putSprite( Images.missile[cs][a], wxy.x , wxy.y ) 
+                    putSprite( Images.missile[cs][a], wxy.x , wxy.y )
+                    if ( age !=== undefined ){
+                        // dbg
+                        $context.fillStyle = 'white'
+                        $context.font = `${ 10  }px monospace`;
+                        $context.fillText(`[${age}]`, wxy.x , wxy.y + 9 )
+                    }
                 }
             }
         }

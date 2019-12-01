@@ -62,13 +62,12 @@ export const PLANE_INPUT_NAMES = [
     'firebomb','firemissile'
 ]
 function NameGenerator(){
-
     let letters = [
         /* rare wov */ 'jy'.split(''),
         /* freq wov */ 'aeiou'.split(''),
         /* rare_con */ 'hkqvxz'.split(''),
         /* freq_con */ 'bcdfglmnprst'.split('')
-    ]    
+    ],
     let freqs = [
         // rw fw rc fc
         [ 0,1,1,10 ], // rw
@@ -105,9 +104,6 @@ function NameGenerator(){
     }
 }
 const generateName = NameGenerator()
-/*
- *
- */
 const directions16 = new Array( 16 ).fill(0)
       .map( (_,i) => ( i * 2 * Math.PI / 16 ) )
       .map( x => [ Math.cos( x ), Math.sin( x ) ] )
@@ -300,6 +296,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
     function init_bomb( i, owner ){
         const idx = owner
         return {
+            age : 0,
             cs : idx%ColorSchemes.length,
             hitmaskf : Hitmaskfs.bomb,
             bhitmaskf : Bhitmaskfs.bomb,
@@ -327,6 +324,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
     function init_missile( i, owner ){
         const idx = owner
         return {
+            age : 0,
             cs : idx%ColorSchemes.length,
             hitmaskf : Hitmaskfs.missile,
             bhitmaskf : Bhitmaskfs.missile,
@@ -353,6 +351,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
     }
     function init_plane(idx){
         return {
+            age : 0,
             cs : idx%ColorSchemes.length,
             hitmaskf : Hitmaskfs.plane,
             bhitmaskf : Bhitmaskfs.plane,
@@ -423,6 +422,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         bomb.ttl = 100
         bomb.step = 0
         bomb.a = a >> 1
+        bomb.age = 0
         justfire( bomb.justfired )
     }
     function fire_missile_from_plane( missile, from ){
@@ -438,6 +438,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         missile.p = 5
         missile.step = 0
         missile.a = a 
+        missile.age = 0
         justfire( missile.justfired )
     }
     function handleinputs(){
@@ -543,6 +544,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 }
                 plane.x = clamp( plane.x, worldSize.x1, worldSize.x2)
                 plane.y = clamp( plane.y, worldSize.y1, worldSize.y2)
+                plane.age+= 1
             } else {
                 plane.respawn -= 1
                 if ( plane.respawn < 0 ){
@@ -550,6 +552,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                     plane.x = Math.floor( worldSize.x1 + worldSize.w * Math.random() )
                     plane.y = Math.floor( 100 + Math.floor( Math.random() * 700 ) )
                     plane.p = 1
+                    plane.age = 0
                 }
             }
             move_anim( leaving )
@@ -558,8 +561,6 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 falling.y -= falling.p
             }
             move_explosion( explosion )
-            ///
-
             move_reload( plane.reload )
             
             for ( let i = 0, l = bombs.length ; i < l ; i++ ){
@@ -570,14 +571,16 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                     let dx = directions8[ a ][ 0 ] * p * 2
                     let dy = directions8[ a ][ 1 ] * p * 2
                     bomb.x = x + dx
-                    bomb.y = y + dy
+                    bomb.y = y + dy                    
                     if ( step === 20 ){
+                        // every 20 step
                         bomb.step = 0
                         bomb.a = toFall8[ a ]
                     } else {
                         bomb.step += 1
                     }
                     bomb.ttl -= 1
+                    bomb.age += 1
                 }
                 //const explosion = bomb.explosion
                 move_explosion( bomb.explosion )
@@ -598,6 +601,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                         missile.step += 1
                     }
                     missile.ttl -= 1
+                    missile.age += 1
                 }
                 move_explosion( missile.explosion )
             }
@@ -758,7 +762,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             item2.ttl = -1
         }
         //
-        if ( item1.destoys ) item1.destirt
+        // ? if ( item1.destoys ) item1.destirt
         if ( item1.explosion ) {
             start_explosion( item1.explosion, item1.x, item2.y )
         }
@@ -780,7 +784,11 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             dont = dont || ( item1.owner === item2.owner )
         }
         return dont
-
+    }
+    function have_sameteam_relation( item1, item2 ){
+        if ( item1.cs ) return
+        if ( item2.cs ) return
+        return ( item1.cs === item2.cs )
     }
     function collisions(){
         // State.tree = new Tree( 4096, 256, 16 )
@@ -856,6 +864,9 @@ export function Game( { tellPlayer, // called with user centered world, each wor
 
                         // 2.1 no collision between item and its owner
                         const dont = have_ownership_relation( item1, item2 )
+
+                        // unused
+                        const dont2 = have_sameteam_relation( item1, item2 )
 
                         // 2.2 test hitmask bounding rectangle
                         if ( ( !dont ) && rectangle_intersection_bool(
@@ -1200,7 +1211,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         })
         
         State.planes.forEach( plane => {
-            let { defaultname,
+            let { defaultname,age,
                   idx, ttl, x, y, r, a, p, cs, explosion, leaving, falling, value, score } = plane
             let name = '??'
             if ( plane.inputId ){
@@ -1215,7 +1226,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             }
             // TODO
             //if ( ttl > 0 ){
-            payload.planes.push( { ttl, x, y, r, a, p, cs, name, value, score } )
+            payload.planes.push( { ttl, age, x, y, r, a, p, cs, name, value, score } )
             //}
             {
                 const {x,y,as,ttl} = leaving
@@ -1242,13 +1253,13 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 })
             }
             plane.bombs.forEach( bomb => {
-                let { x, y, a, p, cs, ttl, step, explosion, justfired } = bomb
+                let { x, age, y, a, p, cs, ttl, step, explosion, justfired } = bomb
 
                 if ( justfired.ttl > 0 ){
                     payload.justfired.push( { x,y, type : justfired.type, num : justfired.num } )
                 }
                 
-                payload.bombs.push( { x, y, a, p, cs, ttl /*, step */ } )
+                payload.bombs.push( { age, x, y, a, p, cs, ttl /*, step */ } )
                 if ( explosion.ttl > 0 ){
                     let { x,y,justfired } = explosion
 
@@ -1263,12 +1274,11 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 }
             })
             plane.missiles.forEach( missile => {
-                let { x, y, a, p, cs, ttl, step, explosion, justfired } = missile
-                payload.missiles.push( { x, y, a, p, cs, ttl, justfired /*, step */ } )
+                let { age, x, y, a, p, cs, ttl, step, explosion, justfired } = missile
                 if ( justfired.ttl > 0 ){
                     payload.justfired.push( { x,y, type : justfired.type, num : justfired.num } )
                 }
-                
+                payload.missiles.push( { age, x, y, a, p, cs, ttl, justfired /*, step */ })               
                 if ( explosion.ttl > 0 ){
                     let { x,y,justfired } = explosion
 
