@@ -252,38 +252,6 @@ function Interpretor( synth ){
         }
 
         
-        //     if ( state.explosions ){
-        //         const explosions = state.explosions
-        //         let total = 0
-        //         explosions.forEach( explosion => {
-        //             if ( explosion.justFired ){
-        //                 const { type, num } = explosion.justFired
-        //                 if ( ! num ){
-        //                     console.log( num )
-        
-        //                 }
-        //             }
-        //             //console.log(explosion)
-        //             //if ( explosion.justFired.type === 'explosion' ){
-        //                 let sqd = dist( playerItem, explosion )
-        //                 if (sqd < 1 ) sqd = 1
-        //                 total += 1 / sqd
-        //             //}
-        //         })
-        //         let ctotal = Math.pow( clamp( total, 0, 1 ), 0.5 )
-        //         if ( ctotal < 0.1 ){
-        //             ctotal = 0
-        //         }
-        //         /*console.log( Intl.NumberFormat( 'en-EN', {
-        //             minimumIntegerDigits : 1,
-        //             maximumIntegerDigits : 1,
-        //             minimumFractionDigits : 3,
-        //             maximumFractionDigits : 3,
-        //         }).format(ctotal));                */
-        //         s.audioParam('fader/gain').linearRampToValueAtTime(ctotal, ctx.currentTime + 0.1)
-        //     } else {
-        //         s.audioParam('fader/gain').linearRampToValueAtTime(0, ctx.currentTime + 0.1)
-        //     }
     }
 
     return { setState }
