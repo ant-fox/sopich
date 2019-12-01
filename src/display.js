@@ -1,4 +1,4 @@
-import { prepareImages } from './symbols.js'
+import { prepareImages, ColorSchemes } from './symbols.js'
 const Images = prepareImages()
 import { clamp } from './utils.js'
 import { worldSize } from './game.js'
@@ -146,6 +146,9 @@ export function Display() {
             image.height,
         )
     }
+
+    let last_camera_target = undefined
+
     function display(){
 
         $context.imageSmoothingEnabled = false
@@ -176,7 +179,22 @@ export function Display() {
         const me = State.me
 
         
-        const camera_target = State[ me.type ][ me.idx ]
+        const camera_target = Object.assign({}, State[ me.type ][ me.idx ] )
+
+        
+        if ( last_camera_target === undefined ){
+            last_camera_target = camera_target
+        } else {
+            let dx = camera_target.x - last_camera_target.x
+            let dy = camera_target.y - last_camera_target.y
+            let md = Math.abs( dx ) + Math.abs( dy )
+            let ratio = 0.05
+            if ( dx > 20 ){
+                camera_target.x = Math.floor( last_camera_target.x + dx * ratio )
+                camera_target.y = Math.floor( last_camera_target.y + dy * ratio )
+            } 
+            last_camera_target = camera_target
+        }
         
         const left = clamp(
             // TODO : 8
@@ -282,8 +300,11 @@ export function Display() {
                 putSprite( Images.plane[cs][vr][va], wxy.x  , wxy.y )
                 
                 //$context.drawImage( Images.plane[vr][va], wxy.x - 8 , wxy.y - 8 )
-                
-                $context.fillStyle = 'white'
+                let col = ColorSchemes[cs][0]
+                let rgb = `rgb(${col[0]},${col[1]},${col[2]})`
+                console.log( rgb )
+                //console.log(ColorSchemes[cs])
+                $context.fillStyle = rgb
                 $context.font = "10px monospace";
                 $context.fillText(`${ name } ${Math.floor(x)},${Math.floor(y)},${p}`,
                                   wxy.x + 8 , wxy.y + 18 )

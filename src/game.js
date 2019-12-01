@@ -48,6 +48,7 @@ import { Tree, CONTINUE_VISIT, STOP_VISIT } from './coll.js'
 import { clamp, posmod } from './utils.js'
 import { rectangle_intersection, rectangle_intersection_bool } from './rect.js'
 import { ColorSchemes } from './symbols.js'
+console.log( 'ColorSchemes',ColorSchemes)
 export const worldSize = {
     x1 : 0,
     x2 : 3000,
@@ -103,9 +104,14 @@ function event_num(){
     last_event_num++
     return last_event_num
 }
-export function Game( { tellPlayer, tellScore } ) {
+export function Game( { tellPlayer, // called with user centered world, each world update 
+                        tellScore,  // called with player score, when quitting
+                      } ) {
+
     tellScore = tellScore || ( _ => _ )
+
     const State = init_state()
+    
     function init_score( idx ){
         return {
             total : 0,
@@ -125,7 +131,6 @@ export function Game( { tellPlayer, tellScore } ) {
             ttl : -1,
         }
     }
-    // const inputs = []
     function init_falling_plane(){
         return {
             x : Math.floor( 100 + Math.random() * 2500 ),
@@ -330,6 +335,7 @@ export function Game( { tellPlayer, tellScore } ) {
     }
     function init_state(){
         return {
+            version : 0,
             ground : init_ground(),
             planes : new Array(20).fill(0).map( (_,i) => init_plane(i) ),
             targets : init_targets(),
@@ -337,7 +343,6 @@ export function Game( { tellPlayer, tellScore } ) {
             flocks : new Array(4).fill(0).map( (_,i,r) => init_flock(i,r.length) ),
             oxs : new Array(12).fill(0).map( (_,i,r) => init_ox(i,r.length) ),
             // pxcoll : { list : [] },
-            version : 0,
             tree : new Tree( 4096, 1024, 16 ),
             showcolls : [],
             showtreecells : [],
@@ -512,7 +517,7 @@ export function Game( { tellPlayer, tellScore } ) {
             ///
 
             move_reload( plane.reload )
-
+            
             for ( let i = 0, l = bombs.length ; i < l ; i++ ){
                 const bomb = bombs[i]
                 if ( bomb.ttl <= 0 ){
