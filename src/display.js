@@ -309,7 +309,7 @@ export function Display() {
         const planes = State.planes
         if ( planes ){
             State.planes.forEach( (plane,planeIdx) => {
-                const { age, ttl, x, y, r, a, p, cs, score, value,  name } = plane
+                const { reckless, age, ttl, x, y, r, a, p, cs, score, value,  name } = plane
                 if ( ttl < 0 ){
                     return
                 }
@@ -318,7 +318,13 @@ export function Display() {
                 let va = a
                 let vr = r?1:0
                 let wxy = world_to_context( x, y )
-                putSprite( Images.plane[cs][vr][va], wxy.x  , wxy.y )
+                if ( reckless ){
+                    if ( Math.floor((age/2))%2 ){
+                        putSprite( Images.plane[cs][vr][va], wxy.x  , wxy.y )
+                    } 
+                } else {
+                    putSprite( Images.plane[cs][vr][va], wxy.x  , wxy.y )
+                }
                 
                 let col = ColorSchemes[cs][0]
                 let rgb = `rgb(${col[0]},${col[1]},${col[2]})`
@@ -367,10 +373,10 @@ export function Display() {
                 if ( ttl > 0 ){
                     let wxy = world_to_context( x, y )
                     putSprite( Images.bomb[cs][a], wxy.x , wxy.y )
-                    if ( age !=== undefined ){
+                    if ( age !== undefined ){
                         // dbg
                         $context.fillStyle = 'white'
-                        $context.font = `${ 10  }px monospace`;
+                        $context.font = `${ 10 }px monospace`;
                         $context.fillText(`[${age}]`, wxy.x , wxy.y + 9 )
                     }
                 }
@@ -384,10 +390,10 @@ export function Display() {
                 if ( ttl > 0 ){
                     let wxy = world_to_context( x, y )
                     putSprite( Images.missile[cs][a], wxy.x , wxy.y )
-                    if ( age !=== undefined ){
+                    if ( age !== undefined ){
                         // dbg
                         $context.fillStyle = 'white'
-                        $context.font = `${ 10  }px monospace`;
+                        $context.font = `${ 10 }px monospace`;
                         $context.fillText(`[${age}]`, wxy.x , wxy.y + 9 )
                     }
                 }

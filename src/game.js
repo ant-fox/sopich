@@ -67,7 +67,7 @@ function NameGenerator(){
         /* freq wov */ 'aeiou'.split(''),
         /* rare_con */ 'hkqvxz'.split(''),
         /* freq_con */ 'bcdfglmnprst'.split('')
-    ],
+    ]
     let freqs = [
         // rw fw rc fc
         [ 0,1,1,10 ], // rw
@@ -352,6 +352,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
     function init_plane(idx){
         return {
             age : 0,
+            recklessness : 40,
             cs : idx%ColorSchemes.length,
             hitmaskf : Hitmaskfs.plane,
             bhitmaskf : Bhitmaskfs.plane,
@@ -730,30 +731,22 @@ export function Game( { tellPlayer, // called with user centered world, each wor
     }
     function resolve_collision( item1, item2 ){
         // both die
-        
-        if ( item1.value || item2.value ){
-            if ( item1.destroys || item2.destroys ){
-                if ( item2.destroys ){
-                    /*console.log( (item1.destroys?'have':'no'), item1.cs,item1.value,
-                      '||',
-                      (item2.destroys?'have':'no'), item2.cs, item2.value )*/
-                    item2.destroys( item2, item1 )
-                }
-            }
-        }
+        // //if ( item1.value || item2.value ){
+        //     if ( item1.destroys || item2.destroys ){
+        //         if ( item2.destroys ){
+        //             /*console.log( (item1.destroys?'have':'no'), item1.cs,item1.value,
+        //               '||',
+        //               (item2.destroys?'have':'no'), item2.cs, item2.value )*/
+        //             item2.destroys( item2, item1 )
+        //         }
+        //     }
+        // //}
+        if ( item1.destroys ) item1.destroys( item1, item2 )
+        if ( item2.destroys ) item2.destroys( item2, item1 )
+
         if ( item1.destroyed ) item1.destroyed( item1 )
         if ( item2.destroyed ) item2.destroyed( item2 )
-        if ( item1.cs && item2.cs && ( item1.cs !== item2.cs ) ){
-            // console.log( item1.destroys, item2.destroys, item1.cs, item2.cs )
-            /*if ( item1.destroys ){
-              console.log('here1',Date.now(),{item1,item2})
-              }
-              if ( item2.destroys ){
-              console.log('here2',Date.now(),{item1,item2})
-              }
-              if ( item1.destroys ) item1.destroys( item1, item2 )
-              if ( item2.destroys ) item2.destroys( item2, item1 )*/
-        }
+
         //
         if ( (!item1.undescrtu) && ( item1.ttl !== undefined ) ){
             item1.ttl = -1
@@ -769,10 +762,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         if ( item2.explosion ) {
             start_explosion( item2.explosion, item2.x, item2.y )
         }
-        if ( (!item2.undescrtu) ){
-            item2._node.remove( item2 )
-            //item2_.node = undefined
-        }
+      
     }
     function have_ownership_relation( item1, item2 ){
         let dont = false
@@ -845,7 +835,12 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                     }
                 }
             }
-            
+
+            const tooYoungtoDie = ( item1.age && item1.recklessness
+                                    && ( item1.age < item1.recklessness ) )
+            if ( tooYoungtoDie ){
+                return
+            }   
             // 2. insert/collide
             const { x, y } = item1
             let node = tree.insert(
@@ -882,6 +877,12 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                             }
                             resolve_collision( item1, item2 )
                             
+                            // remove item from coll tree node
+                            // TODO why not remove item1 ??
+                            if ( (!item2.undescrtu) ){
+                                item2._node.remove( item2 )
+                                //item2_.node = undefined
+                            }
                             return STOP_VISIT // do not insert node and stop testing collisions
                         } else {
                             //return CONTINUE_VISIT  ?? XX
@@ -1212,7 +1213,10 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         
         State.planes.forEach( plane => {
             let { defaultname,age,
-                  idx, ttl, x, y, r, a, p, cs, explosion, leaving, falling, value, score } = plane
+                  idx, ttl, x, y, r, a, p, cs, explosion, leaving,
+                  falling, value, score,
+                  recklessness,
+                } = plane
             let name = '??'
             if ( plane.inputId ){
                 const player = playerByInputId[ plane.inputId ]
@@ -1224,9 +1228,12 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                     name = defaultname
                 }
             }
+
+            const reckless = ( age < recklessness )
+
             // TODO
             //if ( ttl > 0 ){
-            payload.planes.push( { ttl, age, x, y, r, a, p, cs, name, value, score } )
+            payload.planes.push( { ttl, age, x, y, r, a, p, cs, name, value, score, reckless } )
             //}
             {
                 const {x,y,as,ttl} = leaving
