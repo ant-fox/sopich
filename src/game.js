@@ -1,4 +1,5 @@
 const IA_DOES_NOT_FIRE = false
+const FIRST_PLANE_CANNOT_BE_DESTRUCTED = false
 //
 // game modes
 // - protect fort
@@ -45,7 +46,7 @@ import { ground } from './ground.js'
 import { prepareHitmask, prepareBottomHitmask } from './symbols.js'
 import { Tree, CONTINUE_VISIT, STOP_VISIT } from './coll.js'
 import { clamp, posmod } from './utils.js'
-import { rectangle_intersection } from './rect.js'
+import { rectangle_intersection, rectangle_intersection_bool } from './rect.js'
 import { ColorSchemes } from './symbols.js'
 export const worldSize = {
     x1 : 0,
@@ -89,6 +90,7 @@ const Bhitmaskfs = {
     missile : item => BottomHitmasks.missile[ item.a ]
 }
 function available_ttl( items ){
+    // get first dead item in a list
     for ( let i = 0, l = items.length ; i < l ; i++ ){
         if ( items[ i ].ttl <= 0 ){
             return i
@@ -114,6 +116,13 @@ export function Game( { tellPlayer, tellScore } ) {
         let item = State.planes[ idx ]
         if ( item && item.score ){
             item.score.total += value
+        }
+    }
+    function init_justfired( type ){
+        return {
+            type,
+            num : undefined,
+            ttl : -1,
         }
     }
     // const inputs = []
@@ -154,23 +163,23 @@ export function Game( { tellPlayer, tellScore } ) {
     }
     function init_bird( i, l ){
         return {
-            hitmaskf : Hitmaskfs.bird,
             x : Math.floor( 500 + Math.random() * 2000 ),
             y : Math.floor( 100 + ( i / l ) * 700 ),
             as : Math.floor( Math.random() * 2 ),
             interv : Math.floor( 3 + Math.random() * 2 ),
             step : 0,
+            hitmaskf : Hitmaskfs.bird,
             destroyed : item => item.ttl = -1
         }
     }
     function init_flock(i,l){
         return {
-            hitmaskf : Hitmaskfs.flock,
             x : Math.floor( 500 + Math.random() * 2000 ),
             y : Math.floor( 100 + ( i / l ) * 500 ),
             as : Math.floor( Math.random() * 2 ),
             interv : Math.floor( 5 + Math.random() * 5 ),
             step : 0,
+            hitmaskf : Hitmaskfs.flock,
             destroyed : item => item.ttl = -1
         }
     }
@@ -239,6 +248,7 @@ export function Game( { tellPlayer, tellScore } ) {
     function arm_reload( reload ){
         reload.step = reload.t
     }
+
     function init_bomb( i, owner ){
         const idx = owner
         return {
@@ -248,7 +258,7 @@ export function Game( { tellPlayer, tellScore } ) {
             x : 1550+i*20,
             y : 100+i*10,
             a : i,
-                p : 1,
+            p : 1,
             ttl : -1,
             step : 0,
             explosion : init_explosion(idx%ColorSchemes.length),
@@ -261,7 +271,7 @@ export function Game( { tellPlayer, tellScore } ) {
                     } else if ( other.owner !== undefined){
                         give_points( other.owner, -1 )
                     }
-                    }
+                }
             },
             justfired : init_justfired('bomb')
         }
@@ -280,16 +290,16 @@ export function Game( { tellPlayer, tellScore } ) {
             step : 0,
             explosion : init_explosion(idx%ColorSchemes.length),
             owner : idx,
-                destroys : ( me, other ) => {
-                    if ( other.value ){
-                        give_points( me.owner, other.value )
-                        if ( other.idx !== undefined){
-                            give_points( other.idx, -5 )
-                        } else if ( other.owner !== undefined){
-                            give_points( other.owner, -1 )
-                        }
+            destroys : ( me, other ) => {
+                if ( other.value ){
+                    give_points( me.owner, other.value )
+                    if ( other.idx !== undefined){
+                        give_points( other.idx, -5 )
+                    } else if ( other.owner !== undefined){
+                        give_points( other.owner, -1 )
                     }
-                },
+                }
+            },
             justfired : init_justfired('missile')
         }
     }
@@ -345,13 +355,6 @@ export function Game( { tellPlayer, tellScore } ) {
     */
     function normalDirection16(r,a){
         return ( a + (r?4:12) ) % directions16.length
-    }
-    function init_justfired( type ){
-        return {
-            type,
-            num : undefined,
-            ttl : -1,
-        }
     }
     function justfire( justfired ){
         // justfired.type = type
@@ -429,6 +432,7 @@ export function Game( { tellPlayer, tellScore } ) {
                     }
                 }
             }
+            // reset inputs
             plane_init_inputs( plane )
         })
     }
@@ -649,7 +653,7 @@ export function Game( { tellPlayer, tellScore } ) {
             item.respawn = 30
         }
     }
-    function iterateStateObjects( f ){
+    function iterateCollisionItems( f ){
         //f( 'ground', State.ground )
         State.oxs.forEach( ox => f( 'ox', ox ) )
         State.targets.forEach( (target,i) => f( 'target', target ) )
@@ -671,6 +675,64 @@ export function Game( { tellPlayer, tellScore } ) {
             })
         })
     }
+    function resolve_collision( item1, item2 ){
+        // both die
+        
+        if ( item1.value || item2.value ){
+            if ( item1.destroys || item2.destroys ){
+                if ( item2.destroys ){
+                    /*console.log( (item1.destroys?'have':'no'), item1.cs,item1.value,
+                      '||',
+                      (item2.destroys?'have':'no'), item2.cs, item2.value )*/
+                    item2.destroys( item2, item1 )
+                }
+            }
+        }
+        if ( item1.destroyed ) item1.destroyed( item1 )
+        if ( item2.destroyed ) item2.destroyed( item2 )
+        if ( item1.cs && item2.cs && ( item1.cs !== item2.cs ) ){
+            // console.log( item1.destroys, item2.destroys, item1.cs, item2.cs )
+            /*if ( item1.destroys ){
+              console.log('here1',Date.now(),{item1,item2})
+              }
+              if ( item2.destroys ){
+              console.log('here2',Date.now(),{item1,item2})
+              }
+              if ( item1.destroys ) item1.destroys( item1, item2 )
+              if ( item2.destroys ) item2.destroys( item2, item1 )*/
+        }
+        //
+        if ( (!item1.undescrtu) && ( item1.ttl !== undefined ) ){
+            item1.ttl = -1
+        }
+        if ( (!item2.undescrtu) && ( item2.ttl !== undefined ) ){
+            item2.ttl = -1
+        }
+        //
+        if ( item1.destoys ) item1.destirt
+        if ( item1.explosion ) {
+            start_explosion( item1.explosion, item1.x, item2.y )
+        }
+        if ( item2.explosion ) {
+            start_explosion( item2.explosion, item2.x, item2.y )
+        }
+        if ( (!item2.undescrtu) ){
+            item2._node.remove( item2 )
+            //item2_.node = undefined
+        }
+    }
+    function have_ownership_relation( item1, item2 ){
+        let dont = false
+        if ( ( item1.owner !== undefined ) && ( item2.idx !== undefined )){
+            dont = item1.owner === item2.idx
+        } else if ( ( item2.owner !== undefined ) && ( item1.idx !== undefined )){
+            dont = dont || ( item2.owner === item1.idx )
+        } else if ( ( item1.owner !== undefined ) && ( item2.owner !== undefined )){
+            dont = dont || ( item1.owner === item2.owner )
+        }
+        return dont
+
+    }
     function collisions(){
         // State.tree = new Tree( 4096, 256, 16 )
         // to move ?
@@ -687,7 +749,9 @@ export function Game( { tellPlayer, tellScore } ) {
               const y = ground[ Math.floor( x ) % ground.length ]
               ox.y = y*/
         })
-        State.planes[ 0 ].undescrtu = true
+
+        State.planes[ 0 ].undescrtu = FIRST_PLANE_CANNOT_BE_DESTRUCTED
+        
         let c = { }
         let total = 0
         //
@@ -696,7 +760,7 @@ export function Game( { tellPlayer, tellScore } ) {
         const tree = State.tree
         State.version++
         const version = State.version
-        iterateStateObjects( (type,item1) => {
+        iterateCollisionItems( (type,item1) => {
             if ( ( item1.ttl !== undefined ) && ( item1.ttl < 0 ) ){
                 return
             }
@@ -706,8 +770,8 @@ export function Game( { tellPlayer, tellScore } ) {
             c[ type ] = 1 + (ct?ct:0)
             // set hitmask
             const hitmask = item1.hitmaskf( item1 )
-            item1._hitmask = hitmask
-            // test ground
+            item1._hitmask = hitmask // cache the hitmask (A)
+            // 1. test ground
             if ( item1.ttl ){
                 const bhitmask = item1.bhitmaskf( item1 )
                 if ( bhitmask ){
@@ -724,78 +788,46 @@ export function Game( { tellPlayer, tellScore } ) {
                     }
                 }
             }
-            // insert/collide
+            
+            // 2. insert/collide
             const { x, y } = item1
             let node = tree.insert(
                 { x,y, w:hitmask.w,h:hitmask.h, item :item1 },
                 version,
                 (candidates) => {
+                    // test all items in a the coll tree quad
                     for ( let i = 0, l = candidates.length ; i < l ; i++ ){
                         const candidate = candidates[ i ]
+                        // do not check against deads resulting of previous collisions
                         if ( ( candidate.ttl !== undefined ) && ( candidate.ttl < 0 ) ){
                             continue
                         }
                         const item2 = candidate.item
-                        let hitmask2 = item2._hitmask
-                        let o = {}
-                        let dont = false
-                        if ( ( item1.owner !== undefined ) && ( item2.idx !== undefined )){
-                            dont = item1.owner === item2.idx
-                        } else if ( ( item2.owner !== undefined ) && ( item1.idx !== undefined )){
-                            dont = dont || ( item2.owner === item1.idx )
-                        } else if ( ( item1.owner !== undefined ) && ( item2.owner !== undefined )){
-                            dont = dont || ( item1.owner === item2.owner )
-                        }
-                        if ( (!dont) && rectangle_intersection( x,y,hitmask.w,hitmask.h,
-                                                                item2.x,item2.y,hitmask2.w,hitmask2.h, o ) ){
-                            State.showcolls.push( o )
-                            if ( item1.value || item2.value ){
-                                if ( item1.destroys || item2.destroys ){
-                                    if ( item2.destroys ){
-                                        /*console.log( (item1.destroys?'have':'no'), item1.cs,item1.value,
-                                          '||',
-                                          (item2.destroys?'have':'no'), item2.cs, item2.value )*/
-                                        item2.destroys( item2, item1 )
-                                    }
-                                }
-                            }
-                            if ( item1.destroyed ) item1.destroyed( item1 )
-                            if ( item2.destroyed ) item2.destroyed( item2 )
-                            if ( item1.cs && item2.cs && ( item1.cs !== item2.cs ) ){
-                                // console.log( item1.destroys, item2.destroys, item1.cs, item2.cs )
-                                /*if ( item1.destroys ){
-                                  console.log('here1',Date.now(),{item1,item2})
-                                  }
-                                  if ( item2.destroys ){
-                                  console.log('here2',Date.now(),{item1,item2})
-                                  }
-                                  if ( item1.destroys ) item1.destroys( item1, item2 )
-                                  if ( item2.destroys ) item2.destroys( item2, item1 )*/
-                            }
+                        let hitmask2 = item2._hitmask // we cached the hitmasks in (A)
+
+                        // 2.1 no collision between item and its owner
+                        const dont = have_ownership_relation( item1, item2 )
+
+                        // 2.2 test hitmask bounding rectangle
+                        if ( ( !dont ) && rectangle_intersection_bool(
+                            x,y,hitmask.w,hitmask.h,
+                            item2.x,item2.y,hitmask2.w,hitmask2.h
+                        )){
                             //
-                            if ( (!item1.undescrtu) && ( item1.ttl !== undefined ) ){
-                                item1.ttl = -1
-                            }
-                            if ( (!item2.undescrtu) && ( item2.ttl !== undefined ) ){
-                                item2.ttl = -1
-                            }
+                            // if (pixel_collision( o, x,y,hitmask.w,hitmask.h, hitmask,
+                            //                         tx,ty,16,16, Hitmasks.targets[ ttype ]) )
                             //
-                            if ( item1.destoys ) item1.destirt
-                            if ( item1.explosion ) {
-                                start_explosion( item1.explosion, x, y )
+                            if ( false ){
+                                State.showcolls.push( o )
                             }
-                            if ( item2.explosion ) {
-                                start_explosion( item2.explosion, item2.x, item2.y )
-                            }
-                            if ( (!item2.undescrtu) ){
-                                item2._node.remove( item2 )
-                                //item2_.node = undefined
-                            }
-                            return STOP_VISIT
+                            resolve_collision( item1, item2 )
+                            
+                            return STOP_VISIT // do not insert node and stop testing collisions
                         } else {
-                            return CONTINUE_VISIT
+                            //return CONTINUE_VISIT  ?? XX
                         }
                     }
+                    return CONTINUE_VISIT // ?? XX
                 }
             )
             if ( node ){
@@ -804,57 +836,8 @@ export function Game( { tellPlayer, tellScore } ) {
             }
         })
         //console.log(total,c)
+        
     }
-    // function collisions2(){
-    // State.version++
-    // const version = State.version
-    // const tree = State.tree
-    // let ncoll = 0;
-    // State.planes.forEach( plane => {
-    // const { x, y, r, a, p, bombs, missiles, explosion } = plane
-    // const { xs, tys, hits, broken } = State.targets
-    // const ground = State.ground
-    // /*
-    // collisions with items
-    // */
-    // ;[ [ [ plane ], item => Hitmasks.plane[ (item.r)?1:0 ][ item.a ] ],
-    // [ bombs, item => Hitmasks.bomb[ item.a ] ],
-    // [ missiles, item => Hitmasks.missile[ item.a ] ]
-    // ].forEach( ([ items, hitmaskf ]) => {
-    // items.forEach( item => {
-    // if (( item.ttl === undefined ) || (item.ttl > 0 )){
-    // const explosion = item.explosion
-    // const hitmask = hitmaskf( item )
-    // const x = item.x
-    // const y = item.y
-    // tree.insert(
-    // { x,y,w:hitmask.w,h:hitmask.h, item },
-    // version,
-    // () => { ncoll++ }
-    // )
-    // //const { x, y, r, a, p, explosion } = item //State.plane
-    // for ( let i = 0 ; i < xs.length ; i++ ){
-    // const tx = xs[ i ]
-    // const ty = ground[ Math.floor( tx ) % ground.length ]
-    // const hit = hits[ i ]
-    // const ttype = tys[ i ] // type
-    // const o = {}
-    // if ( rectangle_intersection( x,y,hitmask.w,hitmask.h, tx,ty,16,16, o ) ){
-    // if ( pixel_collision( o, x,y,hitmask.w,hitmask.h, hitmask, tx,ty,16,16, Hitmasks.targets[ ttype ]) ){
-    // hits[ i ] = o
-    // broken[ i ] = true
-    // start_explosion( explosion, tx ,ty )
-    // item.ttl = -1
-    // start_falling( item )
-    // }
-    // } else {
-    // //hits[ i ] = false
-    // //broken[ i ] = false
-    // }
-    // }
-    // }
-    // })
-    // })
     function ia(){
         function ia1( cp, target, maxdist ){
             //cp.undescrtu = true
@@ -914,48 +897,9 @@ export function Game( { tellPlayer, tellScore } ) {
                 }
             }
         })
-        // ia1( State.planes[ 0 ], State.planes[ State.planes.length - 1 ] )
-        /*
-          {
-          let commands = [
-          'noseup',
-          //'nosedown',
-          //'reverse',
-          'powerup',
-          //'firemissile',
-          'firebomb'
-          ]
-          let clients = State.planes
-          .map( (plane,idx) => [plane,idx] )
-          .filter( ([plane,idx]) => plane.inputId === undefined )
-          if ( clients ){
-          for ( let i = 0 ; i < ( clients.length * 2 ) ; i++ ){
-          let input = commands[ Math.floor( Math.random() * commands.length ) ]
-          let client = clients[ Math.floor( Math.random() * clients.length ) ]
-          inputs.push( { input, client:client[1] } )
-          }
-          }
-          }
-        */
+        
     }
-    /*
-      function groundOxs(){
-      const ground = State.ground
-      const oxs = State.oxs
-      oxs.forEach( ox => {
-      const x = Math.floor( ox.x )
-      let meany = 0;
-      for ( let ii = 0 ; ii < 16 ; ii++ ){
-      let wx = x + ii
-      let h = ground[ Math.floor( wx ) % ground.length ]
-      meany += h/16
-      }
-      for ( let ii = 0 ; ii < 16 ; ii++ ){
-      let wx = x + ii
-      ground[ Math.floor( wx ) % ground.length ] = meany
-      }
-      })
-      }*/
+    
     function ground_item16( item ){
         const x = Math.floor( item.x )
         const ground = State.ground
@@ -992,9 +936,7 @@ export function Game( { tellPlayer, tellScore } ) {
       }
       })
     */
-    // groundTargets()
-    // groundOxs()
-    // const FPS = 16//16//2//16
+
     function turninit_justfired( x ){
         if ( x.justfired ){
             x.justfired.ttl = -1
@@ -1012,7 +954,9 @@ export function Game( { tellPlayer, tellScore } ) {
             })
         })
     }
+    // const FPS = 16//16//2//16
     const FPS = 10//2//10//16//5
+
     State.lastUpdateTime = Date.now()
     function update(){
         const now = Date.now()
@@ -1098,10 +1042,6 @@ export function Game( { tellPlayer, tellScore } ) {
         if ( plane.inputs ){
             plane.inputs[ input ] = true
         }
-        /*inputs.push({
-          input,
-          client : State.planes.findIndex( p => plane === p )
-          })*/
     }
     function handleInput( inputId, input ){
         let plane = planeByInputId[ inputId ]
@@ -1109,10 +1049,12 @@ export function Game( { tellPlayer, tellScore } ) {
             plane_handle_input( plane, input )
         }
     }
+
     const leaderboardskip = {
         ttl : 0,
         reset : 10
     }
+    // build message for visualisation
     function stateUpdated(){
         let now = Date.now()
         let doLeaderboard = false
@@ -1199,8 +1141,7 @@ export function Game( { tellPlayer, tellScore } ) {
                 let { x,y,justfired } = explosion
 
                 if ( justfired.ttl > 0 ){
-                    payload.justfired.push({ x,y, type : justfired.type,
-                                             num : justfired.num } )
+                    payload.justfired.push({ x,y, type : justfired.type, num : justfired.num } )
                 }
                 
                 explosion.debris.forEach( debri => {
