@@ -61,7 +61,8 @@ export const PLANE_INPUT_NAMES = [
     'powerup','powerdown',
     'firebomb','firemissile'
 ]
-function buildName(){
+function NameGenerator(){
+
     let letters = [
         /* rare wov */ 'jy'.split(''),
         /* freq wov */ 'aeiou'.split(''),
@@ -71,7 +72,7 @@ function buildName(){
     let freqs = [
         // rw fw rc fc
         [ 0,1,1,10 ], // rw
-        [ 1,4,4,8 ], // fw
+        [ 1,1,4,12 ], // fw
         [ 1,20,0,0 ], // rc
         [ 2,20,1,1 ]  // fc
     ]
@@ -87,20 +88,23 @@ function buildName(){
         },[])
         return array
     })
-    let length = 4 + Math.floor( Math.pow( Math.random(), 5 ) * 10 )
-    let last = Math.floor( Math.random() * letters.length )
-    let namea = []
-    for ( let i = 0 ; i < length ; i++ ){
-        let array = arrays[ last ]
-        let rndIdx = Math.floor( Math.random() * array.length )
-        let categ = array[ rndIdx ]
-        let choices = letters[ categ ]
-        let letter = choices[ Math.floor( Math.random() * choices.length ) ]
-        namea[ i ] = letter     
-        last = categ
+    return function buildName(){    
+        let length = 4 + Math.floor( Math.pow( Math.random(), 5 ) * 10 )
+        let last = Math.floor( Math.random() * letters.length )
+        let namea = []
+        for ( let i = 0 ; i < length ; i++ ){
+            let array = arrays[ last ]
+            let rndIdx = Math.floor( Math.random() * array.length )
+            let categ = array[ rndIdx ]
+            let choices = letters[ categ ]
+            let letter = choices[ Math.floor( Math.random() * choices.length ) ]
+            namea[ i ] = letter     
+            last = categ
+        }
+        return namea.join('')
     }
-    return namea.join('')
 }
+const generateName = NameGenerator()
 /*
  *
  */
@@ -370,7 +374,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             respawn : -1,
             value : 10,
             score : init_score( idx ),
-            defaultname : buildName()
+            defaultname : generateName()
         }
     }
     function init_state(){
