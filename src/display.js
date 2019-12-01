@@ -1,8 +1,7 @@
 import { prepareImages, ColorSchemes } from './symbols.js'
 const Images = prepareImages()
-import { clamp } from './utils.js'
+import { clamp, length } from './utils.js'
 import { worldSize } from './game.js'
-
 function LeaderBoardDisplay(){
     const MAX_DISPLAYED = 10
     
@@ -148,7 +147,9 @@ export function Display() {
     }
 
     let last_camera_target = undefined
-
+    let last_camera_target_to_center_dist = undefined
+    let position_helper_ttl = -1
+    let position_helper_max_ttl = 120
     function display(){
 
         $context.imageSmoothingEnabled = false
@@ -189,7 +190,9 @@ export function Display() {
             let dy = camera_target.y - last_camera_target.y
             let md = Math.abs( dx ) + Math.abs( dy )
             let ratio = 0.05
-            if ( dx > 20 ){
+            let threshold = 200
+            if ( dx > threshold ){
+                // the movement is too big for a moving object
                 camera_target.x = Math.floor( last_camera_target.x + dx * ratio )
                 camera_target.y = Math.floor( last_camera_target.y + dy * ratio )
             } 
@@ -211,6 +214,27 @@ export function Display() {
         )   
         const top = bottom +  $canvas.height
 
+        let camera_target_to_center = {
+            x : Math.abs( camera_target.x - ( left + right ) / 2 ),
+            y : Math.abs( camera_target.y - ( top + bottom ) / 2 ),
+        }
+        let camera_target_to_center_dist = length( camera_target_to_center )
+
+        // detect abrupt screen position change
+        let abrubt_target_screen_position_change = false
+        if ( last_camera_target_to_center_dist ){
+            let distsdiff = Math.abs( camera_target_to_center_dist - last_camera_target_to_center_dist )
+            if ( distsdiff > 10 ){
+                //console.log( distsdiff )
+                abrubt_target_screen_position_change = true
+                position_helper_ttl = position_helper_max_ttl + 1
+            }
+        }
+        last_camera_target_to_center_dist = camera_target_to_center_dist
+        if ( position_helper_ttl > 0 ){
+            position_helper_ttl--
+            //console.log( position_helper_ttl )
+        }
         function world_to_context( x, y ){
             return {
                 x : x - left  ,
@@ -281,33 +305,69 @@ export function Display() {
                 //}
             }
         }
-     
+        
         const planes = State.planes
         if ( planes ){
-            State.planes.forEach( plane => {
-                const { ttl, x, y, r, a, p, cs, /*bombs, missiles, explosion*/ name } = plane
+            State.planes.forEach( (plane,planeIdx) => {
+                const { ttl, x, y, r, a, p, cs, score, value,  name } = plane
                 if ( ttl < 0 ){
                     return
                 }
                 $context.fillStyle = 'black'
-                
-                //let va = Math.floor(posmod(a, 2 * Math.PI) / ( 2 * Math.PI ) * 16 )
+
                 let va = a
                 let vr = r?1:0
-                //$context.putImageData( Images.pln[vr][va], $canvas.width/2, $canvas.height/2)
                 let wxy = world_to_context( x, y )
-                //            console.log( 'vrva', vr, va )
                 putSprite( Images.plane[cs][vr][va], wxy.x  , wxy.y )
                 
-                //$context.drawImage( Images.plane[vr][va], wxy.x - 8 , wxy.y - 8 )
                 let col = ColorSchemes[cs][0]
                 let rgb = `rgb(${col[0]},${col[1]},${col[2]})`
-                console.log( rgb )
-                //console.log(ColorSchemes[cs])
                 $context.fillStyle = rgb
-                $context.font = "10px monospace";
+
+                const threshold = 100
+                let prefix
+                /*if (  && ( camera_target_to_center_dist > threshold ) ){
+                    let size = 10 + clamp( (Math.floor(camera_target_to_center_dist) - threshold) / 20, 0,10)
+                    $context.font = `${ size  }px monospace`;
+                    prefix = '➹'
+                } else {
+                    $context.font = "10px monospace";
+                    prefix = ''
+                }
+                */
+                const is_target_plane = (  me.idx === planeIdx )
+                function target_helper( position_helper_ttl, position_helper_max_ttl ){
+                    const remain = position_helper_max_ttl -  position_helper_ttl
+                    const ratio = 1
+                    const maxheight = 64
+                    const height = clamp(maxheight * position_helper_ttl / position_helper_max_ttl,0,30)
+                    const basewidth = height / ratio
+                    const vpad = 10
+                    $context.beginPath()
+                    $context.moveTo( wxy.x + 16/2, wxy.y + vpad )
+                    $context.lineTo( wxy.x + 16/2 - basewidth / 2 , wxy.y + height + vpad )
+                    $context.lineTo( wxy.x + 16/2 + basewidth / 2 , wxy.y + height + vpad )
+                    $context.closePath()
+                    $context.fill()                    
+                }
+                if (  is_target_plane && position_helper_ttl > 0 ){
+                    target_helper( position_helper_ttl, position_helper_max_ttl)
+                    $context.font = `${ 10 + clamp( position_helper_ttl,0,30)  }px monospace`;
+                    /*$context.fillText(`▲`,
+                      wxy.x ,  wxy.y + 18 )*/
+                    prefix = '?'
+                } else {
+                    $context.font = `${ 10  }px monospace`;
+                    prefix = ''
+                    $context.fillText(`${ prefix}${ name }(${p})${score.total}/${value}`,
+                                      wxy.x + 8 , wxy.y + 18 )
+                }
+                
+
+                /*
                 $context.fillText(`${ name } ${Math.floor(x)},${Math.floor(y)},${p}`,
                                   wxy.x + 8 , wxy.y + 18 )
+                */
             })
         }
 
@@ -423,3 +483,58 @@ export function Display() {
         animate,
     }
 }
+
+/*var canvas=document.getElementById("canvas");
+var context=canvas.getContext("2d");
+*/
+
+// function Line(x1,y1,x2,y2){
+//     this.x1=x1;
+//     this.y1=y1;
+//     this.x2=x2;
+//     this.y2=y2;
+// }
+// Line.prototype.drawWithArrowheads=function(ctx, ratio){
+    
+//     // arbitrary styling
+//     ctx.strokeStyle="blue";
+//     ctx.fillStyle="red";
+//     ctx.lineWidth=10;
+    
+//     // draw the line
+//     ctx.beginPath();
+//     ctx.moveTo(this.x1,this.y1);
+//     ctx.lineTo(this.x2,this.y2);
+//     ctx.stroke();
+
+    
+    
+//     // draw the starting arrowhead
+//     /*var startRadians=Math.atan((this.y2-this.y1)/(this.x2-this.x1));
+//     startRadians+=((this.x2>this.x1)?-90:90)*Math.PI/180;
+//     this.drawArrowhead(ctx,this.x1,this.y1,startRadians);
+//     */
+//     // draw the ending arrowhead
+//     var endRadians=Math.atan((this.y2-this.y1)/(this.x2-this.x1));
+//     endRadians+=((this.x2>this.x1)?90:-90)*Math.PI/180;
+//     this.drawArrowhead(ctx,this.x2,this.y2,endRadians);
+    
+// }
+// Line.prototype.drawArrowhead=function(ctx,x,y,radians){
+//     ctx.save();
+//     ctx.beginPath();
+//     ctx.translate(x,y);
+//     ctx.rotate(radians);
+//     ctx.moveTo(0,0);
+//     ctx.lineTo(5,20);
+//     ctx.lineTo(-5,20);
+//     ctx.closePath();
+//     ctx.restore();
+//     ctx.fill();
+// }
+// /*
+// // create a new line object
+// var line=new Line(0,0,50,75);
+// // draw the line
+// line.drawWithArrowheads(context);
+// */

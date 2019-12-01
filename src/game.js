@@ -1121,14 +1121,14 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             payload.oxs.push( { x, y, as } )
         })
         State.planes.forEach( plane => {
-            let { ttl, x, y, r, a, p, cs, explosion, leaving, falling } = plane
+            let { ttl, x, y, r, a, p, cs, explosion, leaving, falling, value, score } = plane
             let name = '??'
             if ( plane.inputId ){
                 name = nameByInputId[ plane.inputId ]
             }
             // TODO
             //if ( ttl > 0 ){
-            payload.planes.push( { ttl, x, y, r, a, p, cs, name } )
+            payload.planes.push( { ttl, x, y, r, a, p, cs, name, value, score } )
             //}
             {
                 const {x,y,as,ttl} = leaving

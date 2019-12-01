@@ -64,6 +64,9 @@ export function centerText( text, l, c = ' ', biasLeft = true ){
 export function dist( a, b ){
     return Math.sqrt( Math.pow( a.x - b.x, 2) + Math.pow( a.y - b.y, 2) )
 }
+export function length( a ){
+    return Math.sqrt( Math.pow( a.x, 2) + Math.pow( a.y, 2 ) )
+}
 export function sqdist( a, b ){
     return Math.pow( a.x - b.x, 2) + Math.pow( a.y - b.y, 2)
 }
