@@ -426,17 +426,17 @@ export function Display() {
         const fallings = State.fallings
         if (fallings){
             for ( let j = 0, ll = fallings.length ; j < ll ; j++ ){
-                let { x, y, as } = fallings[ j ]
+                let { cs, x, y, as } = fallings[ j ]
                 let wxy = world_to_context( x, y )
-                putSprite( Images.plane_hit[as], wxy.x , wxy.y )             
+                putSprite( Images.plane_hit[cs][as], wxy.x , wxy.y )             
             }
         }
         const leavings = State.leavings
         if (leavings){
             for ( let j = 0, ll = leavings.length ; j < ll ; j++ ){
-                let { x, y, as } = leavings[ j ]
+                let { cs, x, y, as } = leavings[ j ]
                 let wxy = world_to_context( x, y )
-                putSprite( Images.plane_win[as], wxy.x , wxy.y )             
+                putSprite( Images.plane_win[cs][as], wxy.x , wxy.y )             
             }
         }
         const oxs = State.oxs

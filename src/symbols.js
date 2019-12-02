@@ -1300,9 +1300,9 @@ export function prepareImages(){
         bomb : ColorSchemes.map( pal => swbmbsym.map( x => symboltoimage( x, 8, 8, pal ) ) ),
         missile : ColorSchemes.map( pal =>  swmscsym.map( x => symboltoimage( x, 8, 8, pal ) )),
         burst : swbstsym.map( x => symboltoimage( x, 8, 8 ) ),
-        plane_hit : swhitsym.map( x => symboltoimage( x, 16, 16 ) ),
-        plane_win : swwinsym.map( x => symboltoimage( x, 16, 16 ) ),
+        plane_hit : ColorSchemes.map( pal => swhitsym.map( x => symboltoimage( x, 16, 16, pal ) ) ),
+        plane_win : ColorSchemes.map( pal => swwinsym.map( x => symboltoimage( x, 16, 16, pal ) ) ),
     }
-    
+    console.log(sym)
     return sym
 }

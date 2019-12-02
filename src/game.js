@@ -170,8 +170,9 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             ttl : -1,
         }
     }
-    function init_falling_plane(){
+    function init_falling_plane(idx,cs){
         return {
+            cs,idx,
             x : Math.floor( 100 + Math.random() * 2500 ),
             y : Math.floor( 100 + Math.random() * 200 ),
             step : 0,
@@ -181,11 +182,12 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             interv : 8,
             ttl : -1,
             as : 0,
-            p : 1,
+            p : 3,
         }
     }
-    function init_leaving_plane(){
+    function init_leaving_plane(idx,cs){
         return {
+            cs,idx,
             x : Math.floor( 100 + Math.random() * 2500 ),
             y : Math.floor( 100 + Math.random() * 200 ),
             step : 3,
@@ -350,15 +352,16 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         }
     }
     function init_plane(idx){
+        const cs = idx%ColorSchemes.length
         return {
             age : 0,
             recklessness : 40,
-            cs : idx%ColorSchemes.length,
+            cs,
             hitmaskf : Hitmaskfs.plane,
             bhitmaskf : Bhitmaskfs.plane,
             idx,
             inputs : plane_init_inputs(),
-            ttl : 300,
+            ttl : 1,
             inputId : undefined,
             x : 250 + idx * 250,
             y : 100,
@@ -369,8 +372,8 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             bombs : new Array(8).fill(0).map( (_,i) => init_bomb( i, idx ) ),
             missiles : new Array(16).fill(0).map( (_,i) => init_missile( i, idx ) ),
             explosion : init_explosion(idx%ColorSchemes.length),
-            falling : init_falling_plane(),
-            leaving : init_leaving_plane(),
+            falling : init_falling_plane(idx,cs),
+            leaving : init_leaving_plane(idx,cs),
             respawn : -1,
             value : 10,
             score : init_score( idx ),
@@ -510,21 +513,18 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         }
     }
     function move_anim( leaving ){
-        if ( leaving.ttl > 0 ){
-            if ( leaving.step && ( ( leaving.step % leaving.interv ) === 0 ) ){
-                if ( leaving.loop ){
-                    leaving.as = posmod( leaving.as + leaving.dir, leaving.len )
+        const { ttl, step, interv, as, dir, len, loop } = leaving
+        if ( ttl > 0 ){
+            if ( step && ( ( step % interv ) === 0 ) ){
+                if ( loop ){
+                    leaving.as = posmod( as + dir, len )
                 } else {
-                    let next_as = leaving.as + leaving.dir
+                    let next_as = as + dir
                     if ( next_as < 0 ){
                         leaving.ttl = -1
                     } else {
-                        leaving.as = clamp( leaving.as + leaving.dir, 0, leaving.len )
+                        leaving.as = clamp( as + dir, 0, len )
                     }
-                    /*let nexti = leaving.as + leaving.dir
-                      if ( ( nexti < 0 ) || ( nexti >= leaving.len ) ){
-                      leaving.ttl = -1
-                      }*/
                 }
             }
             leaving.step++
@@ -699,9 +699,10 @@ export function Game( { tellPlayer, // called with user centered world, each wor
     function start_falling( item ){
         if ( item.falling ){
             // TODO
-            item.falling = init_falling_plane()
+            item.falling = init_falling_plane( item.falling.idx, item.falling.cs )
             item.falling.x = item.x
             item.falling.y = item.y
+            item.falling.ttl = 100
         }
         if ( item.respawn ){
             item.respawn = 30
@@ -762,6 +763,9 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         if ( item2.explosion ) {
             start_explosion( item2.explosion, item2.x, item2.y )
         }
+        if ( item1.falling ) start_falling( item1 )
+        if ( item2.falling ) start_falling( item2 )
+
       
     }
     function have_ownership_relation( item1, item2 ){
@@ -1236,15 +1240,15 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             payload.planes.push( { ttl, age, x, y, r, a, p, cs, name, value, score, reckless } )
             //}
             {
-                const {x,y,as,ttl} = leaving
+                const {x,y,as,ttl,cs,idx} = leaving
                 if ( ttl > 0 ){
-                    payload.leavings.push({x,y,as})
+                    payload.leavings.push({x,y,as,cs,idx})
                 }
             }
             {
                 const {x,y,as,ttl} = falling
                 if ( ttl > 0 ){
-                    payload.fallings.push({x,y,as})
+                    payload.fallings.push({x,y,as,cs,idx})
                 }
             }
             if ( explosion.ttl > 0 ){
