@@ -2,6 +2,9 @@ import { prepareImages, ColorSchemes } from './symbols.js'
 const Images = prepareImages()
 import { clamp, length } from './utils.js'
 import { worldSize } from './game.js'
+
+const DEBUG_AGE = false
+
 function LeaderBoardDisplay(){
     const MAX_DISPLAYED = 10
     
@@ -353,8 +356,13 @@ export function Display() {
                     //prefix = '?'
                 } else {
                     $context.font = `${ 10  }px monospace`;
-                    $context.fillText(`${ name }[${age}](${p})${score.total}/${value}`,
-                                      wxy.x + 8 , wxy.y + 18 )
+                    if ( DEBUG_AGE ){
+                        $context.fillText(`${ name }[${age}](${p})${score.total}/${value}`,
+                                          wxy.x + 8 , wxy.y + 18 )
+                    } else {
+                        $context.fillText(`${ name }(${p})${score.total}/${value}`,
+                                          wxy.x + 8 , wxy.y + 18 )
+                    }
                 }
                 
 
@@ -375,9 +383,11 @@ export function Display() {
                     putSprite( Images.bomb[cs][a], wxy.x , wxy.y )
                     if ( age !== undefined ){
                         // dbg
-                        $context.fillStyle = 'white'
-                        $context.font = `${ 10 }px monospace`;
-                        $context.fillText(`[${age}]`, wxy.x , wxy.y + 9 )
+                        if (DEBUG_AGE){
+                            $context.fillStyle = 'white'
+                            $context.font = `${ 10 }px monospace`;
+                            $context.fillText(`[${age}]`, wxy.x , wxy.y + 9 )
+                        }
                     }
                 }
             }
@@ -391,10 +401,11 @@ export function Display() {
                     let wxy = world_to_context( x, y )
                     putSprite( Images.missile[cs][a], wxy.x , wxy.y )
                     if ( age !== undefined ){
-                        // dbg
-                        $context.fillStyle = 'white'
-                        $context.font = `${ 10 }px monospace`;
-                        $context.fillText(`[${age}]`, wxy.x , wxy.y + 9 )
+                        if (DEBUG_AGE){
+                            $context.fillStyle = 'white'
+                            $context.font = `${ 10 }px monospace`;
+                            $context.fillText(`[${age}]`, wxy.x , wxy.y + 9 )
+                        }
                     }
                 }
             }

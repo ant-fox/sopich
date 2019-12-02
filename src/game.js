@@ -1,5 +1,7 @@
 const IA_DOES_NOT_FIRE = false
 const FIRST_PLANE_CANNOT_BE_DESTRUCTED = false
+const MAX_PLANES = 20
+
 //
 // game modes
 // - protect fort
@@ -71,7 +73,7 @@ function NameGenerator(){
     let freqs = [
         // rw fw rc fc
         [ 0,1,1,10 ], // rw
-        [ 1,1,4,12 ], // fw
+        [ 1,1,2,12 ], // fw
         [ 1,20,0,0 ], // rc
         [ 2,20,1,1 ]  // fc
     ]
@@ -384,7 +386,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         return {
             version : 0,
             ground : init_ground(),
-            planes : new Array(20).fill(0).map( (_,i) => init_plane(i) ),
+            planes : new Array(MAX_PLANES).fill(0).map( (_,i) => init_plane(i) ),
             targets : init_targets(),
             birds : new Array(20).fill(0).map( (_,i,r) => init_bird(i,r.length) ),
             flocks : new Array(4).fill(0).map( (_,i,r) => init_flock(i,r.length) ),
@@ -547,12 +549,12 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 plane.y = clamp( plane.y, worldSize.y1, worldSize.y2)
                 plane.age+= 1
             } else {
-                plane.respawn -= 1
+                plane.respawn -= 1                
                 if ( plane.respawn < 0 ){
-                    plane.ttl = 1000
+                    plane.ttl = 1
                     plane.x = Math.floor( worldSize.x1 + worldSize.w * Math.random() )
-                    plane.y = Math.floor( 100 + Math.floor( Math.random() * 700 ) )
-                    plane.p = 1
+                    plane.y = Math.floor( 400 + Math.floor( Math.random() * 400 ) )
+                    plane.p = 2
                     plane.age = 0
                 }
             }
@@ -705,7 +707,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             item.falling.ttl = 100
         }
         if ( item.respawn ){
-            item.respawn = 30
+            item.respawn = 20
         }
     }
     function iterateCollisionItems( f ){
@@ -732,22 +734,24 @@ export function Game( { tellPlayer, // called with user centered world, each wor
     }
     function resolve_collision( item1, item2 ){
         // both die
-        // //if ( item1.value || item2.value ){
-        //     if ( item1.destroys || item2.destroys ){
-        //         if ( item2.destroys ){
-        //             /*console.log( (item1.destroys?'have':'no'), item1.cs,item1.value,
-        //               '||',
-        //               (item2.destroys?'have':'no'), item2.cs, item2.value )*/
-        //             item2.destroys( item2, item1 )
-        //         }
-        //     }
-        // //}
+
+        
+          //          same  team                    other team                  no team
+          //          bomb  missile plane building  bomb missile plane buildin  flock bird
+          // bomb     
+          // missile       
+          // plane
+          // building 
+          // flock
+          // bird
+        
+        
         if ( item1.destroys ) item1.destroys( item1, item2 )
         if ( item2.destroys ) item2.destroys( item2, item1 )
 
         if ( item1.destroyed ) item1.destroyed( item1 )
         if ( item2.destroyed ) item2.destroyed( item2 )
-
+        
         //
         if ( (!item1.undescrtu) && ( item1.ttl !== undefined ) ){
             item1.ttl = -1
@@ -1072,6 +1076,9 @@ export function Game( { tellPlayer, // called with user centered world, each wor
     const playerByInputId = {}
     
     function addPlayer( inputId, name, total = 0 ){
+        if ( typeof name !== 'string' ) return false
+        
+
         console.log('addPlayer', inputId, name, total )
         const plane = State.planes.find( x => x.inputId === undefined )
         if ( plane ){

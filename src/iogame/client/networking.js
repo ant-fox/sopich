@@ -11,32 +11,32 @@ const Constants = require('../shared/constants');
 const socket = io();
 
 const connectedPromise = new Promise(resolve => {
-  socket.on('connect', () => {
-    console.log('Connected to server!');
-    resolve();
-  });
+    socket.on('connect', () => {
+        console.log('Connected to server!');
+        resolve();
+    });
 });
 
 export const connect = onGameOver => (
     connectedPromise.then(() => {
-    // Register callbacks
-    socket.on(Constants.MSG_TYPES.GAME_UPDATE, processGameUpdate);
-    socket.on(Constants.MSG_TYPES.GAME_OVER, onGameOver);
+        // Register callbacks
+        socket.on(Constants.MSG_TYPES.GAME_UPDATE, processGameUpdate);
+        socket.on(Constants.MSG_TYPES.GAME_OVER, onGameOver);
         socket.on('disconnect', () => {
             stopRendering()
-      console.log('Disconnected from server.');
-      document.getElementById('disconnect-modal').classList.remove('hidden');
-      document.getElementById('reconnect-button').onclick = () => {
-        window.location.reload();
-      };
-    });
-  })
+            console.log('Disconnected from server.');
+            document.getElementById('disconnect-modal').classList.remove('hidden');
+            document.getElementById('reconnect-button').onclick = () => {
+                window.location.reload();
+            };
+        });
+    })
 );
 
 export const play = username => {
-  socket.emit(Constants.MSG_TYPES.JOIN_GAME, username);
+    socket.emit(Constants.MSG_TYPES.JOIN_GAME, username);
 };
 
-export const updateDirection = throttle(20, dir => {
+export const sendInputToServer = throttle(20, dir => {
     socket.emit(Constants.MSG_TYPES.INPUT, dir );
 });

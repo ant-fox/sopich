@@ -1,10 +1,8 @@
-// Learn more about this file at:
-// https://victorzhou.com/blog/build-an-io-game-part-1/#6-client-input-%EF%B8%8F
-
-import { updateDirection } from './networking';
+import { sendInputToServer } from './networking';
 import { Controller } from '../../../src/controller.js'
+
 function onInput( input ){
-    updateDirection( input )
+    sendInputToServer( input )
 }
 const controller = new Controller( onInput )
 
