@@ -1,9 +1,8 @@
-// Learn more about this file at:
-// https://victorzhou.com/blog/build-an-io-game-part-1/#4-client-networking
 import io from 'socket.io-client';
 import { throttle } from 'throttle-debounce';
 import { processGameUpdate } from './state';
 import { stopRendering } from './render'
+import { ADD_PLAYER_RETURNS } from '../../game'
 
 const Constants = require('../shared/constants');
 //const socket = io(`ws://${window.location.host}`, { reconnection: false, secure : true });
@@ -16,10 +15,38 @@ const connectedPromise = new Promise(resolve => {
         resolve();
     });
 });
-
-export const connect = onGameOver => (
+function onPlayerNotAddedf( joinFailed) {
+    return function onPlayerNotAdded(o){
+        console.log('could not play because', o)
+        let r = ''
+        switch ( o ){
+        case ADD_PLAYER_RETURNS.WRONG_USERNAME : r = 'wrong username' 
+            break ;
+        case ADD_PLAYER_RETURNS.WRONG_USERNAME : r = 'wrong username' 
+            break ;
+        case ADD_PLAYER_RETURNS.ALREADY_JOINED : r = 'already joined' 
+            break ;
+        case ADD_PLAYER_RETURNS.USERNAME_TOO_LONG : r = 'username to long' 
+            break ;
+        case ADD_PLAYER_RETURNS.NO_MORE_AVAILABLE_ITEM : r = 'game is full' 
+            break ;
+        case ADD_PLAYER_RETURNS.USERNAME_ALREADY_IN_USE : r = 'username is already playing' 
+            break ;
+        }
+        joinFailed( r )
+    }
+}
+function onPlayerAddedf( joinSuccess ){
+    return function onPlayerAdded(){
+        console.log('ajoined !')
+        joinSuccess()
+    }
+}
+export const connect = (onGameOver,joinSuccess,joinFailed) => (
     connectedPromise.then(() => {
         // Register callbacks
+        socket.on(Constants.MSG_TYPES.JOINED_GAME_OK, onPlayerAddedf( joinSuccess ) );
+        socket.on(Constants.MSG_TYPES.JOINED_GAME_KO, onPlayerNotAddedf( joinFailed ) );
         socket.on(Constants.MSG_TYPES.GAME_UPDATE, processGameUpdate);
         socket.on(Constants.MSG_TYPES.GAME_OVER, onGameOver);
         socket.on('disconnect', () => {
@@ -34,7 +61,10 @@ export const connect = onGameOver => (
 );
 
 export const play = username => {
-    socket.emit(Constants.MSG_TYPES.JOIN_GAME, username);
+    console.log('PLAY',username,'?')
+    socket.emit(Constants.MSG_TYPES.JOIN_GAME, username, function(o){
+        console.log('ooooooooooooooooooo',o)
+    });
 };
 
 export const sendInputToServer = throttle(20, dir => {

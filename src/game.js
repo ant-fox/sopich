@@ -1,7 +1,6 @@
 const IA_DOES_NOT_FIRE = false
 const FIRST_PLANE_CANNOT_BE_DESTRUCTED = false
 const MAX_PLANES = 20
-
 //
 // game modes
 // - protect fort
@@ -57,6 +56,14 @@ export const worldSize = {
     y2 : 800,
     w : 3000,
     h : 800
+}
+export const ADD_PLAYER_RETURNS = {
+    OK : 0,
+    WRONG_USERNAME : 1,
+    ALREADY_JOINED : 2,
+    USERNAME_TOO_LONG : 3,
+    NO_MORE_AVAILABLE_ITEM : 4,
+    USERNAME_ALREADY_IN_USE : 5
 }
 export const PLANE_INPUT_NAMES = [
     'noseup','nosedown','reverse',
@@ -1062,37 +1069,32 @@ export function Game( { tellPlayer, // called with user centered world, each wor
     }
     ////
     
-    /*
-      const planeByInputId = {}
-      const nameByInputId = {}
-*/
     const players = {
-        /*names : () => Object.values( nameByInputId ),
-        scores : () => Object.values( planeByInputId ).map( x => x.score.total ),
-        */
         names : () => Object.values( playerByInputId ).map( x => x.name ),
         scores : () => Object.values( playerByInputId ).map( x => x.plane.score.total )
     }
     const playerByInputId = {}
-    
     function addPlayer( inputId, name, total = 0 ){
-        if ( typeof name !== 'string' ) return false
-        
 
+        console.log('[game]','add',inputId,name,total)
+        //console.log('[game]',playerByInputId[ inputId ].idx)
+
+        
+        if ( playerByInputId[ inputId ] ) return ADD_PLAYER_RETURNS.ALREADY_JOINED
+        if ( typeof name !== 'string' ) return ADD_PLAYER_RETURNS.WRONG_USERNAME
+        if ( name.length > 20 ) return ADD_PLAYER_RETURNS.USERNAME_TOO_LONG
+
+        let nameExists = Object.values( playerByInputId ).find( p => p.name ===  name )
+        if ( nameExists ) return ADD_PLAYER_RETURNS.USERNAME_ALREADY_IN_USE
+              
         console.log('addPlayer', inputId, name, total )
+        
         const plane = State.planes.find( x => x.inputId === undefined )
         if ( plane ){
-            /*
-              planeByInputId[ inputId ] = plane
-              nameByInputId[ inputId ] = name || '?'
-            */
-            /* */
             playerByInputId[ inputId ] = {
                 plane,
                 name : ( name || ('anon#'+event_num()) )
             }
-            /* */
-            
             plane.inputId = inputId
             plane.x = 500 + Math.floor( Math.random() * 1000 )
             plane.y = 100
@@ -1100,9 +1102,9 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             plane.score = init_score( total )
             plane.score.total = total
             plane_init_inputs( plane )
-            return true
+            return ADD_PLAYER_RETURNS.OK
         } else {
-            return false
+            return ADD_PLAYER_RETURNS.NO_MORE_AVAILABLE_ITEM
         }
     }
     function removePlayer( inputId ){
@@ -1111,16 +1113,9 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         if ( !player ) return
 
         const plane = player.plane
-        //const plane = planeByInputId[ inputId ]
-        
         if ( plane ){
-            // const name = nameByInputId[ inputId ]
             const name = player.name
             tellScore( name, plane.score )
-            /*
-              delete planeByInputId[ inputId ]
-              delete nameByInputId[ inputId ]
-            */
             delete playerByInputId[ inputId ]
             plane.inputId = undefined
             plane_init_inputs( plane )
@@ -1145,7 +1140,6 @@ export function Game( { tellPlayer, // called with user centered world, each wor
     function handleInput( inputId, input ){
         let player = playerByInputId[ inputId ]
         if (!player) return
-        // let plane = planeByInputId[ inputId ]
         let plane = player.plane
         if ( plane ){
             plane_handle_input( plane, input )
@@ -1192,7 +1186,6 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 if ( plane.inputId ){
                     const player = playerByInputId[ plane.inputId ]
                     if ( player ){
-                        //const username = nameByInputId[ plane.inputId ]
                         const username = player.name 
                         payload.leaderboard.push( { username, score : plane.score.total } )
                     }
@@ -1312,10 +1305,9 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             })
             
         })
-        Object.keys( playerByInputId /* planeByInputId */ ).forEach( inputId => {
+        Object.keys( playerByInputId ).forEach( inputId => {
             let player = playerByInputId[ inputId ]
             if ( ! player ) return
-            //let plane = planeByInputId[ inputId ]
             let plane = player.plane
             if ( ! plane ) return
             let me = {

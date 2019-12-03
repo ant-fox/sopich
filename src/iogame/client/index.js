@@ -17,25 +17,39 @@ import  * as Menu from '../../menu.js'
 const playMenu = document.getElementById('play-menu');
 const playButton = document.getElementById('play-button');
 const usernameInput = document.getElementById('username-input');
+const notJoinedReason = document.getElementById('not-joined-reason');
 const menu = new Menu.Menu( Menu.Definitions, Menu.defaultStore )
- 
+
+
 Promise.all([
-  connect(onGameOver),
-//  downloadAssets(),
+    connect( onGameOver, onGameStarting, onGameNotStarting ),
+    //  downloadAssets(),
 ]).then(() => {
-    menu.start()
+    console.log('PROMISE FILED')
     playMenu.classList.remove('hidden');
     usernameInput.focus();
     playButton.onclick = () => {
         // Play!
-    play(usernameInput.value);
-    playMenu.classList.add('hidden');
+        play(usernameInput.value);
+        //onGameStarting()
+        
+        //    setLeaderboardHidden(false);
+    };
+}).catch(console.error);
+
+function onGameStarting(){
+    playMenu.classList.add('hidden');    
+    menu.start()
     initState();
     startCapturingInput();
     startRendering();
-//    setLeaderboardHidden(false);
-  };
-}).catch(console.error);
+    
+}
+function onGameNotStarting( cause ){
+    console.log('not joined becasue', cause )
+    notJoinedReason.textContent = cause
+    playMenu.classList.remove('hidden');
+}
 
 function onGameOver() {
     menu.stop()

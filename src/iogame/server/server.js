@@ -207,6 +207,13 @@ async function joinGame(username) {
     User.findOne( { username } )
         .then( u => game.addPlayer( id, username, u.score ) )
         .catch( u => game.addPlayer( id, username ) )
+        .then( o => {
+            if ( o === 0 ){
+                this.emit( Constants.MSG_TYPES.JOINED_GAME_OK )
+            } else {
+                this.emit( Constants.MSG_TYPES.JOINED_GAME_KO, o )
+            }
+        })
 }
 function handleInput(dir) {
     game.handleInput(this.id,dir);

@@ -145,3 +145,6 @@ canvas {
     font-size: 14px;
   }
 }
+#not-joined-reason {
+    color : red;
+}
