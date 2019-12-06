@@ -7,6 +7,7 @@ const passport = require('passport')
 const LocalStrategy = require('passport-local')
 const Constants = require('../shared/constants')
 const { User } = require('./user.js')
+const flash = require('express-flash');
 
 // db connection
 const localcs = 'mongodb://127.0.0.1:27017/TodoApp'
@@ -14,10 +15,16 @@ mongoose.connect(process.env.MONGOLAB_URI || localcs, {useNewUrlParser: true} )
 console.info('using db',process.env.MONGOLAB_URI || localcs )
 
 /*
+ * Bcrypt
+ */
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
+
+/*
  * Passport 
  */
 function loggedIn(req, res, next) {
-    console.log('=> check if logged in',req.user)
+    console.log('=> check if logged in')
     if (req.user) {
         next()
     } else {
@@ -30,22 +37,69 @@ passport.serializeUser(function(user, done) {
 passport.deserializeUser(function(user, done) {
     done(null, user)
 })
-passport.use(new LocalStrategy(
-    function(username, password, done) {
-        /*if ( Math.random() > 0.5 ){
-          console.log(username,'no')
-          return done( null, false,  { message: 'Incorrect username.' } )
-          } else {*/
-        console.log(username,'connected using passport',password)
-        let user = { username }
-        return done( null,  user )
-        /*        username = 'Zildjian'
-                  User.findByUsername( username, function (err, user) {
-                  if (err) { return done(err) }
-                  if (!user) { return done(null, false) }
-        */
+
+function checkUsername( x ){
+    return x && ( x.length >=1 ) && ( x.length < 50 )
+}
+function checkPassword( x ){
+    return x && ( x.length >=1 )
+}
+
+async function loginOrCreate( username, password, done ){
+
+    const OK = user => done( null, user, { message : 'success' } )
+    const KO = cause => done( null, false, { message : cause } )
+    if ( !(checkUsername( username ) )){
+        console.log('[login]','rejext username',username)
+        KO( 'wrongusername')
+        return
+    }    
+    if ( !(checkPassword( password ) )){
+        console.log('[login]','rejext password',password)
+        KO( 'badpassword' )
+        return
     }
-))
+    console.log('[login]','login or create',username,'/',password)
+    const user = await User.findOne( { username } )
+    if ( user ){
+        console.log('[login]', username )
+        if ( !user.passwordHash ){
+            KO('error#22')
+            return 
+        }
+        bcrypt.compare(password, user.passwordHash, function(err, res) {
+            if ( err ){
+                console.error('######',err)
+            } else {
+                if ( res ){
+                    console.log('[login] password ok', username )
+                    OK(user)
+                } else {
+                    console.log('[login] password NOT ok', username )
+                    KO('password does not match')
+                }
+            }
+        });
+    } else {
+        console.log('[login] create user',username )
+        bcrypt.hash(password, saltRounds, function(err, hash) {        
+            if ( !err ){
+                const user = new User({ username, score : 0, passwordHash : hash})
+                const s = user.save().then( x => {
+                    console.log('[login]','created', username)
+                    OK(user)
+                }).catch( e => {
+                    KO('could not create user')
+                })
+            } else {
+                KO('error while creating hash')
+            }
+        });        
+    }
+    
+    //return done('error',null)
+}
+passport.use( new LocalStrategy( loginOrCreate ) )
 
 const app = express()
 // app.use(require('serve-static')(__dirname + '/../../public'))
@@ -63,14 +117,19 @@ app.use(expressSession({
     saveUninitialized: true,
     store : sessionStore
 }))
+app.use(flash())
 app.use(passport.initialize())
 
 const passportSession = passport.session()
 app.use(passportSession)
 
 app.post('/login',
-         passport.authenticate('local', { successRedirect: '/',
-                                          failureRedirect: '/login' }))
+         passport.authenticate('local', {
+             successRedirect: '/',
+             failureRedirect: '/login',
+             failureFlash : true
+             
+         }))
 app.get('/logout', function(req, res){
     console.log('logs out')
     req.logout()
@@ -78,24 +137,30 @@ app.get('/logout', function(req, res){
 })
 app.get('/login',
         function (req, res) {
+            const errors = req.flash('error') 
             console.log('ask login but',req.user )
-
             let userZone = ''
-            userZone = 'already connected as ?: '+JSON.stringify( req.user )
-
+            userZone = 'already connected as ?: '+((req.user)?(req.user.username):'')
+            let errorZone = ''
+            if ( errors.length ){
+                errorZone = '<ul>'+errors.map( e => '<li>'+e )+'</ul>'
+            }
             let passZone
             let html = [
                 // '<html>',
                 // '<head>',
                 // '</head>',
                 // '<body>',
+                errorZone,
                 userZone,
+                '<div class="login">',
                 '<form action="/login" method="post">',
                 '<div><label>Username:</label><input type="text" name="username"/></div>',
                 '<div><label>Password:</label><input type="password" name="password"/></div>',
                 '<div><input type="submit" value="Log In"/>',
                 '</div>',
                 '</form>',
+                '</div>',
                 // '</body>',
                 // '</html>'
             ]
@@ -105,7 +170,7 @@ app.get('/login',
 // TODO remove
 app.get('/stats/users', function(req, res) {
     User.find({}, function(err, users) {
-        res.send(users.map( ({username,score}) => ({username,score}) ) )
+        res.send(users.map( ({username,score,passwordHash}) => ({username,score,passwordHash}) ) )
     })
 })
 
@@ -160,7 +225,6 @@ io.use(passportSocketIo.authorize({
 
 // Listen for socket.io connections
 io.on('connection', socket => {
-    //    console.log('iooioi',socket.handshake)
     console.log('connexion', socket.id)
     socket.on(Constants.MSG_TYPES.JOIN_GAME, joinGame)
     socket.on(Constants.MSG_TYPES.INPUT, handleInput)
