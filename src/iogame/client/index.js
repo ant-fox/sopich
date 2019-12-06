@@ -20,7 +20,6 @@ const usernameInput = document.getElementById('username-input');
 const notJoinedReason = document.getElementById('not-joined-reason');
 const menu = new Menu.Menu( Menu.Definitions, Menu.defaultStore )
 
-
 Promise.all([
     connect( onGameOver, onGameStarting, onGameNotStarting ),
     //  downloadAssets(),

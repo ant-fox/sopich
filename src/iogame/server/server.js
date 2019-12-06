@@ -1,81 +1,56 @@
-const express = require('express');
-const webpack = require('webpack');
-const webpackDevMiddleware = require('webpack-dev-middleware');
-const socketio = require('socket.io');
+const express = require('express')
+const webpack = require('webpack')
+const webpackDevMiddleware = require('webpack-dev-middleware')
+const socketio = require('socket.io')
 const mongoose = require('mongoose')
 const passport = require('passport')
 const LocalStrategy = require('passport-local')
-const Constants = require('../shared/constants');
+const Constants = require('../shared/constants')
+const { User } = require('./user.js')
 
+// db connection
 const localcs = 'mongodb://127.0.0.1:27017/TodoApp'
-mongoose.connect(process.env.MONGOLAB_URI || localcs, {useNewUrlParser: true} );
-
+mongoose.connect(process.env.MONGOLAB_URI || localcs, {useNewUrlParser: true} )
 console.info('using db',process.env.MONGOLAB_URI || localcs )
 
-const Schema = mongoose.Schema;
-const UserSchema = new Schema({
-    username: String,
-    score : Number,
-})
-UserSchema.statics.findByUsername = function(username) {
-    //return this.find({ username: new RegExp(username, 'i') });
-    return this.find({ username })
-};
-const User = mongoose.model('User', UserSchema);
-
-//User.deleteMany({ username: 'Zildjian' }).then( console.log )
-//User.deleteMany({ name: 'Zildjian' }).then( console.log )
-
-///////////////
-// const kitty = new User({ username: 'Zildjian', score : 12 });
-// kitty.save().then(() => console.log('meow'));
-// User.find({}).exec(function(err, animals) {
-//    console.log('found',animals.length)//,animals);
-//});
-///////////////
-
+/*
+ * Passport 
+ */
 function loggedIn(req, res, next) {
+    console.log('=> check if logged in',req.user)
     if (req.user) {
-        next();
+        next()
     } else {
-        res.redirect('/login');
+        res.redirect('/login')
     }
 }
 passport.serializeUser(function(user, done) {
-    done(null, user);
-});
+    done(null, user)
+})
 passport.deserializeUser(function(user, done) {
-    done(null, user);
-});
+    done(null, user)
+})
 passport.use(new LocalStrategy(
     function(username, password, done) {
         /*if ( Math.random() > 0.5 ){
           console.log(username,'no')
           return done( null, false,  { message: 'Incorrect username.' } )
           } else {*/
-        console.log(username,'connected using passport',username)
+        console.log(username,'connected using passport',password)
         let user = { username }
         return done( null,  user )
-        
-        //}
         /*        username = 'Zildjian'
                   User.findByUsername( username, function (err, user) {
-                  console.log('yes!',err,user)
-                  
-                  if (err) { return done(err); }
-                  if (!user) { return done(null, false); }
-                  //if (!user.verifyPassword(password)) { return done(null, false); }
-                  return done(null, user);
-                  });*/
+                  if (err) { return done(err) }
+                  if (!user) { return done(null, false) }
+        */
     }
-));
+))
 
-const app = express();
-// app.use(require('serve-static')(__dirname + '/../../public'));
-app.use(require('cookie-parser')());
-app.use(require('body-parser').urlencoded({ extended: true }));
-
-///*
+const app = express()
+// app.use(require('serve-static')(__dirname + '/../../public'))
+app.use(require('cookie-parser')())
+app.use(require('body-parser').urlencoded({ extended: true }))
 const expressSession = require('express-session')
 const MongoStore = require('connect-mongo')(expressSession)
 app.use(expressSession({
@@ -84,42 +59,25 @@ app.use(expressSession({
     saveUninitialized: true,
     store : new MongoStore({ mongooseConnection: mongoose.connection })
 }))
-//app.use( require('connect-flash') )
-
-//app.use(expressSession);
-//*/
-//const expressSession = require('express-session')
-//const MongoStore = require('connect-mongo')(expressSession);
-/*
-  app.use(expressSession({
-  store: new MongoStore({ mongooseConnection: mongoose.connection })
-  }))
-*/
-app.use(passport.initialize());
+app.use(passport.initialize())
 
 const passportSession = passport.session()
-app.use(passportSession);
-
-app.get('/stats/users', function(req, res) {
-    User.find({}, function(err, users) {
-        res.send(users.map( ({username,score}) => ({username,score}) ) )
-    });
-});
+app.use(passportSession)
 
 app.post('/login',
          passport.authenticate('local', { successRedirect: '/',
-                                          failureRedirect: '/login' }));
+                                          failureRedirect: '/login' }))
 app.get('/logout', function(req, res){
-    req.logout();
-    res.redirect('/');
-});
-
+    console.log('logs out')
+    req.logout()
+    res.redirect('/')
+})
 app.get('/login',
         function (req, res) {
             console.log('ask login but',req.user )
 
             let userZone = ''
-            userZone = JSON.stringify( req.user )
+            userZone = 'already connected as ?: '+JSON.stringify( req.user )
 
             let passZone
             let html = [
@@ -138,35 +96,41 @@ app.get('/login',
                 // '</html>'
             ]
             res.send( html.join("\n") )
-        });
+        })
+
+app.get('/stats/users', function(req, res) {
+    User.find({}, function(err, users) {
+        res.send(users.map( ({username,score}) => ({username,score}) ) )
+    })
+})
 
 if (process.env.NODE_ENV === 'development') {
     // Setup Webpack for development
-    const webpackConfig = require('../../../webpack.dev.js');
-    const compiler = webpack(webpackConfig);
-    app.use(webpackDevMiddleware(compiler));
+    const webpackConfig = require('../../../webpack.dev.js')
+    const compiler = webpack(webpackConfig)
+    app.use([loggedIn,webpackDevMiddleware(compiler)])
 } else {
     // Static serve the dist/ folder in production
-    app.use('/',[loggedIn,express.static('dist')]);
+    app.use('/',[loggedIn,express.static('dist')])
 }
 
 
 // Listen on port
-const port = process.env.PORT || 3000;
-const server = app.listen(port);
-console.log(`Server listening on port ${port}`);
+const port = process.env.PORT || 3000
+const server = app.listen(port)
+console.log(`Server listening on port ${port}`)
 
 // Setup socket.io
-const io = socketio(server);
+const io = socketio(server)
 
 // Listen for socket.io connections
 io.on('connection', socket => {
     //    console.log('iooioi',socket.handshake)
-    console.log('connexion', socket.id);
-    socket.on(Constants.MSG_TYPES.JOIN_GAME, joinGame);
-    socket.on(Constants.MSG_TYPES.INPUT, handleInput);
-    socket.on('disconnect', onDisconnect);
-});
+    console.log('connexion', socket.id)
+    socket.on(Constants.MSG_TYPES.JOIN_GAME, joinGame)
+    socket.on(Constants.MSG_TYPES.INPUT, handleInput)
+    socket.on('disconnect', onDisconnect)
+})
 
 /*
  * Setup the Game
@@ -216,8 +180,8 @@ async function joinGame(username) {
         })
 }
 function handleInput(dir) {
-    game.handleInput(this.id,dir);
+    game.handleInput(this.id,dir)
 }
 function onDisconnect() {
-    game.removePlayer(this.id);
+    game.removePlayer(this.id)
 }
