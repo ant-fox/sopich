@@ -98,6 +98,7 @@ app.get('/login',
             res.send( html.join("\n") )
         })
 
+// TODO remove
 app.get('/stats/users', function(req, res) {
     User.find({}, function(err, users) {
         res.send(users.map( ({username,score}) => ({username,score}) ) )
@@ -152,7 +153,7 @@ function tellScore( name, score ){
         .catch( x => console.log('update!NO',x))
 }
 const game = new Game( { tellPlayer, tellScore } )
-
+// TOOO : remove ?
 app.get('/stats/players', function(req, res, next) {
     if ( game && game.players ){
         let names = game.players.names()
