@@ -380,7 +380,7 @@ async function joinGame(/*username*/) {
     // get latest score if exists and add player
     User.findOne( { username } )
         .then( u => game.addPlayer( id, username, u.score ) )
-        .catch( u => game.addPlayer( id, username ) )
+        .catch( u => game.addPlayer( id, username ) ) // TODO : remove ?
         .then( o => {
             if ( o === 0 ){
                 this.emit( Constants.MSG_TYPES.JOINED_GAME_OK )

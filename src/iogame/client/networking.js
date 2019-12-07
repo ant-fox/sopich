@@ -22,15 +22,13 @@ function onPlayerNotAddedf( joinFailed) {
         switch ( o ){
         case ADD_PLAYER_RETURNS.WRONG_USERNAME : r = 'wrong username' 
             break ;
-        case ADD_PLAYER_RETURNS.WRONG_USERNAME : r = 'wrong username' 
-            break ;
         case ADD_PLAYER_RETURNS.ALREADY_JOINED : r = 'already joined' 
             break ;
         case ADD_PLAYER_RETURNS.USERNAME_TOO_LONG : r = 'username to long' 
             break ;
         case ADD_PLAYER_RETURNS.NO_MORE_AVAILABLE_ITEM : r = 'game is full' 
             break ;
-        case ADD_PLAYER_RETURNS.USERNAME_ALREADY_IN_USE : r = 'username is already playing' 
+        case ADD_PLAYER_RETURNS.USERNAME_ALREADY_IN_USE : r = 'already playing' 
             break ;
         }
         joinFailed( r )
