@@ -20,10 +20,10 @@ Promise.all([
 ]).then(() => {
     console.log('PROMISE FILED')
     playMenu.classList.remove('hidden');
-    usernameInput.focus();
+    //usernameInput.focus();
     playButton.onclick = () => {
         // Play!
-        play(usernameInput.value);
+        play(/*usernameInput.value*/);
         //onGameStarting()
         
         //    setLeaderboardHidden(false);

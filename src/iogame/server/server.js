@@ -195,7 +195,8 @@ const io = socketio(server)
 const passportSocketIo = require("passport.socketio");
 
 function onAuthorizeSuccess(data, accept){
-  console.log('successful connection to socket.io');
+    const user = data.user
+    console.log('successful connection to socket.io', user)
  
   // The accept-callback still allows us to decide whether to
   // accept the connection or not.
@@ -225,6 +226,7 @@ io.use(passportSocketIo.authorize({
 
 // Listen for socket.io connections
 io.on('connection', socket => {
+    console.log( 'YEAH',socket.request.user )
     console.log('connexion', socket.id)
     socket.on(Constants.MSG_TYPES.JOIN_GAME, joinGame)
     socket.on(Constants.MSG_TYPES.INPUT, handleInput)
@@ -263,7 +265,8 @@ app.get('/stats/players', function(req, res, next) {
         res.json( [] )
     }
 })
-async function joinGame(username) {
+async function joinGame(/*username*/) {
+    const username = this.request.user.username
     console.log('joinGame',this.id,username,this.request.user)
     const id = this.id
     // get latest score if exists and add player

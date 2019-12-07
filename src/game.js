@@ -1,6 +1,7 @@
 const IA_DOES_NOT_FIRE = false
 const FIRST_PLANE_CANNOT_BE_DESTRUCTED = false
 const MAX_PLANES = 20
+const IDLE_IF_NO_PLAYER = true
 //
 // game modes
 // - protect fort
@@ -1035,6 +1036,12 @@ export function Game( { tellPlayer, // called with user centered world, each wor
 
     State.lastUpdateTime = Date.now()
     function update(){
+
+        const nplayers = Object.keys( playerByInputId ).length
+        if ( IDLE_IF_NO_PLAYER && ( nplayers === 0 )){
+            return
+        }
+        
         const now = Date.now()
         //
         const dt = (now - State.lastUpdateTime) / 1000;
