@@ -457,6 +457,8 @@ export function Game( { tellPlayer, // called with user centered world, each wor
     }
     function handleinputs(){
         State.planes.forEach( plane => {
+
+            
             if ( plane.ttl >= 0 ){
                 let inputs = plane.inputs
                 let dda = 0
@@ -477,21 +479,24 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 if ( reverse ){
                     plane.r = r?0:1
                 }
-                if (firebomb){
-                    if ( reload.step === 0 ){
-                        let avail = available_ttl( bombs )
-                        if ( avail !== bombs.length ){
-                            fire_bomb_from_plane( bombs[avail], plane )
-                            arm_reload( reload )
+                const tooyoung = ( plane.age < plane.recklessness )
+                if (!tooyoung){
+                    if (firebomb){
+                        if ( reload.step === 0 ){
+                            let avail = available_ttl( bombs )
+                            if ( avail !== bombs.length ){
+                                fire_bomb_from_plane( bombs[avail], plane )
+                                arm_reload( reload )
+                            }
                         }
                     }
-                }
-                if (firemissile){
-                    if ( reload.step === 0 ){
-                        let avail = available_ttl( missiles )
-                        if ( avail !== missiles.length ){
-                            fire_missile_from_plane( missiles[avail], plane )
-                            arm_reload( reload )
+                    if (firemissile){
+                        if ( reload.step === 0 ){
+                            let avail = available_ttl( missiles )
+                            if ( avail !== missiles.length ){
+                                fire_missile_from_plane( missiles[avail], plane )
+                                arm_reload( reload )
+                            }
                         }
                     }
                 }
