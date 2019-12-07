@@ -135,32 +135,130 @@ app.get('/logout', function(req, res){
     req.logout()
     res.redirect('/')
 })
+app.post('/delete', [loggedIn,function( req, res){
+
+    const username = req.user.username
+    req.logout()
+    
+    console.log('delete account',username)
+    User.deleteOne({ username }).then( x => console.log('???????????',x) )
+    res.redirect('/')
+
+}])
+
 app.get('/login',
         function (req, res) {
+            const user = req.user            
             const errors = req.flash('error') 
             console.log('ask login but',req.user )
-            let userZone = ''
-            userZone = 'already connected as ?: '+((req.user)?(req.user.username):'')
-            let errorZone = ''
-            if ( errors.length ){
-                errorZone = '<ul>'+errors.map( e => '<li>'+e )+'</ul>'
-            }
-            let passZone
-            let html = [
-                // '<html>',
-                // '<head>',
-                // '</head>',
-                // '<body>',
-                errorZone,
-                userZone,
+            const css = `<style>
+
+
+
+
+body, input[type="submit"] {
+  background-color : black;
+  color : white;
+  font-family : monospace;  
+  font-size : 10px;
+  
+}
+input[type="submit"] {
+  border : 5px solid orange;
+  background-color : orange;
+  color : black;
+  border-radius : 8px;
+  margin-top : 1em;
+}
+input[type="text"], input[type="password"]  {
+  border : 0px;
+  margin : 0.5em;
+  font-family : monospace;  
+  font-size : 10px;
+  
+}
+input {
+  
+}
+div {
+  align-self: center;
+}
+div.connected {
+  //background-color : red;
+  font-size : 20px;
+}
+div.logout {
+  //background-color : maroon;
+  
+}
+div.delete{
+  //background-color : blue;
+}
+div.login {
+  //background-color : yellow;
+}
+ 
+
+
+
+
+
+
+</style>`;
+            const userBlock = (user)?(
+                `<div class="connected"><p>connected as ${ req.user.username }</p></div>`
+            ):''
+            let errorBlock = (errors.length)?([
+                '<div class="error">',
+                '<p>Could not !</p>',
+                '<ul>'+errors.map( e => '<li>'+e+'</li>' )+'</ul>',
+                '</div>',
+            ].join("\n")):''
+            const proceedBlock = user?([
+                '<div class="proceed">',
+                '<form action="/" method="get">',
+                '<div><input type="submit" value="Proceed"/></div>',
+                '</div>',
+                '</form>',
+            ].join("\n")):''
+            const logoutBlock = user?([
+                '<div class="logout">',
+                '<form action="/logout" method="get">',
+                '<div><input type="submit" value="Logout"/></div>',
+                '</form>',
+                '</div>',
+            ].join("\n")):''            
+            const deleteUserBlock = user?([
+                '<div class="delete">',
+                '<form action="/delete" method="post">',
+                '<div><input type="submit" value="Delete User"/></div>',
+                '</div>',
+                '</form>',
+            ].join("\n")):''
+            const loginBlock = user?'':([
                 '<div class="login">',
                 '<form action="/login" method="post">',
                 '<div><label>Username:</label><input type="text" name="username"/></div>',
                 '<div><label>Password:</label><input type="password" name="password"/></div>',
-                '<div><input type="submit" value="Log In"/>',
+                '<div><input type="submit" value="Log In / Register"/>',
                 '</div>',
                 '</form>',
                 '</div>',
+                
+            ].join("\n"))
+            let passBlock
+            let html = [
+                // '<html>',
+                // '<head>',
+                css,
+                // '</head>',
+                // '<body>',
+                userBlock,
+                errorBlock,
+                proceedBlock,
+                logoutBlock,
+                deleteUserBlock,
+                loginBlock
                 // '</body>',
                 // '</html>'
             ]
@@ -226,11 +324,21 @@ io.use(passportSocketIo.authorize({
 
 // Listen for socket.io connections
 io.on('connection', socket => {
-    console.log( 'YEAH',socket.request.user )
     console.log('connexion', socket.id)
-    socket.on(Constants.MSG_TYPES.JOIN_GAME, joinGame)
-    socket.on(Constants.MSG_TYPES.INPUT, handleInput)
-    socket.on('disconnect', onDisconnect)
+    const user = socket.request.user
+    if ( user && user.logged_in ){
+        const { username, score } = user
+        const yourInfo = { username, score }
+        console.log('io connected', { yourInfo } , Constants.MSG_TYPES.YOUR_INFO)
+        setTimeout( () => {
+        socket.emit(Constants.MSG_TYPES.YOUR_INFO,yourInfo)
+        },1000)
+        socket.on(Constants.MSG_TYPES.JOIN_GAME, joinGame)
+        socket.on(Constants.MSG_TYPES.INPUT, handleInput)
+        socket.on('disconnect', onDisconnect)
+    }
+    
+
 })
 
 /*
@@ -248,7 +356,7 @@ function tellScore( name, score ){
     User.updateOne( { username : name },
                     //{ $inc : { score : score.total } },
                     { score : score.total },
-                    { upsert : true } )
+                    { upsert : false } )
         .then( x => console.log('update!YES',x))
         .catch( x => console.log('update!NO',x))
 }

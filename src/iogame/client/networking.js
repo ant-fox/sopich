@@ -42,9 +42,19 @@ function onPlayerAddedf( joinSuccess ){
         joinSuccess()
     }
 }
-export const connect = (onGameOver,joinSuccess,joinFailed) => (
+function onYourInfof( yourInfo ){
+    return function (...args){
+        yourInfo( ...args )
+        console.log('oooo',this,args)
+    }
+}
+export const connect = (onGameOver,joinSuccess,joinFailed,yourInfo) => (
     connectedPromise.then(() => {
         // Register callbacks
+        socket.on(Constants.MSG_TYPES.YOUR_INFO, function(...args){
+            console.log('-------------------',args)
+            onYourInfof( yourInfo )(...args);
+        })
         socket.on(Constants.MSG_TYPES.JOINED_GAME_OK, onPlayerAddedf( joinSuccess ) );
         socket.on(Constants.MSG_TYPES.JOINED_GAME_KO, onPlayerNotAddedf( joinFailed ) );
         socket.on(Constants.MSG_TYPES.GAME_UPDATE, processGameUpdate);

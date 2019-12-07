@@ -11,13 +11,14 @@
   </head>
   <body>
     <div id="play-menu" class="hidden">
+      <p>You are <a href="/login"><span id="username"></span></a></p>
       <h1>Sopich</h1> 
+ 
       <p id="not-joined-reason" placeholder="" />
-      <p> Stay alive and shoot other players.</p>
-      <p> Use left/right direction keys for looping,</p>
-      <p> shift for missile, enter for bombs</p>
-      <p> page up/down for speed</p>
-
+      <p> Stay alive and shoot other players<br/>
+        Use left/right direction keys for looping<br/>
+        Shift for missile, enter for bombs<br/>
+        page up/down for speed</p>
       <hr />
       <p>
         <img src="favicon.ico"/>
@@ -26,6 +27,7 @@
       <!-- <input type="text" id="username-input" placeholder="Username" /> -->
       <button id="play-button">PLAY</button>
     </div>
+
     <div id="disconnect-modal" class="hidden">
       <div>
         <h2>Disconnected from Server </h2>

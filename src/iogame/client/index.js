@@ -8,6 +8,7 @@ import { initState } from './state';
 import './css/main.css';
 import  * as Menu from '../../menu.js'
 
+const usernameDiv = document.getElementById('username');
 const playMenu = document.getElementById('play-menu');
 const playButton = document.getElementById('play-button');
 const usernameInput = document.getElementById('username-input');
@@ -15,7 +16,7 @@ const notJoinedReason = document.getElementById('not-joined-reason');
 const menu = new Menu.Menu( Menu.Definitions, Menu.defaultStore )
 
 Promise.all([
-    connect( onGameOver, onGameStarting, onGameNotStarting ),
+    connect( onGameOver, onGameStarting, onGameNotStarting, onYourInfo ),
     //  downloadAssets(),
 ]).then(() => {
     console.log('PROMISE FILED')
@@ -50,4 +51,8 @@ function onGameOver() {
     stopRendering();
     playMenu.classList.remove('hidden');
     //  setLeaderboardHidden(true);
+}
+function onYourInfo( info ){
+    console.log('youtinfoindex.js',info)
+    usernameDiv.innerHTML = info.username
 }
