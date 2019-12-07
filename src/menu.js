@@ -385,6 +385,8 @@ export function Menu( Definitions, store ){
             case'ArrowRight':onInput('next');break
             case'NumpadAdd':onInput('inc');break
             case'NumpadSubtract':onInput('dec');break
+            case'PageUp':onInput('inc');break
+            case'PageDown':onInput('dec');break
             case'Enter':onInput('action');break
             case'Backspace':onInput('parent');break
             }
