@@ -360,7 +360,12 @@ export function Display() {
                         $context.fillText(`${ name }[${age}](${p})${score.total}/${value}`,
                                           wxy.x + 8 , wxy.y + 18 )
                     } else {
+                        /*
                         $context.fillText(`${ name }(${p})${score.total}/${value}`,
+                                          wxy.x + 8 , wxy.y + 18 )
+                        */
+                        
+                        $context.fillText(`${score.total}`,
                                           wxy.x + 8 , wxy.y + 18 )
                     }
                 }

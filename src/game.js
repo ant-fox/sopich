@@ -3,17 +3,44 @@ const FIRST_PLANE_CANNOT_BE_DESTRUCTED = false
 const MAX_PLANES = 20
 const IDLE_IF_NO_PLAYER = true
 //
+// Mode campagne :
+
+// sauvegarder {
+// highscore des surivals
+// unlocks
+// }
+//
+//
+// ?? mode easy / hard
+//
+//
+// mission:tutoriel1 -> mission:tutoriel2 -> mission:tutoriel3
+// -> pas de choix de mission
+//
+// sv:mission 1 'kill five cows' 
+// sv:mission 2 'protect forts pendant un certain temps'
+//
+// - 2 survival modes
+//   tuer jusqu'à mourrir -> MORT
+//   défendre les forts jusqu'à plus de fort  -> MORT
+//
+// mode campagne
+// - survivre 5 minutes.
+//   => survit et +50 points --> unlock NEXT
+// - 
+
 // game modes
 // - protect fort
 // evenly spaced hq along x must be protected by same color plane
 // base destruction -> -200
-// - solo battle
+// - solo battle [survival-master] unlock 
 // (normal count)
 // - solo contest
 //   -> limited time (max score)
 //   -> limited score (min time)
 // - by team
 // like protect fort but with less hq types than players
+//
 // - invasion
 // all forts belong to A team
 // A team must destroy all opponent (n lives ?)

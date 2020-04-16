@@ -12,7 +12,7 @@
   "author": "Vivien Guillet, Victor Zhou",
   "license": "MIT",
   "dependencies": {
-    "bcrypt": "^3.0.7",
+    "bcrypt": "^4.0.1",
     "connect-mongo": "^3.1.2",
     "esm": "^3.2.25",
     "express": "^4.16.4",
