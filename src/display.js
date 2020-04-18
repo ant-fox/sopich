@@ -365,16 +365,20 @@ export function Display() {
                                           wxy.x + 8 , wxy.y + 18 )
                         */
                         
-                        $context.fillText(`${score.total}`,
+                        /*$context.fillText(`${score.total}`,
                                           wxy.x + 8 , wxy.y + 18 )
+                        */
+                        /*context.fillText(`${ name }`,
+                          wxy.x + 8 , wxy.y + 18 )*/
+                        
                     }
                 }
                 
 
-                /*
-                $context.fillText(`${ name } ${Math.floor(x)},${Math.floor(y)},${p}`,
+                
+                $context.fillText(`${ name }`,// ${Math.floor(x)},${Math.floor(y)},${p}`,
                                   wxy.x + 8 , wxy.y + 18 )
-                */
+                
             })
         }
 
