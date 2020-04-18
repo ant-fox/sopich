@@ -1,21 +1,31 @@
+// window.onkeydown = ({code}) => console.log( 'touche', code )
+// o/p
+// i k j l
 export function Controller( input_send0 ){   
     function onKeydown( { code } ){
         switch ( code ){
+        case 'KeyI' :
         case 'ArrowLeft' : input_send0( 'noseup' ) 
             break
+        case 'KeyK' :
         case 'ArrowRight' : input_send0( 'nosedown' ) 
             break
+        case 'KeyL' :
         case 'ArrowUp' : input_send0( 'reverse' ) 
             break
+        case 'KeyA' :
         case 'PageUp' : input_send0( 'powerup' ) 
             break
+        case 'keyZ' :
         case 'PageDown' : input_send0( 'powerdown' ) 
             break
+        case 'KeyM' : 
         case 'ShiftRight' : input_send0( 'firemissile' ) 
             break
+        case 'Space' : 
         case 'Enter' : input_send0( 'firebomb' ) 
             break
-        //default : console.log(code)
+            //default : console.log(code)
         }
     }
     function connect(){
@@ -40,24 +50,24 @@ export function Controller( input_send0 ){
             if (gamepads[i]) {
                 const buttons = gamepads[ i ].buttons
                 /*for ( let j = 0, l = buttons.length ; j < l ; j++ ){
-                    const button = buttons[ j ]
-                    // 0 1 2 3 a d x y
-                    if ( button.pressed ){
-//                        console.log( j )
-                    }
-                }*/
+                  const button = buttons[ j ]
+                  // 0 1 2 3 a d x y
+                  if ( button.pressed ){
+                  //                        console.log( j )
+                  }
+                  }*/
                 if ( buttons[ 0 ].pressed ){
-                     input_send0( 'firebomb' ) 
+                    input_send0( 'firebomb' ) 
                 }
                 if ( buttons[ 2 ].pressed ){
-                     input_send0( 'firemissile' ) 
+                    input_send0( 'firemissile' ) 
                 }
 
                 if ( buttons[ 4 ].pressed ){
-                     input_send0( 'powerdown' ) 
+                    input_send0( 'powerdown' ) 
                 }
                 if ( buttons[ 5 ].pressed ){
-                     input_send0( 'powerup' ) 
+                    input_send0( 'powerup' ) 
                 }
                 
                 const axes = gamepads[ i ].axes
