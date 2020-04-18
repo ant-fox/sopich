@@ -754,8 +754,8 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         //f( 'ground', State.ground )
         State.oxs.forEach( ox => f( 'ox', ox ) )
         State.targets.forEach( (target,i) => f( 'target', target ) )
-        State.birds.forEach( bird => f( 'bird', bird ) )
-        State.flocks.forEach( flock => f( 'flock', flock ) )
+        // State.birds.forEach( bird => f( 'bird', bird ) )
+        // State.flocks.forEach( flock => f( 'flock', flock ) )
         State.planes.forEach( plane => {
             const { bombs, missiles, explosion } = plane
             f( 'plane', plane )
