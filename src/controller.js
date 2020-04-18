@@ -13,9 +13,11 @@ export function Controller( input_send0 ){
         case 'KeyL' :
         case 'ArrowUp' : input_send0( 'reverse' ) 
             break
+        case 'KeyE' :
         case 'KeyA' :
         case 'PageUp' : input_send0( 'powerup' ) 
             break
+        case 'KeyR' :
         case 'keyZ' :
         case 'PageDown' : input_send0( 'powerdown' ) 
             break
