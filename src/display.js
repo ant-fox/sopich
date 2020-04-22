@@ -154,7 +154,7 @@ export function Display() {
     let position_helper_ttl = -1
     let position_helper_max_ttl = 120
 
-    const trailPoints = new Array( 1000 ).fill(0).map( x => undefined )
+    const trailPoints = new Array( 500 ).fill(0).map( x => undefined )
     let currentTrailPointIdx = 0
     function displayTrailPoints( world_to_context, putSprite ){
         const now = Date.now()
