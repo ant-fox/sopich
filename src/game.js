@@ -96,7 +96,7 @@ export const ADD_PLAYER_RETURNS = {
 export const PLANE_INPUT_NAMES = [
     'noseup','nosedown','reverse',
     'powerup','powerdown',
-    'firebomb','firemissile'
+    'firebomb','firemissile',
 ]
 function NameGenerator(){
     let letters = [

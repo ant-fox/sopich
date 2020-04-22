@@ -24,6 +24,9 @@ export function Controller( input_send0 ){
         case 'KeyM' : 
         case 'ShiftRight' : input_send0( 'firemissile' ) 
             break
+        case 'KeyP' : 
+        case 'ControlRight' : input_send0( 'fireguidedmissile' ) 
+            break
         case 'Space' : 
         case 'Enter' : input_send0( 'firebomb' ) 
             break

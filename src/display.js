@@ -217,6 +217,8 @@ export function Display() {
         )   
         const top = bottom +  $canvas.height
 
+        
+
         let camera_target_to_center = {
             x : Math.abs( camera_target.x - ( left + right ) / 2 ),
             y : Math.abs( camera_target.y - ( top + bottom ) / 2 ),
@@ -255,7 +257,9 @@ export function Display() {
         // sky
         {
             $context.fillStyle = 'black'//'SkyBlue'
-            $context.fillRect(0,0,$canvas.width,$canvas.height)
+            let cxy = world_to_context( worldSize.x1, worldSize.y1 )
+            $context.fillRect( 0, 0, $canvas.width, $canvas.height )
+            
         }
         // stars
 
