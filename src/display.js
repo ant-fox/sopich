@@ -430,15 +430,15 @@ export function Display() {
                 const { x, y, age, a, p, ttl, cs, explosion } = guidedmissile
                 if ( ttl > 0 ){
                     let wxy = world_to_context( x, y )
-                    putSprite( Images.missile[cs][a], wxy.x , wxy.y )
+                    putSprite( Images.guidedmissile[cs][a], wxy.x , wxy.y )
                     
                     /*if ( age !== undefined ){
-                        if (DEBUG_AGE){*/
-                            $context.fillStyle = 'white'
-                            $context.font = `${ 10 }px monospace`;
+                      if (DEBUG_AGE){*/
+                    $context.fillStyle = 'white'
+                    $context.font = `${ 10 }px monospace`;
                     $context.fillText(`[*]`, wxy.x , wxy.y + 9 )
-                /*}
-                  }*/
+                    /*}
+                      }*/
                 }
             }
         }
