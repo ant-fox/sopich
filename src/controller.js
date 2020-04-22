@@ -1,7 +1,51 @@
 // window.onkeydown = ({code}) => console.log( 'touche', code )
 // o/p
 // i k j l
-export function Controller( input_send0 ){   
+
+const DefaultKeyboardMapping = {
+    'noseup' : ['KeyI','ArrowLeft'],
+    'nosedown' : ['KeyK','ArrowRight'],
+    'reverse' : ['KeyL','ArrowUp'],
+    'powerup'  : ['KeyE','KeyA','PageUp'] ,
+    'powerdown': ['KeyR','keyZ','PageDown'] ,
+    'firemissile': ['KeyM','ShiftRight'] ,
+    'firebomb': ['KeyP','ControlRight'] ,
+    'fireguidedmissile': ['Space','Enter'] ,
+}
+export const KeyboardMapping = {}
+let mappingByKey = {}
+resetKeyboardMapping( KeyboardMapping )
+
+
+function updateMappingByKey(){
+    Object.entries( KeyboardMapping ).forEach( ([input,keys]) => {
+        keys.forEach( key => {
+            mappingByKey[ key ] = input
+        })
+    })
+    console.log({mappingByKey})
+}
+
+
+export function resetKeyboardMapping( KeyboardMapping ){
+    Object.entries( DefaultKeyboardMapping ).forEach( ([k,v]) => {
+        KeyboardMapping[ k ] = v.map( x => x )
+    })
+    updateMappingByKey()
+}
+export function setOneKeyboardMapping( action, key ){
+    KeyboardMapping[ action ] = [ key ]
+    updateMappingByKey()
+}
+
+export function Controller( input_send0 ){
+    function onKeydown( { code } ){
+        const input = mappingByKey[ code ]
+        if ( input ){
+            input_send0( input )  
+        }
+    }
+    /*
     function onKeydown( { code } ){
         switch ( code ){
         case 'KeyI' :
@@ -33,6 +77,7 @@ export function Controller( input_send0 ){
             //default : console.log(code)
         }
     }
+    */
     function connect(){
         document.body.addEventListener('keydown', onKeydown)
     }

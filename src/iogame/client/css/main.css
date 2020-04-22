@@ -148,3 +148,9 @@ canvas {
 #not-joined-reason {
     color : red;
 }
+.keyboardmapping {
+    font-family : mono;
+}
+.active-remapping {
+    font-weight : bold;
+}

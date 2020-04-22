@@ -4,28 +4,58 @@
     <title>Sopitch</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="shortcut icon" href="/assets/icon64.png">
-    <!-- <meta property="description" content="A  multiplayer .io web game."> -->
-    <!-- <meta property="og:title" content="An example .io game"> -->
-    <!-- <meta property="og:description" content="A  multiplayer .io web game."> -->
-    <!-- <meta property="og:image" content="/assets/icon1200.png"> -->
   </head>
   <body>
     <div id="play-menu" class="hidden">
       <p>You are <a href="/login"><span id="username"></span></a></p>
       <h1>Sopich</h1> 
- 
       <p id="not-joined-reason" placeholder="" />
-      <p> Stay alive and shoot other players<br/>
-        Use left/right direction keys for looping<br/>
-        Shift for missile, enter for bombs<br/>
-        page up/down for speed</p>
-      <hr />
+      <p> Stay alive and shoot other players</p>
       <p>
         <img src="favicon.ico"/>
       </p>
       <hr />
       <!-- <input type="text" id="username-input" placeholder="Username" /> -->
+      <button id="remap-controls-button">VIEW / REMAP CONTROLS</button>
+      <div id="remap-controls-list" class="hidden">
+        <div>
+          <button id="remap-control-noseup-button">Nose Up</button>
+          <span class="keyboardmapping" class="keyboardmapping" id="remap-control-noseup-key"></span>
+        </div>
+        <div>
+          <button id="remap-control-nosedown-button">Nose Down</button>
+          <span class="keyboardmapping" id="remap-control-nosedown-key"></span>
+        </div>
+        <div>
+          <button id="remap-control-reverse-button">Reverse</button>
+          <span class="keyboardmapping" id="remap-control-reverse-key"></span>
+        </div>
+        <div>
+          <button id="remap-control-powerup-button">Power up</button>
+          <span class="keyboardmapping" id="remap-control-powerup-key"></span>
+        </div>
+        <div>
+          <button id="remap-control-powerdown-button">Power down</button>
+          <span class="keyboardmapping" id="remap-control-powerdown-key"></span>
+        </div>
+        <div>
+          <button id="remap-control-firemissile-button">Fire missile</button>
+          <span class="keyboardmapping" id="remap-control-firemissile-key"></span>
+        </div>
+        <div>
+          <button id="remap-control-firebomb-button">Fire bomb</button>
+          <span class="keyboardmapping" id="remap-control-firebomb-key"></span>
+        </div>
+        <div>
+          <button id="remap-control-fireguidedmissile-button">Fire guided missile</button>
+          <span class="keyboardmapping" id="remap-control-fireguidedmissile-key"></span>
+        </div>
+        <button id="remap-controls-reset-button">RESET ALL CONTROLS</button>
+
+      </div>
+      <hr />
       <button id="play-button">PLAY</button>
+
     </div>
 
     <div id="disconnect-modal" class="hidden">

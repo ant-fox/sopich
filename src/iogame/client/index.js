@@ -4,7 +4,6 @@ import { connect, play } from './networking';
 import { startRendering, stopRendering } from './render';
 import { startCapturingInput, stopCapturingInput } from './input';
 import { initState } from './state';
-
 import './css/main.css';
 import  * as Menu from '../../menu.js'
 
@@ -14,7 +13,57 @@ const playButton = document.getElementById('play-button');
 const usernameInput = document.getElementById('username-input');
 const notJoinedReason = document.getElementById('not-joined-reason');
 const menu = new Menu.Menu( Menu.Definitions, Menu.defaultStore )
+const remapControlsButton = document.getElementById('remap-controls-button')
+const remapControlsList =  document.getElementById('remap-controls-list')
+const remapControlsResetButton = document.getElementById('remap-controls-reset-button')
 
+import { KeyboardMapping, setOneKeyboardMapping, resetKeyboardMapping } from '../../controller.js'
+
+function firstKeyDown( $element, continuation ){
+    function onKeydown( { code } ){
+        continuation( code )
+        $element.removeEventListener('keydown',onKeydown)
+    }
+    $element.addEventListener('keydown',onKeydown)    
+}
+function updateMappedKeySpan( type, KeyboardMapping ){
+    const spanId = `remap-control-${ type }-key`
+    const mappedKeysSpan = document.getElementById( spanId )
+    mappedKeysSpan.innerHTML = KeyboardMapping[ type ].join(' ')
+    
+}
+function remapControlsButtonClicked(){  
+    
+    remapControlsList.classList.toggle('hidden')
+
+    remapControlsResetButton.onclick = () => {
+        resetKeyboardMapping( KeyboardMapping )
+        Object.keys( KeyboardMapping ).forEach( type => {
+            updateMappedKeySpan( type, KeyboardMapping )
+        })
+              
+    }
+    
+    Object.keys( KeyboardMapping ).forEach( type => {
+
+        updateMappedKeySpan( type, KeyboardMapping )
+        
+        const buttonId = `remap-control-${ type }-button`
+        const remapButton = document.getElementById( buttonId )        
+        console.log(buttonId, remapButton )
+        remapButton.onclick = e => {
+            remapButton.classList.add('active-remapping')
+            console.log( buttonId, remapButton )
+            firstKeyDown( window.document, code => {
+                console.log('type',type,code)
+                setOneKeyboardMapping( type, code )
+                updateMappedKeySpan( type, KeyboardMapping )
+                remapButton.classList.remove('active-remapping')
+
+            })
+        }
+    })
+}
 Promise.all([
     connect( onGameOver, onGameStarting, onGameNotStarting, onYourInfo ),
     //  downloadAssets(),
@@ -29,6 +78,9 @@ Promise.all([
         
         //    setLeaderboardHidden(false);
     };
+    remapControlsButton.onclick = () => {
+        remapControlsButtonClicked()
+    }
 }).catch(console.error);
 
 function onGameStarting(){
