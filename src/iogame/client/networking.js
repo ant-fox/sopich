@@ -78,3 +78,6 @@ export const play = username => {
 export const sendInputToServer = throttle(20, dir => {
     socket.emit(Constants.MSG_TYPES.INPUT, dir );
 });
+export const sendKeyboardMappingToServer = mapping => {
+    socket.emit(Constants.MSG_TYPES.KEYBOARD_MAPPING, mapping );
+}

@@ -19,6 +19,7 @@ module.exports = Object.freeze({
         JOIN_GAME: 'join_game',
         GAME_UPDATE: 'update',
         INPUT: 'input',
-        GAME_OVER: 'dead',
+        KEYBOARD_MAPPING : 'keyboard_mapping',
+        GAME_OVER: 'dead',        
     },
 });

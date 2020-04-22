@@ -112,7 +112,7 @@ if (process.env.NODE_ENV === 'development') {
 // TODO remove
 app.get('/stats/users', function(req, res) {
     User.find({}, function(err, users) {
-        res.send(users.map( ({username,score,passwordHash}) => ({username,score,passwordHash}) ) )
+        res.send(users.map( ({username,score,passwordHash,keyboardMapping})                            => ({username,score,passwordHash,keyboardMapping}) ) )
     })
 })
 
@@ -162,14 +162,18 @@ io.on('connection', socket => {
     console.log('connexion', socket.id)
     const user = socket.request.user
     if ( user && user.logged_in ){
-        
-        const { username, score, keyboardMapping } = user
-        const yourInfo = { username, score, keyboardMapping }
-        console.log('io connected', { yourInfo } , Constants.MSG_TYPES.YOUR_INFO)
-        setTimeout( () => {
-            socket.emit(Constants.MSG_TYPES.YOUR_INFO, yourInfo )
-        },1000)
+        console.log('UUUU',user)
+        const { username, score } = user
+        User.findOne( { username } )
+            .then( ({keyboardMapping}) => {
+                const yourInfo = { username, score, keyboardMapping  }
+                console.log('io connected', { yourInfo } , Constants.MSG_TYPES.YOUR_INFO)
+                setTimeout( () => {
+                    socket.emit(Constants.MSG_TYPES.YOUR_INFO, yourInfo )
+                },1000)
+            })
         socket.on(Constants.MSG_TYPES.JOIN_GAME, joinGame)
+        socket.on(Constants.MSG_TYPES.KEYBOARD_MAPPING, handleKeyboardMapping)
         socket.on(Constants.MSG_TYPES.INPUT, handleInput)
         socket.on('disconnect', onDisconnect)
     }
@@ -230,4 +234,14 @@ function handleInput(dir) {
 }
 function onDisconnect() {
     game.removePlayer(this.id)
+}
+function handleKeyboardMapping( keyboardMapping ){
+    const username = this.request.user.username
+    console.log("keyboardMapping", JSON.stringify( keyboardMapping ), username )
+    User.updateOne( { username : username },
+                    //{ $inc : { score : score.total } },
+                    { keyboardMapping },
+                    { upsert : false } )
+        .then( x => console.log('updateKBM!YES',x))
+        .catch( x => console.log('updateKBM!NO',x))
 }

@@ -1,6 +1,6 @@
 // Learn more about this file at:
 // https://victorzhou.com/blog/build-an-io-game-part-1/#3-client-entrypoints
-import { connect, play } from './networking';
+import { connect, play, sendKeyboardMappingToServer } from './networking';
 import { startRendering, stopRendering } from './render';
 import { startCapturingInput, stopCapturingInput } from './input';
 import { initState } from './state';
@@ -34,8 +34,19 @@ function updateMappedKeySpan( type, KeyboardMapping ){
     
 }
 function onMappingUpdated(){
-    
-    
+    // updated in client    
+    // send to server
+    sendKeyboardMappingToServer( KeyboardMapping )
+}
+function keyboardMappingLoaded( keyboardMapping ){
+    console.log('loaded KeyboardMapping',keyboardMapping)
+    Object.keys( KeyboardMapping ).forEach( type => {
+        if ( keyboardMapping !== undefined ){
+            const code = keyboardMapping[ type ]
+            setOneKeyboardMapping( KeyboardMapping, type, code )
+            updateMappedKeySpan( type, KeyboardMapping )
+        }
+    })
 }
 function remapControlsButtonClicked(){  
     
@@ -109,6 +120,8 @@ function onGameOver() {
     //  setLeaderboardHidden(true);
 }
 function onYourInfo( info ){
-    console.log('youtinfoindex.js',info)
+    console.log('youtinfoindex',info)
     usernameDiv.innerHTML = info.username
+    const { keyboardMapping } = info
+    keyboardMappingLoaded( keyboardMapping )
 }
