@@ -24,7 +24,7 @@ function onPlayerNotAddedf( joinFailed) {
             break ;
         case ADD_PLAYER_RETURNS.ALREADY_JOINED : r = 'already joined' 
             break ;
-        case ADD_PLAYER_RETURNS.USERNAME_TOO_LONG : r = 'username to long' 
+        case ADD_PLAYER_RETURNS.USERNAME_TOO_LONG : r = 'username too long' 
             break ;
         case ADD_PLAYER_RETURNS.NO_MORE_AVAILABLE_ITEM : r = 'game is full' 
             break ;
