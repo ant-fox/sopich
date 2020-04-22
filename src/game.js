@@ -2,6 +2,7 @@ const IA_DOES_NOT_FIRE = false
 const FIRST_PLANE_CANNOT_BE_DESTRUCTED = false
 const MAX_PLANES = 20
 const IDLE_IF_NO_PLAYER = true
+const IA_JUST_FLIES_AROUND = true
 //
 // Mode campagne :
 
@@ -1081,13 +1082,13 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 /* if ( i > 0 ){
                  ia1( State.planes[ i ], State.planes[ i - 1 ] )
                  */
-                /*
-                if ( !(i%2) ){
-                    ia1( State.planes[ i ], State.planes[ 0 ], 300)
-                } else {
-                    ia1( State.planes[ i ], State.planes[ i - 1 ],2000 )
+                if (!IA_JUST_FLIES_AROUND){
+                    if ( !(i%2) ){
+                        ia1( State.planes[ i ], State.planes[ 0 ], 300)
+                    } else {
+                        ia1( State.planes[ i ], State.planes[ i - 1 ],2000 )
+                    }
                 }
-                */
             }
         })
         

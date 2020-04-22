@@ -153,6 +153,34 @@ export function Display() {
     let last_camera_target_to_center_dist = undefined
     let position_helper_ttl = -1
     let position_helper_max_ttl = 120
+
+    const trailPoints = new Array( 1000 ).fill(0).map( x => undefined )
+    let currentTrailPointIdx = 0
+    function displayTrailPoints( world_to_context, putSprite ){
+        const now = Date.now()
+        const minAge = 130
+        const maxAge = 1000
+        trailPoints.filter( x => x !== undefined ).forEach( ({x,y,color,spread,size,date}) => {
+            const age = now - date
+            if ( ( age > minAge) && ( age < maxAge ) ){
+                const prog =  1 - ( (age - minAge) / (maxAge-minAge) )
+                let cxy = world_to_context( x, y )
+                $context.fillStyle = color
+                const r1 = ( Math.random() - 0.5 ) * 2 * spread
+                const r2 = ( Math.random() - 0.5 ) * 2 * spread
+                const s = size * prog
+                const ss = -1 * s/4
+                //$context.fillRect( cxy.x + r1 -ss, cxy.y+r2-ss, s, s)
+                $context.fillRect( cxy.x + r1 + ss, cxy.y + r2 + ss, s, s )
+            }
+        })
+    }
+    function trailPoint(x,y,color,spread,size){
+        if ( trailPoints.length ){
+            trailPoints[ currentTrailPointIdx ] = { x, y, color, spread, size, date : Date.now() }
+            currentTrailPointIdx = ( currentTrailPointIdx + 1 ) % trailPoints.length        
+        }
+    }
     function display(){
 
         $context.imageSmoothingEnabled = false
@@ -264,7 +292,7 @@ export function Display() {
         // stars
 
         if (stars){
-            if (Math.random()>0.95){
+            if (Math.random()>0.90){
                 update_stars( stars )
             }
             const bcolors = [ '#faff', '#a59a', '#0095' ]
@@ -274,6 +302,8 @@ export function Display() {
                 $context.fillRect( cxy.x, cxy.y, 1,1)                
             })
         }
+        displayTrailPoints( world_to_context, putSprite )
+
         // ground
         const ground = State.ground
         if ( ground ){
@@ -413,6 +443,7 @@ export function Display() {
                 if ( ttl > 0 ){
                     let wxy = world_to_context( x, y )
                     putSprite( Images.missile[cs][a], wxy.x , wxy.y )
+                    trailPoint( x + 4, y + 4,'#656', 2, 1 )
                     if ( age !== undefined ){
                         if (DEBUG_AGE){
                             $context.fillStyle = 'white'
@@ -427,16 +458,18 @@ export function Display() {
         if ( guidedmissiles ){
             for ( let i = 0, l = guidedmissiles.length ; i < l ; i++ ){        
                 const guidedmissile = guidedmissiles[i]
-                const { x, y, age, a, p, ttl, cs, explosion } = guidedmissile
+                const { x, y, age, a, p, ttl, cs, explosion, step } = guidedmissile
                 if ( ttl > 0 ){
                     let wxy = world_to_context( x, y )
                     putSprite( Images.guidedmissile[cs][a], wxy.x , wxy.y )
+                    //console.log(age)
+                    trailPoint( x + 4, y + 4,'#886500',3, 2 )
                     
                     /*if ( age !== undefined ){
                       if (DEBUG_AGE){*/
                     $context.fillStyle = 'white'
                     $context.font = `${ 10 }px monospace`;
-                    $context.fillText(`[*]`, wxy.x , wxy.y + 9 )
+                    //$context.fillText(`[*]`, wxy.x , wxy.y + 9 )
                     /*}
                       }*/
                 }
@@ -447,6 +480,9 @@ export function Display() {
             for ( let j = 0, ll = debris.length ; j < ll ; j++ ){
                 let { x, y, a, ttl, cs, dtype } = debris[ j ]
                 let wxy = world_to_context( x, y )
+                if (Math.random()>0.8){
+                    trailPoint( x + 4, y + 4,'#88550a',3, 2 )
+                }
                 putSprite( Images.debris[cs][dtype], wxy.x , wxy.y )             
             }
         }
@@ -471,7 +507,15 @@ export function Display() {
             for ( let j = 0, ll = fallings.length ; j < ll ; j++ ){
                 let { cs, x, y, as } = fallings[ j ]
                 let wxy = world_to_context( x, y )
-                putSprite( Images.plane_hit[cs][as], wxy.x , wxy.y )             
+                putSprite( Images.plane_hit[cs][as], wxy.x , wxy.y )
+                if (Math.random()>0.8){
+                    if ( Math.random()>0.5){
+                        trailPoint( x + 8, y + 8,'#88888', 5, 4 )
+                    } else {
+                        trailPoint( x + 8, y + 8,'#a8888', 3, 2 )
+                    }
+                }
+
             }
         }
         const leavings = State.leavings
