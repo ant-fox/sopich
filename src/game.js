@@ -1,6 +1,6 @@
 const IA_DOES_NOT_FIRE = false
 const FIRST_PLANE_CANNOT_BE_DESTRUCTED = false
-const MAX_PLANES = 20
+const MAX_PLANES = 3
 const IDLE_IF_NO_PLAYER = true
 //
 // Mode campagne :
@@ -352,6 +352,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
     function init_guidedmissile( i, owner ){
         const missile = init_missile( i, owner )
         missile.guidanceTarget = undefined
+        missile.p = 4
         return missile
     }
 
@@ -435,7 +436,10 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         justfire( bomb.justfired )
     }
     function fire_guidedmissile_from_plane( missile, from ){
-        return fire_missile_from_plane( missile, from )
+        fire_missile_from_plane( missile, from )
+        missile.ttl = 80
+        missile.guidanceTarget = undefined
+        missile.p = 5
     }
     function fire_missile_from_plane( missile, from ){
         const { x, y, p, r, a } = from
@@ -447,7 +451,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         missile.x = x + off[0] + ( 16 / 2 ) - ( 8 / 2 ) + dir[0] * dist
         missile.y = y + off[1] + ( 16 / 2 ) - ( 8 / 2 ) + dir[1] * dist
         missile.ttl = 100
-        missile.p = 5
+        missile.p = 4
         missile.step = 0
         missile.a = a 
         missile.age = 0
@@ -555,21 +559,32 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             leaving.ttl--
         }
     }
-    function move_birdlike( obj ){
 
-        
-    }
     function move(){
         State.planes.forEach( plane => {
             const { x, y, r, a, p, bombs, missiles, guidedmissiles, explosion, leaving, falling } = plane
-            let dx = directions16[ a ][ 0 ] * p * 2
-            let dy = directions16[ a ][ 1 ] * p * 2
+            let dx, dy
+            if ( p === 0 ){
+                dx = 0
+                dy = -3
+            } else {
+                dx = directions16[ a ][ 0 ] * p * 2
+                dy = directions16[ a ][ 1 ] * p * 2
+            }
             if ( plane.ttl >= 0 ){
                 plane.x = x + dx
                 plane.y = y + dy
                 if ( plane.y > worldSize.y2 ){ // TODO
                     plane.a = 12
                     // State.plane.r = !(State.plane.r)
+                }
+                if ( plane.x < worldSize.x1 ){
+                    plane.a = 0
+                    plane.r = 0
+                }
+                if ( plane.x > worldSize.x2 ){
+                    plane.a = 8
+                    plane.r = 1
                 }
                 plane.x = clamp( plane.x, worldSize.x1, worldSize.x2)
                 plane.y = clamp( plane.y, worldSize.y1, worldSize.y2)
@@ -638,7 +653,55 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 const guidedmissile = guidedmissiles[i]
                 if ( guidedmissile.ttl <= 0 ){
                 } else {
-                    const { x, y, a, p, ttl, step } = guidedmissile
+                    const { age, x, y, p, ttl, step } = guidedmissile
+
+                    function nearestActivePlane(x,y,self){
+                        let sqDist = Number.POSITIVE_INFINITY
+                        let targetPlane = undefined
+                        for ( let i = 0 ; i < State.planes.length ; i++ ){
+                            const oplane = State.planes[ i ]
+                            if (( oplane !== self ) && ( oplane.ttl > 0 )){
+                                const d = Math.pow( x - oplane.x,2 ) + Math.pow( y - oplane.y,2 ) 
+                                if ( d < sqDist ){
+                                    targetPlane = oplane
+                                    sqDist = d
+                                }
+                            }
+                        }
+                        return targetPlane
+                    }
+                    if ( age > 10 && ( ( step%2 ) === 0 ) ){
+                        //if (( !guidedmissile.guidanceTarget ) || ( guidedmissile.guidanceTarget.ttl <= 0 ) ){
+                        guidedmissile.guidanceTarget = nearestActivePlane(x,y,plane)
+                        //    }
+                    }
+                    function shortestsRotationDirection( from16, to16 ){
+                        if ( from16 === to16 ) return 0
+                        for ( let i = 1 ; i < 8 ; i++ ){
+                            const r16 = ( from16 + i ) % 16
+                            if ( r16 === to16 ){
+                                return 1
+                            }
+                        }
+                        return -1
+                    }
+                    const { guidanceTarget } = guidedmissile
+                    if ( ( step%2 ) === 0 ){
+                        if ( guidanceTarget ){
+                            const dir = { x : guidanceTarget.x - x, y : guidanceTarget.y - y }
+                            let angle = Math.atan2( dir.y, dir.x )
+                            let a16 = ( 8 + Math.floor( 16 * ( angle + Math.PI )/ ( 2 * Math.PI ) ) ) % 16
+                            const { a } = guidedmissile
+                            
+                            const rot16 = shortestsRotationDirection( guidedmissile.a, a16 )
+                            //if ( Math.abs( rot16 < 4 ) ){
+                            //guidedmissile.a = (16 + guidedmissile.a + Math.sign( rot16 ) )%16
+                            guidedmissile.a = (16 + guidedmissile.a + rot16  )%16
+                        //}
+
+                        }
+                    }
+                    const  { a } = guidedmissile
                     let dx = directions16[ a ][ 0 ] * p * 2
                     let dy = directions16[ a ][ 1 ] * p * 2
                     guidedmissile.x = x + dx
@@ -979,10 +1042,14 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 } else {
                     if ( Math.random() > 0.90 ) {
                         if (! IA_DOES_NOT_FIRE ){
-                            if ( Math.random() > 0.5 ){
+                            if ( Math.random() > 0.6 ){
                                 pushButton('firemissile')
                             } else {
-                                pushButton('firebomb')
+                                if ( Math.random() > 0.5 ){
+                                    pushButton('firebomb')
+                                } else {
+                                    pushButton('fireguidedmissile')
+                                }
                             }
                         }
                     }
@@ -1010,15 +1077,16 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         let cp = State.planes[ 1 ]
         State.planes.forEach( ( p, i ) => {
             if ( p.inputId === undefined ){
-                // if ( i > 0 ){
-                // ia1( State.planes[ i ], State.planes[ i - 1 ] )
-                /*
+                /* if ( i > 0 ){
+                 ia1( State.planes[ i ], State.planes[ i - 1 ] )
+                 */
+                
                 if ( !(i%2) ){
                     ia1( State.planes[ i ], State.planes[ 0 ], 300)
                 } else {
                     ia1( State.planes[ i ], State.planes[ i - 1 ],2000 )
                 }
-                */
+                
             }
         })
         
@@ -1156,7 +1224,8 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             plane.inputId = inputId
             plane.x = 500 + Math.floor( Math.random() * 1000 )
             plane.y = 100
-            plane.p = 0
+            plane.p = 1
+            plane.a = 0
             plane.score = init_score( total )
             plane.score.total = total
             plane_init_inputs( plane )
@@ -1358,7 +1427,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                     }
                     explosion.debris.forEach( debri => {
                         let { x, y, a, dtype } = debri
-                        payload.debris.push( { x, y, a, cs, dtype } )
+                        payload.debris.push( { x, y, a, cs, dtype }) 
                     })
                 }
             })

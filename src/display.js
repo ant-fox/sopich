@@ -436,7 +436,7 @@ export function Display() {
                         if (DEBUG_AGE){*/
                             $context.fillStyle = 'white'
                             $context.font = `${ 10 }px monospace`;
-                            $context.fillText(`[*]`, wxy.x , wxy.y + 9 )
+                    $context.fillText(`[*]`, wxy.x , wxy.y + 9 )
                 /*}
                   }*/
                 }
