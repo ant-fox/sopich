@@ -670,9 +670,10 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                         }
                         return targetPlane
                     }
-                    if ( age > 10 && ( ( step%2 ) === 0 ) ){
+                    if ( age > 10 && ( ( step % 4 ) === 0 ) ){
                         //if (( !guidedmissile.guidanceTarget ) || ( guidedmissile.guidanceTarget.ttl <= 0 ) ){
-                        guidedmissile.guidanceTarget = nearestActivePlane(x,y,plane)
+                        const nap = nearestActivePlane(x,y,plane)
+                        guidedmissile.guidanceTarget = nap
                         //    }
                     }
                     function shortestsRotationDirection( from16, to16 ){
@@ -686,7 +687,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                         return -1
                     }
                     const { guidanceTarget } = guidedmissile
-                    if ( ( step%2 ) === 0 ){
+                    if ( ( step%3 ) === 0 ){
                         if ( guidanceTarget ){
                             const dir = { x : guidanceTarget.x - x, y : guidanceTarget.y - y }
                             let angle = Math.atan2( dir.y, dir.x )
