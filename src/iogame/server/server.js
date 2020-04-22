@@ -163,8 +163,8 @@ io.on('connection', socket => {
     const user = socket.request.user
     if ( user && user.logged_in ){
         
-        const { username, score } = user
-        const yourInfo = { username, score }
+        const { username, score, keyboardMapping } = user
+        const yourInfo = { username, score, keyboardMapping }
         console.log('io connected', { yourInfo } , Constants.MSG_TYPES.YOUR_INFO)
         setTimeout( () => {
             socket.emit(Constants.MSG_TYPES.YOUR_INFO, yourInfo )

@@ -12,10 +12,10 @@ const DefaultKeyboardMapping = {
     'firebomb': ['KeyP','ControlRight'] ,
     'fireguidedmissile': ['Space','Enter'] ,
 }
+
 export const KeyboardMapping = {}
 let mappingByKey = {}
 resetKeyboardMapping( KeyboardMapping )
-
 
 function updateMappingByKey(){
     Object.entries( KeyboardMapping ).forEach( ([input,keys]) => {
@@ -33,7 +33,7 @@ export function resetKeyboardMapping( KeyboardMapping ){
     })
     updateMappingByKey()
 }
-export function setOneKeyboardMapping( action, key ){
+export function setOneKeyboardMapping(KeyboardMapping, action, key ){
     KeyboardMapping[ action ] = [ key ]
     updateMappingByKey()
 }

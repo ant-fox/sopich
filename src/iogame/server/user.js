@@ -4,7 +4,8 @@ const mongoose = require('mongoose')
 const UserSchema = new mongoose.Schema({
     username: String,
     score : Number,
-    passwordHash : String
+    passwordHash : String,
+    keyboardMapping : mongoose.Schema.Types.Mixed
 })
 UserSchema.statics.findByUsername = function(username) {
     return this.find({ username })
@@ -60,7 +61,7 @@ export async function loginOrCreate( username, password, done ){
         console.log('[login] create user',username )
         bcrypt.hash(password, saltRounds, function(err, hash) {        
             if ( !err ){
-                const user = new User({ username, score : 0, passwordHash : hash})
+                const user = new User({ username, score : 0, passwordHash : hash })
                 const s = user.save().then( x => {
                     console.log('[login]','created', username)
                     OK(user)

@@ -24,12 +24,17 @@ function firstKeyDown( $element, continuation ){
         continuation( code )
         $element.removeEventListener('keydown',onKeydown)
     }
-    $element.addEventListener('keydown',onKeydown)    
+    $element.addEventListener('keydown',onKeydown)
+    return () => $element.removeEventListener('keydown',onKeydown)
 }
 function updateMappedKeySpan( type, KeyboardMapping ){
     const spanId = `remap-control-${ type }-key`
     const mappedKeysSpan = document.getElementById( spanId )
     mappedKeysSpan.innerHTML = KeyboardMapping[ type ].join(' ')
+    
+}
+function onMappingUpdated(){
+    
     
 }
 function remapControlsButtonClicked(){  
@@ -41,26 +46,25 @@ function remapControlsButtonClicked(){
         Object.keys( KeyboardMapping ).forEach( type => {
             updateMappedKeySpan( type, KeyboardMapping )
         })
-              
+        onMappingUpdated()
     }
     
     Object.keys( KeyboardMapping ).forEach( type => {
-
         updateMappedKeySpan( type, KeyboardMapping )
-        
         const buttonId = `remap-control-${ type }-button`
         const remapButton = document.getElementById( buttonId )        
         console.log(buttonId, remapButton )
         remapButton.onclick = e => {
             remapButton.classList.add('active-remapping')
             console.log( buttonId, remapButton )
-            firstKeyDown( window.document, code => {
+            const cancelFkd = firstKeyDown( window.document, code => {
                 console.log('type',type,code)
-                setOneKeyboardMapping( type, code )
+                setOneKeyboardMapping( KeyboardMapping, type, code )
                 updateMappedKeySpan( type, KeyboardMapping )
                 remapButton.classList.remove('active-remapping')
-
+                onMappingUpdated()
             })
+            
         }
     })
 }
