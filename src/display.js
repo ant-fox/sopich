@@ -423,6 +423,25 @@ export function Display() {
                 }
             }
         }
+        const guidedmissiles = State.guidedmissiles
+        if ( guidedmissiles ){
+            for ( let i = 0, l = guidedmissiles.length ; i < l ; i++ ){        
+                const guidedmissile = guidedmissiles[i]
+                const { x, y, age, a, p, ttl, cs, explosion } = guidedmissile
+                if ( ttl > 0 ){
+                    let wxy = world_to_context( x, y )
+                    putSprite( Images.missile[cs][a], wxy.x , wxy.y )
+                    
+                    /*if ( age !== undefined ){
+                        if (DEBUG_AGE){*/
+                            $context.fillStyle = 'white'
+                            $context.font = `${ 10 }px monospace`;
+                            $context.fillText(`[*]`, wxy.x , wxy.y + 9 )
+                /*}
+                  }*/
+                }
+            }
+        }
         const debris = State.debris
         if (debris){
             for ( let j = 0, ll = debris.length ; j < ll ; j++ ){

@@ -97,7 +97,7 @@ export const ADD_PLAYER_RETURNS = {
 export const PLANE_INPUT_NAMES = [
     'noseup','nosedown','reverse',
     'powerup','powerdown',
-    'firebomb','firemissile',
+    'firebomb','firemissile','fireguidedmissile',
 ]
 const generateName = NameGenerator()
 const directions16 = new Array( 16 ).fill(0)
@@ -113,6 +113,7 @@ const Hitmaskfs = {
     plane : item => Hitmasks.plane[ (item.r)?1:0 ][ item.a ],
     bomb : item => Hitmasks.bomb[ item.a ],
     missile : item => Hitmasks.missile[ item.a ],
+    guidedmissile : item => Hitmasks.missile[ item.a ],
     flock : item => Hitmasks.flock[ item.as ],
     bird : item => Hitmasks.bird[ item.as ],
     target : item => ((item.broken)
@@ -123,7 +124,8 @@ const Hitmaskfs = {
 const Bhitmaskfs = {
     plane : item => BottomHitmasks.plane[ (item.r)?1:0 ][ item.a ],
     bomb : item => BottomHitmasks.bomb[ item.a ],
-    missile : item => BottomHitmasks.missile[ item.a ]
+    missile : item => BottomHitmasks.missile[ item.a ],
+    guidedmissile : item => BottomHitmasks.missile[ item.a ]
 }
 function available_ttl( items ){
     // get first dead item in a list
@@ -347,6 +349,12 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             justfired : init_justfired('missile')
         }
     }
+    function init_guidedmissile( i, owner ){
+        const missile = init_missile( i, owner )
+        missile.guidanceTarget = undefined
+        return missile
+    }
+
     function init_plane(idx){
         const cs = idx%ColorSchemes.length
         return {
@@ -367,6 +375,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             reload : init_reload( 6 ),
             bombs : new Array(8).fill(0).map( (_,i) => init_bomb( i, idx ) ),
             missiles : new Array(16).fill(0).map( (_,i) => init_missile( i, idx ) ),
+            guidedmissiles : new Array(16).fill(0).map( (_,i) => init_guidedmissile( i, idx ) ),
             explosion : init_explosion(idx%ColorSchemes.length),
             falling : init_falling_plane(idx,cs),
             leaving : init_leaving_plane(idx,cs),
@@ -425,6 +434,9 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         bomb.age = 0
         justfire( bomb.justfired )
     }
+    function fire_guidedmissile_from_plane( missile, from ){
+        return fire_missile_from_plane( missile, from )
+    }
     function fire_missile_from_plane( missile, from ){
         const { x, y, p, r, a } = from
         let off = MissileDropOffset[ a % MissileDropOffset.length]
@@ -452,14 +464,16 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 let dds = 0
                 let firebomb = 0
                 let firemissile = 0
+                let fireguidedmissile = 0
                 if ( inputs ){
                     dda = ( (inputs.noseup)?1:0 ) + ( (inputs.nosedown)?-1:0 )
                     dds = ( (inputs.powerup)?1:0 ) + ( (inputs.powerdown)?-1:0 )
                     reverse = inputs.reverse
                     firebomb = inputs.firebomb
                     firemissile = inputs.firemissile
+                    fireguidedmissile = inputs.fireguidedmissile
                 }
-                const { x, y, r, a, p, bombs, missiles, reload } = plane
+                const { x, y, r, a, p, bombs, missiles, guidedmissiles, reload } = plane
                 plane.a = posmod( a + dda, 16 )
                 plane.p = clamp( p + dds, 0, 4)
                 if ( reverse ){
@@ -481,6 +495,15 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                             let avail = available_ttl( missiles )
                             if ( avail !== missiles.length ){
                                 fire_missile_from_plane( missiles[avail], plane )
+                                arm_reload( reload )
+                            }
+                        }
+                    }
+                    if (fireguidedmissile){
+                        if ( reload.step === 0 ){
+                            let avail = available_ttl( guidedmissiles )
+                            if ( avail !== guidedmissiles.length ){
+                                fire_guidedmissile_from_plane( guidedmissiles[avail], plane )
                                 arm_reload( reload )
                             }
                         }
@@ -532,9 +555,13 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             leaving.ttl--
         }
     }
+    function move_birdlike( obj ){
+
+        
+    }
     function move(){
         State.planes.forEach( plane => {
-            const { x, y, r, a, p, bombs, missiles, explosion, leaving, falling } = plane
+            const { x, y, r, a, p, bombs, missiles, guidedmissiles, explosion, leaving, falling } = plane
             let dx = directions16[ a ][ 0 ] * p * 2
             let dy = directions16[ a ][ 1 ] * p * 2
             if ( plane.ttl >= 0 ){
@@ -607,7 +634,28 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 }
                 move_explosion( missile.explosion )
             }
+            for ( let i = 0, l = guidedmissiles.length ; i < l ; i++ ){
+                const guidedmissile = guidedmissiles[i]
+                if ( guidedmissile.ttl <= 0 ){
+                } else {
+                    const { x, y, a, p, ttl, step } = guidedmissile
+                    let dx = directions16[ a ][ 0 ] * p * 2
+                    let dy = directions16[ a ][ 1 ] * p * 2
+                    guidedmissile.x = x + dx
+                    guidedmissile.y = y + dy
+                    if ( step === 20 ){
+                        guidedmissile.step = 0
+                        //guidedmissile.a = toFall8[ a ]
+                    } else {
+                        guidedmissile.step += 1
+                    }
+                    guidedmissile.ttl -= 1
+                    guidedmissile.age += 1
+                }
+                move_explosion( guidedmissile.explosion )
+            }
         })
+        
         State.flocks.forEach( flock => {
             if ( ( flock.step % flock.interv ) === 0 ){
                 flock.as = ( flock.as + 1)%2
@@ -624,6 +672,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             }
             bird.step++
         })
+        
 
         ////////////
         
@@ -716,7 +765,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         // State.birds.forEach( bird => f( 'bird', bird ) )
         // State.flocks.forEach( flock => f( 'flock', flock ) )
         State.planes.forEach( plane => {
-            const { bombs, missiles, explosion } = plane
+            const { bombs, missiles, guidedmissiles, explosion } = plane
             f( 'plane', plane )
             // explosion.debris.forEach( debri => f( 'debris', debri ) )
             bombs.forEach( bomb => {
@@ -727,6 +776,11 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             missiles.forEach( missile => {
                 const { explosion } = missile
                 f( 'missile', missile )
+                // // explosion.debris.forEach( debri => f( 'debris', debri ) )
+            })
+            guidedmissiles.forEach( missile => {
+                const { explosion } = missile
+                f( 'guidedmissile', missile )
                 // // explosion.debris.forEach( debri => f( 'debris', debri ) )
             })
         })
@@ -1013,12 +1067,16 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         }
     }
     function turninit(){
-        State.planes.forEach( ({ttl,bombs,missiles}) => {
+        State.planes.forEach( ({ttl,bombs,missiles,guidedmissiles}) => {
             bombs.forEach( x => {
                 turninit_justfired( x )
                 turninit_justfired( x.explosion )
             })
             missiles.forEach( x => {
+                turninit_justfired( x )
+                turninit_justfired( x.explosion )
+            })
+            guidedmissiles.forEach( x => {
                 turninit_justfired( x )
                 turninit_justfired( x.explosion )
             })
@@ -1168,6 +1226,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             explosions : [],
             bombs : [],
             missiles : [],
+            guidedmissiles : [],
             debris : [],
             ground : State.ground,
             targets : [],
@@ -1290,6 +1349,25 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                     payload.justfired.push( { x,y, type : justfired.type, num : justfired.num } )
                 }
                 payload.missiles.push( { age, x, y, a, p, cs, ttl, justfired /*, step */ })               
+                if ( explosion.ttl > 0 ){
+                    let { x,y,justfired } = explosion
+
+                    
+                    if ( justfired.ttl > 0 ){
+                        payload.justfired.push( { x,y, type : justfired.type, num : justfired.num } )
+                    }
+                    explosion.debris.forEach( debri => {
+                        let { x, y, a, dtype } = debri
+                        payload.debris.push( { x, y, a, cs, dtype } )
+                    })
+                }
+            })
+            plane.guidedmissiles.forEach( guidedmissile => {
+                let { age, x, y, a, p, cs, ttl, step, explosion, justfired } = guidedmissile
+                if ( justfired.ttl > 0 ){
+                    payload.justfired.push( { x,y, type : justfired.type, num : justfired.num } )
+                }
+                payload.guidedmissiles.push( { age, x, y, a, p, cs, ttl, justfired /*, step */ })               
                 if ( explosion.ttl > 0 ){
                     let { x,y,justfired } = explosion
 
