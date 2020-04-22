@@ -1,6 +1,6 @@
 const IA_DOES_NOT_FIRE = false
 const FIRST_PLANE_CANNOT_BE_DESTRUCTED = false
-const MAX_PLANES = 3
+const MAX_PLANES = 20
 const IDLE_IF_NO_PLAYER = true
 //
 // Mode campagne :
@@ -376,7 +376,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             reload : init_reload( 6 ),
             bombs : new Array(8).fill(0).map( (_,i) => init_bomb( i, idx ) ),
             missiles : new Array(16).fill(0).map( (_,i) => init_missile( i, idx ) ),
-            guidedmissiles : new Array(16).fill(0).map( (_,i) => init_guidedmissile( i, idx ) ),
+            guidedmissiles : new Array(1).fill(0).map( (_,i) => init_guidedmissile( i, idx ) ),
             explosion : init_explosion(idx%ColorSchemes.length),
             falling : init_falling_plane(idx,cs),
             leaving : init_leaving_plane(idx,cs),
@@ -1080,13 +1080,13 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 /* if ( i > 0 ){
                  ia1( State.planes[ i ], State.planes[ i - 1 ] )
                  */
-                
+                /*
                 if ( !(i%2) ){
                     ia1( State.planes[ i ], State.planes[ 0 ], 300)
                 } else {
                     ia1( State.planes[ i ], State.planes[ i - 1 ],2000 )
                 }
-                
+                */
             }
         })
         
