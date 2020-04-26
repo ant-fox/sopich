@@ -2,6 +2,8 @@ Sopich - a multiplayer plane game
 Copyright (C) 2020 SSMTF
 Ceres.Valdid@mail.com
 
+![Screenshot](https://github.com/SopichGame/sopich/blob/master/screenshot.png?raw=true)
+
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
@@ -14,23 +16,3 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-=
-
-The file "src/symbols.js" contains graphic code of the SDL port port of the game "Sopwith", released under GPL
-
-The game "Sopwith", was originally by  BMB CompuScience Canada.
-
-The original author David L. Clark has kindly released the sourcecode under the GNU GPL.
-
-See AUTHORS file for details.
-
-=
-
-This project include dependencies listed in package.json, released under MIT or BSD license (see theses projects for detail)
-
-=
-
-This project borrows ideas from Victor Zhou
-see : https://victorzhou.com/blog/build-an-io-game-part-1
-
