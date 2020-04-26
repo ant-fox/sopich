@@ -452,7 +452,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         missile.x = x + off[0] + ( 16 / 2 ) - ( 8 / 2 ) + dir[0] * dist
         missile.y = y + off[1] + ( 16 / 2 ) - ( 8 / 2 ) + dir[1] * dist
         missile.ttl = 100
-        missile.p = 4
+        missile.p = 5
         missile.step = 0
         missile.a = a 
         missile.age = 0
