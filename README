@@ -28,3 +28,9 @@ See AUTHORS file for details.
 =
 
 This project include dependencies listed in package.json, released under MIT or BSD license (see theses projects for detail)
+
+=
+
+This project borrows ideas from Victor Zhou
+see : https://victorzhou.com/blog/build-an-io-game-part-1
+
