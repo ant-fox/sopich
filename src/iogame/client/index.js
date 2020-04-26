@@ -19,6 +19,9 @@ const remapControlsResetButton = document.getElementById('remap-controls-reset-b
 
 import { KeyboardMapping, setOneKeyboardMapping, resetKeyboardMapping } from '../../controller.js'
 
+/*
+ * controls remap 
+ */
 function firstKeyDown( $element, continuation ){
     function onKeydown( { code } ){
         continuation( code )
@@ -79,6 +82,9 @@ function remapControlsButtonClicked(){
         }
     })
 }
+/*
+ * index
+ */ 
 Promise.all([
     connect( onGameOver, onGameStarting, onGameNotStarting, onYourInfo ),
     //  downloadAssets(),
