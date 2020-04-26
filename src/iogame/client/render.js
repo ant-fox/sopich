@@ -1,12 +1,7 @@
 import { Display } from '../../../src/display.js'
 import { Audio } from '../../../src/audio.js'
 
-
-
-// Learn more about this file at:
-// https://victorzhou.com/blog/build-an-io-game-part-1/#5-client-rendering
 import { debounce } from 'throttle-debounce';
-// import { getAsset } from './assets';
 import { getCurrentState } from './state';
 
 // display 
