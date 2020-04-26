@@ -10,7 +10,7 @@
     "start": "NODE_ENV=production node -r esm src/iogame/server/server.js"
   },
   "author": "Ceres.Valdid@mail.com",
-  "license": "GPL3",
+  "license": "GPL-3.0-or-later",
   "dependencies": {
     "bcrypt": "^4.0.1",
     "connect-mongo": "^3.1.2",
