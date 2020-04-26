@@ -15,6 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+=
+
 The file "src/symbols.js" contains graphic code of the SDL port port of the game "Sopwith", released under GPL
 
 The game "Sopwith", was originally by  BMB CompuScience Canada.
@@ -25,3 +27,4 @@ See AUTHORS file for details.
 
 =
 
+This project include dependencies listed in package.json, released under MIT or BSD license (see theses projects for detail)
