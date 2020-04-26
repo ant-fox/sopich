@@ -1,7 +1,3 @@
-// window.onkeydown = ({code}) => console.log( 'touche', code )
-// o/p
-// i k j l
-
 const DefaultKeyboardMapping = {
     'noseup' : ['KeyI','ArrowLeft'],
     'nosedown' : ['KeyK','ArrowRight'],
