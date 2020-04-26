@@ -1,5 +1,7 @@
 Sopich - a multiplayer plane game
+
 Copyright (C) 2020 SSMTF
+
 Ceres.Valdid@mail.com
 
 ![Screenshot](https://github.com/SopichGame/sopich/blob/master/screenshot.png?raw=true)
