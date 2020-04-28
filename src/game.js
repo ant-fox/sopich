@@ -761,15 +761,6 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             move_bird( bird )
         })
         
-
-        ////////////
-        
-        /*
-          State.targets.forEach( ox => {
-          const { x } = ox
-          const y = ground[ Math.floor( x ) % ground.length ]
-          ox.y = y
-          })*/
     }
     function pixel_collision(b,
                              x1,y1,w1,h1,hm1,
