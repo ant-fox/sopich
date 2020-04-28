@@ -697,7 +697,24 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         guidedmissile.ttl -= 1
         guidedmissile.age += 1
     }
-
+    function move_flock( flock ){
+        if ( ( flock.step % flock.interv ) === 0 ){
+            flock.as = ( flock.as + 1)%2
+            flock.x = Math.floor( flock.x + ( Math.random() * 2 ) - 0.5 )
+            flock.y = Math.floor( flock.y + ( Math.random() * 2 ) - 0.5 )
+        }
+        flock.step++
+        
+    }
+    function move_bird( bird ){
+        if ( ( bird.step % bird.interv ) === 0 ){
+            bird.as = ( bird.as + 1)%2
+            bird.x = Math.floor( bird.x + ( Math.random() * 4 ) - 1.5 )
+            bird.y = Math.floor( bird.y + ( Math.random() * 4 ) - 1.2 )
+        }
+        bird.step++
+    }
+    
     function move(){
         State.planes.forEach( plane => {
             const { x, y, r, a, p, bombs, missiles, guidedmissiles, explosion, leaving, falling } = plane
@@ -737,23 +754,6 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 move_explosion( guidedmissile.explosion )
             }
         })
-        function move_flock( flock ){
-            if ( ( flock.step % flock.interv ) === 0 ){
-                flock.as = ( flock.as + 1)%2
-                flock.x = Math.floor( flock.x + ( Math.random() * 2 ) - 0.5 )
-                flock.y = Math.floor( flock.y + ( Math.random() * 2 ) - 0.5 )
-            }
-            flock.step++
-            
-        }
-        function move_bird( bird ){
-            if ( ( bird.step % bird.interv ) === 0 ){
-                bird.as = ( bird.as + 1)%2
-                bird.x = Math.floor( bird.x + ( Math.random() * 4 ) - 1.5 )
-                bird.y = Math.floor( bird.y + ( Math.random() * 4 ) - 1.2 )
-            }
-            bird.step++
-        }
         State.flocks.forEach( flock => {
             move_flock( flock )
         })
