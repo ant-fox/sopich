@@ -1,8 +1,8 @@
-const IA_DOES_NOT_FIRE = false
+const IA_DOES_NOT_FIRE = true
 const FIRST_PLANE_CANNOT_BE_DESTRUCTED = false
 const MAX_PLANES = 20
 const IDLE_IF_NO_PLAYER = true
-const IA_JUST_FLIES_AROUND = true
+const IA_JUST_FLIES_AROUND = false
 //
 // Mode campagne :
 
@@ -79,6 +79,8 @@ import { clamp, posmod } from './utils.js'
 import { rectangle_intersection, rectangle_intersection_bool } from './rect.js'
 import { ColorSchemes } from './symbols.js'
 import { NameGenerator } from './misc/namegenerator.js'
+import { ia } from './cipiu.js'
+
 export const worldSize = {
     x1 : 0,
     x2 : 3000,
@@ -1025,74 +1027,6 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         //console.log(total,c)
         
     }
-    function ia(){
-        function ia1( cp, target, maxdist ){
-            //cp.undescrtu = true
-            function pushButton( name ){
-                cp.inputs[ name ] = true
-            }
-            //inputs.push( { input : 'nosedown', client : cp.idx } )
-            let dist = Math.sqrt( Math.pow( target.x - cp.x, 2), Math.pow( target.y - cp.y, 2) )
-            if ( dist < maxdist ){
-                let dir = { x : target.x - cp.x, y : target.y - cp.y }
-                let angle = Math.atan2( dir.y, dir.x )
-                let a16 = ( 8 + Math.floor( 16 * ( angle + Math.PI )/ ( 2 * Math.PI ) ) ) % 16
-                if ( a16 !== cp.a ){
-                    // always up looping until right direction
-                    //inputs.push( { input : 'noseup', client : cp.idx } )
-                    cp.a = a16
-                } else {
-                    if ( Math.random() > 0.90 ) {
-                        if (! IA_DOES_NOT_FIRE ){
-                            if ( Math.random() > 0.6 ){
-                                pushButton('firemissile')
-                            } else {
-                                if ( Math.random() > 0.5 ){
-                                    pushButton('firebomb')
-                                } else {
-                                    pushButton('fireguidedmissile')
-                                }
-                            }
-                        }
-                    }
-                }
-                if ( dist > 50 ){
-                    pushButton('powerup')
-                } else if ( dist > 25 ){
-                    if ( cp.p < 3 ){
-                        pushButton('powerup')
-                    }
-                } else if ( dist > 20 ) {
-                    if ( cp.p > 10 ){
-                        pushButton('powerdown')
-                    }
-                    pushButton('nosedown')
-                } else {
-                    if ( cp.p > 1 ){
-                        pushButton('powerdown')
-                    }
-                }
-            } else {
-                pushButton('nosedown')
-            }
-        }
-        let cp = State.planes[ 1 ]
-        State.planes.forEach( ( p, i ) => {
-            if ( p.inputId === undefined ){
-                /* if ( i > 0 ){
-                 ia1( State.planes[ i ], State.planes[ i - 1 ] )
-                 */
-                if (!IA_JUST_FLIES_AROUND){
-                    if ( !(i%2) ){
-                        ia1( State.planes[ i ], State.planes[ 0 ], 300)
-                    } else {
-                        ia1( State.planes[ i ], State.planes[ i - 1 ],2000 )
-                    }
-                }
-            }
-        })
-        
-    }
     
     function ground_item16( item ){
         const x = Math.floor( item.x )
@@ -1181,7 +1115,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         //
         //if ( !PAUSED ){
         turninit()
-        ia()
+        ia(State,{ IA_DOES_NOT_FIRE, IA_JUST_FLIES_AROUND } )
         handleinputs()
         move()
         //}
@@ -1202,9 +1136,9 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         scores : () => Object.values( playerByInputId ).map( x => x.plane.score.total )
     }
     const playerByInputId = {}
-    function addPlayer( inputId, name, total = 0 ){
+    function addPlayer( inputId, name, initialScore = 0 ){
 
-        console.log('[game]','add',inputId,name,total)
+        console.log('[game]','add',inputId,name,initialScore)
         //console.log('[game]',playerByInputId[ inputId ].idx)
 
         
@@ -1215,7 +1149,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         let nameExists = Object.values( playerByInputId ).find( p => p.name ===  name )
         if ( nameExists ) return ADD_PLAYER_RETURNS.USERNAME_ALREADY_IN_USE
               
-        console.log('addPlayer', inputId, name, total )
+        console.log('addPlayer', inputId, name, initialScore )
         
         const plane = State.planes.find( x => x.inputId === undefined )
         if ( plane ){
@@ -1228,8 +1162,8 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             plane.y = 100
             plane.p = 1
             plane.a = 0
-            plane.score = init_score( total )
-            plane.score.total = total
+            plane.score = init_score( initialScore )
+            plane.score.total = initialScore
             plane_init_inputs( plane )
             return ADD_PLAYER_RETURNS.OK
         } else {
