@@ -1066,25 +1066,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             ground[ Math.floor( wx ) % ground.length ] = miny
         }
         item.y = miny
-    }
-    /*
-      let PAUSED = false
-      let OFFSET = {x:0,y:0}
-      document.body.addEventListener('keydown', ({ code }) => {
-      switch ( code ){
-      case 'Pause' : PAUSED = !PAUSED
-      break
-      case 'Numpad1' : OFFSET.x -= 1
-      break
-      case 'Numpad3' : OFFSET.x += 1
-      break
-      case 'Numpad2' : OFFSET.y -= 1
-      break
-      case 'Numpad5' : OFFSET.y += 1
-      break
-      }
-      })
-    */
+    }   
 
     function turninit_justfired( x ){
         if ( x.justfired ){
@@ -1126,24 +1108,12 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             console.error( `update after ${ dt }s, should be ${ 1/FPS }s`,
                            `${ 1 / dt }fps, should be ${ FPS }fps `)
         }
-        const controlled_debug_plane = State.planes[0]
-        //
-        // controlled_debug_plane.x += OFFSET.x
-        // controlled_debug_plane.y += OFFSET.y
-        // OFFSET = {x:0,y:0}
-        //
-        //State.pxcoll.list = []
-        //
-        //if ( !PAUSED ){
+      
         turninit()
         ia(State,{ IA_DOES_NOT_FIRE, IA_JUST_FLIES_AROUND } )
         handleinputs()
         move()
-        //}
         collisions()
-        //groundTargets()
-        //
-        // display.setState( State )
         stateUpdated()
         State.lastUpdateTime = now;
     }
