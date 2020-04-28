@@ -52,9 +52,12 @@ export function ia( State, options ){
     let cp = State.planes[ 1 ]
     State.planes.forEach( ( p, i ) => {
         if ( p.inputId === undefined ){
-            /* if ( i > 0 ){
-               ia1( State.planes[ i ], State.planes[ i - 1 ] )
+            /*
+            if ( i > 0 ){
+                ia1( State.planes[ i ], State.planes[ i - 1 ],3000 )
+            }
             */
+            
             if (!options.IA_JUST_FLIES_AROUND){
                 if ( !(i%2) ){
                     ia1( State.planes[ i ], State.planes[ 0 ], 300)
@@ -62,6 +65,7 @@ export function ia( State, options ){
                     ia1( State.planes[ i ], State.planes[ i - 1 ],2000 )
                 }
             }
+            
         }
     })
     

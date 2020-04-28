@@ -1,8 +1,8 @@
 const IA_DOES_NOT_FIRE = true
 const FIRST_PLANE_CANNOT_BE_DESTRUCTED = false
-const MAX_PLANES = 20
+const MAX_PLANES = 30
 const IDLE_IF_NO_PLAYER = true
-const IA_JUST_FLIES_AROUND = false
+const IA_JUST_FLIES_AROUND = true
 //
 // Mode campagne :
 
@@ -462,8 +462,6 @@ export function Game( { tellPlayer, // called with user centered world, each wor
     }
     function handleinputs(){
         State.planes.forEach( plane => {
-
-            
             if ( plane.ttl >= 0 ){
                 let inputs = plane.inputs
                 let dda = 0
@@ -562,46 +560,148 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             leaving.ttl--
         }
     }
+    function move_plane( plane ){
+        // const { x, y, r, a, p, bombs, missiles, guidedmissiles, explosion, leaving, falling } = plane
+        let dx, dy
+        if ( plane.p === 0 ){
+            dx = 0
+            dy = -3
+        } else {
+            dx = directions16[ plane.a ][ 0 ] * plane.p * 2
+            dy = directions16[ plane.a ][ 1 ] * plane.p * 2
+        }
+        if ( plane.ttl >= 0 ){
+            plane.x = plane.x + dx
+            plane.y = plane.y + dy
+            if ( plane.y > worldSize.y2 ){ // TODO
+                plane.a = 12
+                // State.plane.r = !(State.plane.r)
+            }
+            if ( plane.x < worldSize.x1 ){
+                plane.a = 0
+                plane.r = 0
+            }
+            if ( plane.x > worldSize.x2 ){
+                plane.a = 8
+                plane.r = 1
+            }
+            plane.x = clamp( plane.x, worldSize.x1, worldSize.x2)
+            plane.y = clamp( plane.y, worldSize.y1, worldSize.y2)
+            plane.age+= 1
+        } else {
+            plane.respawn -= 1                
+            if ( plane.respawn < 0 ){
+                plane.ttl = 1
+                plane.x = Math.floor( worldSize.x1 + worldSize.w * Math.random() )
+                plane.y = Math.floor( 400 + Math.floor( Math.random() * 400 ) )
+                plane.p = 2
+                plane.age = 0
+            }
+        }
+
+    }
+    function move_bomb( bomb ){
+        const { x, y, a, p, ttl, step } = bomb
+        let dx = directions8[ a ][ 0 ] * p * 2
+        let dy = directions8[ a ][ 1 ] * p * 2
+        bomb.x = x + dx
+        bomb.y = y + dy                    
+        if ( step === 20 ){
+            // every 20 step
+            bomb.step = 0
+            bomb.a = toFall8[ a ]
+        } else {
+            bomb.step += 1
+        }
+        bomb.ttl -= 1
+        bomb.age += 1
+
+    }
+    function move_missile( missile ){
+        const { x, y, a, p, ttl, step } = missile
+        let dx = directions16[ a ][ 0 ] * p * 2
+        let dy = directions16[ a ][ 1 ] * p * 2
+        missile.x = x + dx
+        missile.y = y + dy
+        if ( step === 20 ){
+            missile.step = 0
+            //missile.a = toFall8[ a ]
+        } else {
+            missile.step += 1
+        }
+        missile.ttl -= 1
+        missile.age += 1
+    }
+    function move_guidedmissile( guidedmissile ){
+        const { age, x, y, p, ttl, step, owner } = guidedmissile
+        const plane = State.planes[ owner ]
+        function nearestActivePlane(x,y,self){
+            let sqDist = Number.POSITIVE_INFINITY
+            let targetPlane = undefined
+            for ( let i = 0 ; i < State.planes.length ; i++ ){
+                const oplane = State.planes[ i ]
+                if (( oplane !== self ) && ( oplane.ttl > 0 )){
+                    const d = Math.pow( x - oplane.x,2 ) + Math.pow( y - oplane.y,2 ) 
+                    if ( d < sqDist ){
+                        targetPlane = oplane
+                        sqDist = d
+                    }
+                }
+            }
+            return targetPlane
+        }
+        
+        if ( age > 10 && ( ( step % 4 ) === 0 ) ){
+            //if (( !guidedmissile.guidanceTarget ) || ( guidedmissile.guidanceTarget.ttl <= 0 ) ){
+            const nap = nearestActivePlane(x,y,plane)
+            guidedmissile.guidanceTarget = nap
+            //    }
+        }
+        function shortestsRotationDirection( from16, to16 ){
+            if ( from16 === to16 ) return 0
+            for ( let i = 1 ; i < 8 ; i++ ){
+                const r16 = ( from16 + i ) % 16
+                if ( r16 === to16 ){
+                    return 1
+                }
+            }
+            return -1
+        }
+        const { guidanceTarget } = guidedmissile
+        if ( ( step%3 ) === 0 ){
+            if ( guidanceTarget ){
+                const dir = { x : guidanceTarget.x - x, y : guidanceTarget.y - y }
+                let angle = Math.atan2( dir.y, dir.x )
+                let a16 = ( 8 + Math.floor( 16 * ( angle + Math.PI )/ ( 2 * Math.PI ) ) ) % 16
+                const { a } = guidedmissile
+                
+                const rot16 = shortestsRotationDirection( guidedmissile.a, a16 )
+                //if ( Math.abs( rot16 < 4 ) ){
+                //guidedmissile.a = (16 + guidedmissile.a + Math.sign( rot16 ) )%16
+                guidedmissile.a = (16 + guidedmissile.a + rot16  )%16
+                //}
+
+            }
+        }
+        const  { a } = guidedmissile
+        let dx = directions16[ a ][ 0 ] * p * 2
+        let dy = directions16[ a ][ 1 ] * p * 2
+        guidedmissile.x = x + dx
+        guidedmissile.y = y + dy
+        if ( step === 20 ){
+            guidedmissile.step = 0
+            //guidedmissile.a = toFall8[ a ]
+        } else {
+            guidedmissile.step += 1
+        }
+        guidedmissile.ttl -= 1
+        guidedmissile.age += 1
+    }
 
     function move(){
         State.planes.forEach( plane => {
             const { x, y, r, a, p, bombs, missiles, guidedmissiles, explosion, leaving, falling } = plane
-            let dx, dy
-            if ( p === 0 ){
-                dx = 0
-                dy = -3
-            } else {
-                dx = directions16[ a ][ 0 ] * p * 2
-                dy = directions16[ a ][ 1 ] * p * 2
-            }
-            if ( plane.ttl >= 0 ){
-                plane.x = x + dx
-                plane.y = y + dy
-                if ( plane.y > worldSize.y2 ){ // TODO
-                    plane.a = 12
-                    // State.plane.r = !(State.plane.r)
-                }
-                if ( plane.x < worldSize.x1 ){
-                    plane.a = 0
-                    plane.r = 0
-                }
-                if ( plane.x > worldSize.x2 ){
-                    plane.a = 8
-                    plane.r = 1
-                }
-                plane.x = clamp( plane.x, worldSize.x1, worldSize.x2)
-                plane.y = clamp( plane.y, worldSize.y1, worldSize.y2)
-                plane.age+= 1
-            } else {
-                plane.respawn -= 1                
-                if ( plane.respawn < 0 ){
-                    plane.ttl = 1
-                    plane.x = Math.floor( worldSize.x1 + worldSize.w * Math.random() )
-                    plane.y = Math.floor( 400 + Math.floor( Math.random() * 400 ) )
-                    plane.p = 2
-                    plane.age = 0
-                }
-            }
+            move_plane( plane )
             move_anim( leaving )
             move_anim( falling )
             if ( falling.ttl > 0 ){
@@ -614,20 +714,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 const bomb = bombs[i]
                 if ( bomb.ttl <= 0 ){
                 } else {
-                    const { x, y, a, p, ttl, step } = bomb
-                    let dx = directions8[ a ][ 0 ] * p * 2
-                    let dy = directions8[ a ][ 1 ] * p * 2
-                    bomb.x = x + dx
-                    bomb.y = y + dy                    
-                    if ( step === 20 ){
-                        // every 20 step
-                        bomb.step = 0
-                        bomb.a = toFall8[ a ]
-                    } else {
-                        bomb.step += 1
-                    }
-                    bomb.ttl -= 1
-                    bomb.age += 1
+                    move_bomb( bomb )
                 }
                 //const explosion = bomb.explosion
                 move_explosion( bomb.explosion )
@@ -636,108 +723,42 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 const missile = missiles[i]
                 if ( missile.ttl <= 0 ){
                 } else {
-                    const { x, y, a, p, ttl, step } = missile
-                    let dx = directions16[ a ][ 0 ] * p * 2
-                    let dy = directions16[ a ][ 1 ] * p * 2
-                    missile.x = x + dx
-                    missile.y = y + dy
-                    if ( step === 20 ){
-                        missile.step = 0
-                        //missile.a = toFall8[ a ]
-                    } else {
-                        missile.step += 1
-                    }
-                    missile.ttl -= 1
-                    missile.age += 1
+                    move_missile( missile )
                 }
                 move_explosion( missile.explosion )
             }
             for ( let i = 0, l = guidedmissiles.length ; i < l ; i++ ){
                 const guidedmissile = guidedmissiles[i]
+                
                 if ( guidedmissile.ttl <= 0 ){
                 } else {
-                    const { age, x, y, p, ttl, step } = guidedmissile
-
-                    function nearestActivePlane(x,y,self){
-                        let sqDist = Number.POSITIVE_INFINITY
-                        let targetPlane = undefined
-                        for ( let i = 0 ; i < State.planes.length ; i++ ){
-                            const oplane = State.planes[ i ]
-                            if (( oplane !== self ) && ( oplane.ttl > 0 )){
-                                const d = Math.pow( x - oplane.x,2 ) + Math.pow( y - oplane.y,2 ) 
-                                if ( d < sqDist ){
-                                    targetPlane = oplane
-                                    sqDist = d
-                                }
-                            }
-                        }
-                        return targetPlane
-                    }
-                    if ( age > 10 && ( ( step % 4 ) === 0 ) ){
-                        //if (( !guidedmissile.guidanceTarget ) || ( guidedmissile.guidanceTarget.ttl <= 0 ) ){
-                        const nap = nearestActivePlane(x,y,plane)
-                        guidedmissile.guidanceTarget = nap
-                        //    }
-                    }
-                    function shortestsRotationDirection( from16, to16 ){
-                        if ( from16 === to16 ) return 0
-                        for ( let i = 1 ; i < 8 ; i++ ){
-                            const r16 = ( from16 + i ) % 16
-                            if ( r16 === to16 ){
-                                return 1
-                            }
-                        }
-                        return -1
-                    }
-                    const { guidanceTarget } = guidedmissile
-                    if ( ( step%3 ) === 0 ){
-                        if ( guidanceTarget ){
-                            const dir = { x : guidanceTarget.x - x, y : guidanceTarget.y - y }
-                            let angle = Math.atan2( dir.y, dir.x )
-                            let a16 = ( 8 + Math.floor( 16 * ( angle + Math.PI )/ ( 2 * Math.PI ) ) ) % 16
-                            const { a } = guidedmissile
-                            
-                            const rot16 = shortestsRotationDirection( guidedmissile.a, a16 )
-                            //if ( Math.abs( rot16 < 4 ) ){
-                            //guidedmissile.a = (16 + guidedmissile.a + Math.sign( rot16 ) )%16
-                            guidedmissile.a = (16 + guidedmissile.a + rot16  )%16
-                        //}
-
-                        }
-                    }
-                    const  { a } = guidedmissile
-                    let dx = directions16[ a ][ 0 ] * p * 2
-                    let dy = directions16[ a ][ 1 ] * p * 2
-                    guidedmissile.x = x + dx
-                    guidedmissile.y = y + dy
-                    if ( step === 20 ){
-                        guidedmissile.step = 0
-                        //guidedmissile.a = toFall8[ a ]
-                    } else {
-                        guidedmissile.step += 1
-                    }
-                    guidedmissile.ttl -= 1
-                    guidedmissile.age += 1
+                    move_guidedmissile( guidedmissile )
                 }
                 move_explosion( guidedmissile.explosion )
             }
         })
-        
-        State.flocks.forEach( flock => {
+        function move_flock( flock ){
             if ( ( flock.step % flock.interv ) === 0 ){
                 flock.as = ( flock.as + 1)%2
                 flock.x = Math.floor( flock.x + ( Math.random() * 2 ) - 0.5 )
                 flock.y = Math.floor( flock.y + ( Math.random() * 2 ) - 0.5 )
             }
             flock.step++
-        })
-        State.birds.forEach( bird => {
+            
+        }
+        function move_bird( bird ){
             if ( ( bird.step % bird.interv ) === 0 ){
                 bird.as = ( bird.as + 1)%2
                 bird.x = Math.floor( bird.x + ( Math.random() * 4 ) - 1.5 )
                 bird.y = Math.floor( bird.y + ( Math.random() * 4 ) - 1.2 )
             }
             bird.step++
+        }
+        State.flocks.forEach( flock => {
+            move_flock( flock )
+        })
+        State.birds.forEach( bird => {
+            move_bird( bird )
         })
         
 
@@ -856,14 +877,14 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         // both die
 
         
-          //          same  team                    other team                  no team
-          //          bomb  missile plane building  bomb missile plane buildin  flock bird
-          // bomb     
-          // missile       
-          // plane
-          // building 
-          // flock
-          // bird
+        //          same  team                    other team                  no team
+        //          bomb  missile plane building  bomb missile plane buildin  flock bird
+        // bomb     
+        // missile       
+        // plane
+        // building 
+        // flock
+        // bird
         
         
         if ( item1.destroys ) item1.destroys( item1, item2 )
@@ -890,7 +911,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         if ( item1.falling ) start_falling( item1 )
         if ( item2.falling ) start_falling( item2 )
 
-      
+        
     }
     function have_ownership_relation( item1, item2 ){
         let dont = false
@@ -1148,7 +1169,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
 
         let nameExists = Object.values( playerByInputId ).find( p => p.name ===  name )
         if ( nameExists ) return ADD_PLAYER_RETURNS.USERNAME_ALREADY_IN_USE
-              
+        
         console.log('addPlayer', inputId, name, initialScore )
         
         const plane = State.planes.find( x => x.inputId === undefined )
