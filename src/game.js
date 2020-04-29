@@ -137,7 +137,7 @@ function available_ttl( items ){
             return i
         }
     }
-    return items.length
+    return undefined
 }
 let last_event_num = 0
 function event_num(){    
@@ -284,13 +284,17 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         })
         return targets
     }
-    function init_reload( t ){
-        return { t, step : 0}
+    
+    function init_reload( t, o = {} ){
+        return Object.assign( o, { t, step : 0 } )
     }
     function move_reload( reload ){
         if ( reload.step > 0  ){
             reload.step--
         }
+    }
+    function reload_is_reloaded( reload ){
+        return ( reload.step === 0 )
     }
     function arm_reload( reload ){
         reload.step = reload.t
@@ -487,7 +491,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 const tooyoung = ( plane.age < plane.recklessness )
                 if (!tooyoung){
                     if (firebomb){
-                        if ( reload.step === 0 ){
+                        if ( reload_is_reloaded( reload ) ){
                             let avail = available_ttl( bombs )
                             if ( avail !== bombs.length ){
                                 fire_bomb_from_plane( bombs[avail], plane )
@@ -496,7 +500,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                         }
                     }
                     if (firemissile){
-                        if ( reload.step === 0 ){
+                        if ( reload_is_reloaded( reload ) ){
                             let avail = available_ttl( missiles )
                             if ( avail !== missiles.length ){
                                 fire_missile_from_plane( missiles[avail], plane )
@@ -505,7 +509,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                         }
                     }
                     if (fireguidedmissile){
-                        if ( reload.step === 0 ){
+                        if ( reload_is_reloaded( reload ) ){
                             let avail = available_ttl( guidedmissiles )
                             if ( avail !== guidedmissiles.length ){
                                 fire_guidedmissile_from_plane( guidedmissiles[avail], plane )
@@ -683,11 +687,13 @@ export function Game( { tellPlayer, // called with user centered world, each wor
 
             }
         }
+
         const  { a } = guidedmissile
         let dx = directions16[ a ][ 0 ] * p * 2
         let dy = directions16[ a ][ 1 ] * p * 2
         guidedmissile.x = x + dx
         guidedmissile.y = y + dy
+        
         if ( step === 20 ){
             guidedmissile.step = 0
             //guidedmissile.a = toFall8[ a ]
