@@ -493,7 +493,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                     if (firebomb){
                         if ( reload_is_reloaded( reload ) ){
                             let avail = available_ttl( bombs )
-                            if ( avail !== bombs.length ){
+                            if ( avail !== undefined ){
                                 fire_bomb_from_plane( bombs[avail], plane )
                                 arm_reload( reload )
                             }
@@ -502,7 +502,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                     if (firemissile){
                         if ( reload_is_reloaded( reload ) ){
                             let avail = available_ttl( missiles )
-                            if ( avail !== missiles.length ){
+                            if ( avail !== undefined ){
                                 fire_missile_from_plane( missiles[avail], plane )
                                 arm_reload( reload )
                             }
@@ -511,7 +511,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                     if (fireguidedmissile){
                         if ( reload_is_reloaded( reload ) ){
                             let avail = available_ttl( guidedmissiles )
-                            if ( avail !== guidedmissiles.length ){
+                            if ( avail !== undefined ){
                                 fire_guidedmissile_from_plane( guidedmissiles[avail], plane )
                                 arm_reload( reload )
                             }
