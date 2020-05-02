@@ -90,7 +90,9 @@ function setCanvasDimensions( canvas, previousDimensions ) {
     canvas.height = height
 
 }
-
+/*
+ * background stars
+ */
 // fixed points needed when the ground is not visible
 function init_stars(){
     const count = 100
@@ -125,9 +127,43 @@ function update_stars( stars ){
         }
     }
 }
+/*
+ * missile & explosion trails
+ */
+function TrailPoints(){
+    const trailPoints = new Array( 500 ).fill(0).map( x => undefined )
+    let currentTrailPointIdx = 0
+    function display( world_to_context, $context, putSprite ){
+        const now = Date.now()
+        const minAge = 130
+        const maxAge = 1000
+        trailPoints.filter( x => x !== undefined ).forEach( ({x,y,color,spread,size,date}) => {
+            const age = now - date
+            if ( ( age > minAge) && ( age < maxAge ) ){
+                const prog =  1 - ( (age - minAge) / (maxAge-minAge) )
+                let cxy = world_to_context( x, y )
+                $context.fillStyle = color
+                const r1 = ( Math.random() - 0.5 ) * 2 * spread
+                const r2 = ( Math.random() - 0.5 ) * 2 * spread
+                const s = size * prog
+                const ss = -1 * s/4
+                //$context.fillRect( cxy.x + r1 -ss, cxy.y+r2-ss, s, s)
+                $context.fillRect( cxy.x + r1 + ss, cxy.y + r2 + ss, s, s )
+            }
+        })
+    }
+    function add(x,y,color,spread,size){
+        if ( trailPoints.length ){
+            trailPoints[ currentTrailPointIdx ] = { x, y, color, spread, size, date : Date.now() }
+            currentTrailPointIdx = ( currentTrailPointIdx + 1 ) % trailPoints.length        
+        }
+    }
+    return { add, display }
+}
 export function Display() {
     
     const stars = init_stars()
+    const trailPoints = TrailPoints()
     
     const $canvas = document.createElement('canvas')
     $canvas.classList.add('game')
@@ -153,34 +189,7 @@ export function Display() {
     let last_camera_target_to_center_dist = undefined
     let position_helper_ttl = -1
     let position_helper_max_ttl = 120
-
-    const trailPoints = new Array( 500 ).fill(0).map( x => undefined )
-    let currentTrailPointIdx = 0
-    function displayTrailPoints( world_to_context, putSprite ){
-        const now = Date.now()
-        const minAge = 130
-        const maxAge = 1000
-        trailPoints.filter( x => x !== undefined ).forEach( ({x,y,color,spread,size,date}) => {
-            const age = now - date
-            if ( ( age > minAge) && ( age < maxAge ) ){
-                const prog =  1 - ( (age - minAge) / (maxAge-minAge) )
-                let cxy = world_to_context( x, y )
-                $context.fillStyle = color
-                const r1 = ( Math.random() - 0.5 ) * 2 * spread
-                const r2 = ( Math.random() - 0.5 ) * 2 * spread
-                const s = size * prog
-                const ss = -1 * s/4
-                //$context.fillRect( cxy.x + r1 -ss, cxy.y+r2-ss, s, s)
-                $context.fillRect( cxy.x + r1 + ss, cxy.y + r2 + ss, s, s )
-            }
-        })
-    }
-    function trailPoint(x,y,color,spread,size){
-        if ( trailPoints.length ){
-            trailPoints[ currentTrailPointIdx ] = { x, y, color, spread, size, date : Date.now() }
-            currentTrailPointIdx = ( currentTrailPointIdx + 1 ) % trailPoints.length        
-        }
-    }
+    
     function display(){
 
         $context.imageSmoothingEnabled = false
@@ -302,7 +311,7 @@ export function Display() {
                 $context.fillRect( cxy.x, cxy.y, 1,1)                
             })
         }
-        displayTrailPoints( world_to_context, putSprite )
+        trailPoints.display( world_to_context,  $context, putSprite )
 
         // ground
         const ground = State.ground
@@ -443,7 +452,7 @@ export function Display() {
                 if ( ttl > 0 ){
                     let wxy = world_to_context( x, y )
                     putSprite( Images.missile[cs][a], wxy.x , wxy.y )
-                    trailPoint( x + 4, y + 4,'#656', 2, 1 )
+                    trailPoints.add( x + 4, y + 4,'#656', 2, 1 )
                     if ( age !== undefined ){
                         if (DEBUG_AGE){
                             $context.fillStyle = 'white'
@@ -463,7 +472,7 @@ export function Display() {
                     let wxy = world_to_context( x, y )
                     putSprite( Images.guidedmissile[cs][a], wxy.x , wxy.y )
                     //console.log(age)
-                    trailPoint( x + 4, y + 4,'#886500',3, 2 )
+                    trailPoints.add( x + 4, y + 4,'#886500',3, 2 )
                     
                     /*if ( age !== undefined ){
                       if (DEBUG_AGE){*/
@@ -481,7 +490,7 @@ export function Display() {
                 let { x, y, a, ttl, cs, dtype } = debris[ j ]
                 let wxy = world_to_context( x, y )
                 if (Math.random()>0.8){
-                    trailPoint( x + 4, y + 4,'#88550a',3, 2 )
+                    trailPoints.add( x + 4, y + 4,'#88550a',3, 2 )
                 }
                 putSprite( Images.debris[cs][dtype], wxy.x , wxy.y )             
             }
@@ -510,9 +519,9 @@ export function Display() {
                 putSprite( Images.plane_hit[cs][as], wxy.x , wxy.y )
                 if (Math.random()>0.8){
                     if ( Math.random()>0.5){
-                        trailPoint( x + 8, y + 8,'#88888', 5, 4 )
+                        trailPoints.add( x + 8, y + 8,'#88888', 5, 4 )
                     } else {
-                        trailPoint( x + 8, y + 8,'#a8888', 3, 2 )
+                        trailPoints.add( x + 8, y + 8,'#a8888', 3, 2 )
                     }
                 }
 
