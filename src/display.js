@@ -22,7 +22,7 @@ function LeaderBoardDisplay(){
     }
     const $div = $buildContainer()
     document.body.appendChild( $div )
-        
+    
     function hide(){
         state.visible = false
         $div.style.visibility = 'collapse'
@@ -256,7 +256,7 @@ export function Display() {
         )   
         const top = bottom +  $canvas.height
 
-      
+        
         let camera_target_to_center = {
             x : Math.abs( camera_target.x - ( left + right ) / 2 ),
             y : Math.abs( camera_target.y - ( top + bottom ) / 2 ),
@@ -286,13 +286,13 @@ export function Display() {
         }
         
         /*
-        function context_to_world( cx, cy ){
-            return {
-                x : left - x ,
-                y : -200 + y - top 
-            }
-        }
-*/
+          function context_to_world( cx, cy ){
+          return {
+          x : left - x ,
+          y : -200 + y - top 
+          }
+          }
+        */
         // sky
         let drawZone
         {
@@ -301,10 +301,10 @@ export function Display() {
             $context.fillStyle = 'black'            
             $context.fillRect( 0, 0, $canvas.width, $canvas.height )
             if (false){
-            let cxy = world_to_context( worldSize.x1, worldSize.y1 )
+                let cxy = world_to_context( worldSize.x1, worldSize.y1 )
 
 
-            // top left bottom right
+                // top left bottom right
                 const { x1,x2,y1,y2,w,h } = worldSize
                 const bl = world_to_context( worldSize.x1, worldSize.y2 )
                 const tr = world_to_context( worldSize.x2,  worldSize.y1 )
@@ -312,12 +312,12 @@ export function Display() {
                 tr.x = clamp( tr.x , 0, $canvas.width )
                 bl.y = clamp( bl.y , 0, $canvas.height )
                 tr.y = clamp( tr.y , 0, $canvas.height )
-            if (Math.random()>0.95){
-                //console.log(bl,tr)
-            }
-            $context.fillStyle = 'SkyBlue'
-            $context.fillRect( bl.x, bl.y, tr.x, tr.y )
-            
+                if (Math.random()>0.95){
+                    //console.log(bl,tr)
+                }
+                $context.fillStyle = 'SkyBlue'
+                $context.fillRect( bl.x, bl.y, tr.x, tr.y )
+                
             }
             
             
@@ -428,12 +428,12 @@ export function Display() {
                                           wxy.x + 8 , wxy.y + 18 )
                     } else {
                         /*
-                        $context.fillText(`${ name }(${p})${score.total}/${value}`,
-                                          wxy.x + 8 , wxy.y + 18 )
+                          $context.fillText(`${ name }(${p})${score.total}/${value}`,
+                          wxy.x + 8 , wxy.y + 18 )
                         */
                         
                         /*$context.fillText(`${score.total}`,
-                                          wxy.x + 8 , wxy.y + 18 )
+                          wxy.x + 8 , wxy.y + 18 )
                         */
                         /*context.fillText(`${ name }`,
                           wxy.x + 8 , wxy.y + 18 )*/
