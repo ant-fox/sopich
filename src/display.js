@@ -188,7 +188,7 @@ export function Display() {
     let last_camera_target = undefined
     let last_camera_target_to_center_dist = undefined
     let position_helper_ttl = -1
-    let position_helper_max_ttl = 120
+    let position_helper_max_ttl = 50
     
     function display(){
 
@@ -405,8 +405,11 @@ export function Display() {
                     const remain = position_helper_max_ttl -  position_helper_ttl
                     const ratio = 1
                     const maxheight = 64
-                    const height = clamp(maxheight * position_helper_ttl / position_helper_max_ttl,0,30)
-                    const basewidth = height / ratio
+                    //const height = clamp(maxheight * position_helper_ttl / position_helper_max_ttl,0,30)
+                    const ratio2 = 1 - Math.pow(clamp( age, 0, position_helper_max_ttl ) /  position_helper_max_ttl,4)
+                    const height = clamp( maxheight * ratio2, 0, 16 )
+                    
+                    const basewidth = height * ratio2 * 1.7
                     const vpad = 10
                     $context.beginPath()
                     $context.moveTo( wxy.x + 16/2, wxy.y + vpad )
@@ -415,19 +418,28 @@ export function Display() {
                     $context.closePath()
                     $context.fill()                    
                 }
-                if (  is_target_plane && ( position_helper_ttl > 0 ) ){
-                    target_helper( position_helper_ttl, position_helper_max_ttl)
+                if (  is_target_plane &&  /*( ( position_helper_ttl > 0 ) ||*/ ( age < position_helper_max_ttl ) ){
+
+                    if (reckless ){
+                        if  (!( Math.floor((age/2))%2 )){
+                            target_helper( position_helper_ttl, position_helper_max_ttl)
+                        }
+                    } else {
+                        target_helper( position_helper_ttl, position_helper_max_ttl)
+                    }
+                
                     //$context.font = `${ 10 + clamp( position_helper_ttl,0,30)  }px monospace`;
                     /*$context.fillText(`▲`,
                       wxy.x ,  wxy.y + 18 )*/
                     //prefix = '?'
-                } else {
+                }
+                if ( !  is_target_plane  ){
                     //if ( human === true ){
                     $context.font = `${ 10  }px monospace`;
 
                     const inScreen = ( wxy.x >= 0 ) && ( wxy.x <= $canvas.width )
                           && ( wxy.y >= 0 ) && ( wxy.y <= $canvas.height )
-
+                    
                     const displayString = `${ name }`// ${ human?'human':'💻' } ${ inScreen?'yes':'no'}`
 
                     if ( true || inScreen || (human === true) ){
@@ -457,7 +469,7 @@ export function Display() {
                               wxy.x + 8 , wxy.y + 18 )*/
                             
                         }
-                    }
+                    }   
                 }
                 
                 /*
