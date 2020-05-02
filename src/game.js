@@ -1,5 +1,5 @@
-const IA_DOES_NOT_FIRE = false
-const IA_JUST_FLIES_AROUND = false
+const IA_DOES_NOT_FIRE = true
+const IA_JUST_FLIES_AROUND = true
 const FIRST_PLANE_CANNOT_BE_DESTRUCTED = false
 const MAX_PLANES = 10
 const IDLE_IF_NO_PLAYER = true
