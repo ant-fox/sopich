@@ -216,10 +216,12 @@ export function Display() {
         } else {
             // console.log('no')
         }
-        // camera
+
         const me = State.me
 
-        
+        /*
+         * camera
+         */
         const camera_target = Object.assign({}, State[ me.type ][ me.idx ] )
 
         
@@ -254,8 +256,7 @@ export function Display() {
         )   
         const top = bottom +  $canvas.height
 
-        
-
+      
         let camera_target_to_center = {
             x : Math.abs( camera_target.x - ( left + right ) / 2 ),
             y : Math.abs( camera_target.y - ( top + bottom ) / 2 ),
@@ -283,6 +284,7 @@ export function Display() {
                 y : $canvas.height - y  + bottom
             }
         }
+        
         /*
         function context_to_world( cx, cy ){
             return {
@@ -292,10 +294,32 @@ export function Display() {
         }
 */
         // sky
+        let drawZone
         {
-            $context.fillStyle = 'black'//'SkyBlue'
-            let cxy = world_to_context( worldSize.x1, worldSize.y1 )
+        }
+        {
+            $context.fillStyle = 'black'            
             $context.fillRect( 0, 0, $canvas.width, $canvas.height )
+            if (false){
+            let cxy = world_to_context( worldSize.x1, worldSize.y1 )
+
+
+            // top left bottom right
+                const { x1,x2,y1,y2,w,h } = worldSize
+                const bl = world_to_context( worldSize.x1, worldSize.y2 )
+                const tr = world_to_context( worldSize.x2,  worldSize.y1 )
+                bl.x = clamp( bl.x , 0, $canvas.width )
+                tr.x = clamp( tr.x , 0, $canvas.width )
+                bl.y = clamp( bl.y , 0, $canvas.height )
+                tr.y = clamp( tr.y , 0, $canvas.height )
+            if (Math.random()>0.95){
+                //console.log(bl,tr)
+            }
+            $context.fillStyle = 'SkyBlue'
+            $context.fillRect( bl.x, bl.y, tr.x, tr.y )
+            
+            }
+            
             
         }
         // stars
