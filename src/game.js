@@ -1,8 +1,9 @@
-const IA_DOES_NOT_FIRE = true
+const IA_DOES_NOT_FIRE = false
+const IA_JUST_FLIES_AROUND = false
 const FIRST_PLANE_CANNOT_BE_DESTRUCTED = false
 const MAX_PLANES = 10
 const IDLE_IF_NO_PLAYER = true
-const IA_JUST_FLIES_AROUND = true
+const DEBUG_MESSAGES = true
 //
 // Mode campagne :
 
@@ -80,6 +81,12 @@ import { rectangle_intersection, rectangle_intersection_bool } from './rect.js'
 import { ColorSchemes } from './symbols.js'
 import { NameGenerator } from './misc/namegenerator.js'
 import { ia } from './cipiu.js'
+
+function debugMessage( ...p ){
+    if ( DEBUG_MESSAGES ){
+        console.log('[sopich game]',...p)
+    }
+}
 
 export const worldSize = {
     x1 : 0,
@@ -414,7 +421,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
     /*
       const NormalDirection16 = [0,1].map( r => directions16.map( (_,a) => {
       const v =  ( a + (r?4:12) ) % directions16.length
-      console.log( a,r,directions16.length,v)
+      debugMessage( a,r,directions16.length,v)
       return v
       })).reduce( (r,x) => Object.assign(r,x), {} )
     */
@@ -1042,7 +1049,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 item1._node = node
             }
         })
-        //console.log(total,c)
+        //debugMessage(total,c)
         
     }
     
@@ -1054,7 +1061,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         for ( let ii = 0 ; ii < 16 ; ii++ ){
             let wx = x + ii
             let h = ground[ Math.floor( wx ) % ground.length ]
-            // console.log( h )
+            // debugMessage( h )
             meany += h/16
             miny = Math.min( h, miny )
         }
@@ -1102,7 +1109,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         const dt = (now - State.lastUpdateTime) / 1000;
         let rfps = 1 / dt / FPS
         if ( ( rfps > 1.5 ) || ( rfps < 0.75 ) ){
-            console.error( `update after ${ dt }s, should be ${ 1/FPS }s`,
+            debugMessage( `update after ${ dt }s, should be ${ 1/FPS }s`,
                            `${ 1 / dt }fps, should be ${ FPS }fps `)
         }
       
@@ -1126,8 +1133,8 @@ export function Game( { tellPlayer, // called with user centered world, each wor
     const playerByInputId = {}
     function addPlayer( inputId, name, initialScore = 0 ){
 
-        console.log('[game]','add',inputId,name,initialScore)
-        //console.log('[game]',playerByInputId[ inputId ].idx)
+        debugMessage('try add player',inputId,name,initialScore)
+        //debugMessage('[game]',playerByInputId[ inputId ].idx)
 
         
         if ( playerByInputId[ inputId ] ) return ADD_PLAYER_RETURNS.ALREADY_JOINED
@@ -1137,7 +1144,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         let nameExists = Object.values( playerByInputId ).find( p => p.name ===  name )
         if ( nameExists ) return ADD_PLAYER_RETURNS.USERNAME_ALREADY_IN_USE
         
-        console.log('addPlayer', inputId, name, initialScore )
+        debugMessage('add player', inputId, name, initialScore )
         
         const plane = State.planes.find( x => x.inputId === undefined )
         if ( plane ){
