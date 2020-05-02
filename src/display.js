@@ -433,13 +433,14 @@ export function Display() {
                       wxy.x ,  wxy.y + 18 )*/
                     //prefix = '?'
                 }
-                if ( !  is_target_plane  ){
+                if (  !  is_target_plane  ){
                     //if ( human === true ){
                     $context.font = `${ 10  }px monospace`;
 
                     const inScreen = ( wxy.x >= 0 ) && ( wxy.x <= $canvas.width )
                           && ( wxy.y >= 0 ) && ( wxy.y <= $canvas.height )
                     
+                    //                    const displayString = `${ name } ${ score.total } ${ value }`// ${ human?'human':'💻' } ${ inScreen?'yes':'no'}`
                     const displayString = `${ name }`// ${ human?'human':'💻' } ${ inScreen?'yes':'no'}`
 
                     if ( true || inScreen || (human === true) ){
@@ -451,7 +452,7 @@ export function Display() {
                         $context.fillText(displayString,
                                           canvasClamped.x + 8,
                                           canvasClamped.y + 18)
-                        
+
                         if ( DEBUG_AGE ){
                             /*$context.fillText(`${ name }[${age}](${p})${score.total}/${value}`,
                               wxy.x + 8 , wxy.y + 18 )

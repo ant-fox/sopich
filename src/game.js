@@ -151,6 +151,7 @@ function event_num(){
     last_event_num++
     return last_event_num
 }
+
 export function Game( { tellPlayer, // called with user centered world, each world update 
                         tellScore,  // called with player score, when quitting
                       } ) {
@@ -169,6 +170,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         let item = State.planes[ idx ]
         if ( item && item.score ){
             item.score.total += value
+            item.value += Math.max( 0, Math.floor( value/2 ) )
         }
     }
     function init_justfired( type ){
