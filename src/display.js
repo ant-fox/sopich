@@ -423,9 +423,19 @@ export function Display() {
                     //prefix = '?'
                 } else {
                     $context.font = `${ 10  }px monospace`;
+                    const displayString = `${ name }`
+                    const canvasClamped = {
+                        x : clamp( wxy.x, 0, $canvas.width - 8 * ( displayString.length + 1 ) ),
+                        y : clamp( wxy.y, 0, $canvas.height - 22 )
+                    }
+                    $context.fillText(displayString,
+                                      canvasClamped.x + 8,
+                                      canvasClamped.y + 18)
+                    
                     if ( DEBUG_AGE ){
-                        $context.fillText(`${ name }[${age}](${p})${score.total}/${value}`,
-                                          wxy.x + 8 , wxy.y + 18 )
+                        /*$context.fillText(`${ name }[${age}](${p})${score.total}/${value}`,
+                          wxy.x + 8 , wxy.y + 18 )
+                        */
                     } else {
                         /*
                           $context.fillText(`${ name }(${p})${score.total}/${value}`,
