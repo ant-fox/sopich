@@ -1281,10 +1281,12 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                   recklessness,
                 } = plane
             let name = '??'
+            let human = false
             if ( plane.inputId ){
                 const player = playerByInputId[ plane.inputId ]
                 if ( player && player.name ){
                     name = player.name
+                    human = true
                 }
             } else {
                 if ( defaultname )  {
@@ -1296,7 +1298,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
 
             // TODO
             //if ( ttl > 0 ){
-            payload.planes.push( { ttl, age, x, y, r, a, p, cs, name, value, score, reckless } )
+            payload.planes.push( { human, ttl, age, x, y, r, a, p, cs, name, value, score, reckless } )
             //}
             {
                 const {x,y,as,ttl,cs,idx} = leaving

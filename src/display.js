@@ -379,7 +379,7 @@ export function Display() {
         const planes = State.planes
         if ( planes ){
             State.planes.forEach( (plane,planeIdx) => {
-                const { reckless, age, ttl, x, y, r, a, p, cs, score, value,  name } = plane
+                const { human, reckless, age, ttl, x, y, r, a, p, cs, score, value,  name } = plane
                 if ( ttl < 0 ){
                     return
                 }
@@ -397,7 +397,7 @@ export function Display() {
                 }
                 
                 let col = ColorSchemes[cs][0]
-                let rgb = `rgb(${col[0]},${col[1]},${col[2]})`
+                let rgb = ( human === true )?`rgb(${col[0]},${col[1]},${col[2]})`:'gray'
                 $context.fillStyle = rgb
 
                 const is_target_plane = (  me.idx === planeIdx )
@@ -422,40 +422,49 @@ export function Display() {
                       wxy.x ,  wxy.y + 18 )*/
                     //prefix = '?'
                 } else {
+                    //if ( human === true ){
                     $context.font = `${ 10  }px monospace`;
-                    const displayString = `${ name }`
-                    const canvasClamped = {
-                        x : clamp( wxy.x, 0, $canvas.width - 8 * ( displayString.length + 1 ) ),
-                        y : clamp( wxy.y, 0, $canvas.height - 22 )
-                    }
-                    $context.fillText(displayString,
-                                      canvasClamped.x + 8,
-                                      canvasClamped.y + 18)
+
+                    const inScreen = ( wxy.x >= 0 ) && ( wxy.x <= $canvas.width )
+                          && ( wxy.y >= 0 ) && ( wxy.y <= $canvas.height )
+
+                    const displayString = `${ name }`// ${ human?'human':'💻' } ${ inScreen?'yes':'no'}`
+
+                    if ( true || inScreen || (human === true) ){
                     
-                    if ( DEBUG_AGE ){
-                        /*$context.fillText(`${ name }[${age}](${p})${score.total}/${value}`,
-                          wxy.x + 8 , wxy.y + 18 )
-                        */
-                    } else {
-                        /*
-                          $context.fillText(`${ name }(${p})${score.total}/${value}`,
-                          wxy.x + 8 , wxy.y + 18 )
-                        */
+                        const canvasClamped = {
+                            x : clamp( wxy.x, 0, $canvas.width - 7 * ( displayString.length + 1 ) ),
+                            y : clamp( wxy.y, 0, $canvas.height - 22 )
+                        }
+                        $context.fillText(displayString,
+                                          canvasClamped.x + 8,
+                                          canvasClamped.y + 18)
                         
-                        /*$context.fillText(`${score.total}`,
-                          wxy.x + 8 , wxy.y + 18 )
-                        */
-                        /*context.fillText(`${ name }`,
-                          wxy.x + 8 , wxy.y + 18 )*/
-                        
+                        if ( DEBUG_AGE ){
+                            /*$context.fillText(`${ name }[${age}](${p})${score.total}/${value}`,
+                              wxy.x + 8 , wxy.y + 18 )
+                            */
+                        } else {
+                            /*
+                              $context.fillText(`${ name }(${p})${score.total}/${value}`,
+                              wxy.x + 8 , wxy.y + 18 )
+                            */
+                            
+                            /*$context.fillText(`${score.total}`,
+                              wxy.x + 8 , wxy.y + 18 )
+                            */
+                            /*context.fillText(`${ name }`,
+                              wxy.x + 8 , wxy.y + 18 )*/
+                            
+                        }
                     }
                 }
                 
-
+                /*
                 
                 $context.fillText(`${ name }`,// ${Math.floor(x)},${Math.floor(y)},${p}`,
                                   wxy.x + 8 , wxy.y + 18 )
-                
+                */
             })
         }
 
