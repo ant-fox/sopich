@@ -6,7 +6,7 @@ import { getCurrentState } from './state';
 
 // display 
 const display = new Display()
-display.animate()
+// display.animate()
 
 // sound
 const audio = new Audio()
