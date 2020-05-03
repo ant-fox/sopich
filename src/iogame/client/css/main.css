@@ -1,11 +1,13 @@
 html, body {
-    /* margin: 0;*/
-    /*padding: 0;*/
-  /*overflow: hidden;
-  overscroll-behavior: none;*/
   background-color: black;
   background-color : darkgrey;
-/*  margin:0px;*/
+}
+.no-overflow-html-body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    scroll-behavior: none;
+    margin:0px;
 }
 
 hr {

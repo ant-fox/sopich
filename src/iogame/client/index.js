@@ -103,7 +103,8 @@ Promise.all([
 }).catch(console.error);
 
 function onGameStarting(){
-    playMenu.classList.add('hidden');    
+    playMenu.classList.add('hidden');
+    document.body.classList.add('no-overflow-html-body')
     menu.start()
     initState();
     startCapturingInput();
