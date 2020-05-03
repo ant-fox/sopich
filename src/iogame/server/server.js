@@ -213,7 +213,7 @@ app.get('/stats/players', function(req, res, next) {
 })
 async function joinGame(/*username*/) {
     const username = this.request.user.username
-    gameDebugMessage('joinGame',this.id,username,JSON.stringify(this.request.user))
+    gameDebugMessage(username, 'wants to joinGame',this.id,JSON.stringify(this.request.user))
     const id = this.id
     // get latest score if exists and add player
     User.findOne( { username } )
@@ -221,8 +221,10 @@ async function joinGame(/*username*/) {
         .catch( u => game.addPlayer( id, username ) ) // TODO : remove ?
         .then( o => {
             if ( o === 0 ){
+                gameDebugMessage(username, 'joined game' )
                 this.emit( Constants.MSG_TYPES.JOINED_GAME_OK )
             } else {
+                gameDebugMessage(username, 'could not join game' )
                 this.emit( Constants.MSG_TYPES.JOINED_GAME_KO, o )
             }
         })
@@ -231,6 +233,8 @@ function handleInput(dir) {
     game.handleInput(this.id,dir)
 }
 function onDisconnect() {
+    const username = this.request.user.username
+    gameDebugMessage( username,'is disconnected' )
     game.removePlayer(this.id)
 }
 async function handleKeyboardMapping( keyboardMapping ){
