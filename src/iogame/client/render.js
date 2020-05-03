@@ -6,6 +6,7 @@ import { getCurrentState } from './state';
 
 // display 
 const display = new Display()
+setInterval( () => display.display(), 1000 )
 // display.animate()
 
 // sound
