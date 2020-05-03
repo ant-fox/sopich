@@ -1299,12 +1299,14 @@ export function prepareImages(){
         bird : swbrdsym.map( x => symboltoimage( x, 4, 2 ) ),
         bomb : ColorSchemes.map( pal => swbmbsym.map( x => symboltoimage( x, 8, 8, pal ) ) ),
         missile : ColorSchemes.map( pal =>  swmscsym.map( x => symboltoimage( x, 8, 8, pal ) )),
-        guidedmissile : ColorSchemes.map( pal =>  {
+        /*guidedmissile : ColorSchemes.map( pal =>  {
             const ipal = [ pal[1], pal[0], pal[2] ]
             return swmscsym.map( x => {
                 return symboltoimage( x, 8, 8, ipal)
             })
         }),
+        */
+        guidedmissile : ColorSchemes.map( pal =>  swmscsym.map( x => symboltoimage( x, 8, 8, pal ) )),
         burst : swbstsym.map( x => symboltoimage( x, 8, 8 ) ),
         plane_hit : ColorSchemes.map( pal => swhitsym.map( x => symboltoimage( x, 16, 16, pal ) ) ),
         plane_win : ColorSchemes.map( pal => swwinsym.map( x => symboltoimage( x, 16, 16, pal ) ) ),
