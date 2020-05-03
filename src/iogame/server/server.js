@@ -195,14 +195,9 @@ import { Game } from '../../game.js'
 function tellPlayer( socketId, update ){
     io.to(`${socketId}`).emit( Constants.MSG_TYPES.GAME_UPDATE, update )
 }
-function tellScore( name, score ){
-    gameDebugMessage(name,'quits with score',JSON.stringify(score) )
-    User.updateOne( { username : name },
-                    //{ $inc : { score : score.total } },
-                    { score : score.total },
-                    { upsert : false } )
-        //.then( x => gameDebugMessage('update!YES',x))
-        //.catch( x => gameDebugMessage('update!NO',x))
+async function tellScore( username, score ){
+    gameDebugMessage( username,'quits with score',JSON.stringify(score) )
+    await User.updateScore( username, score )
 }
 const game = new Game( { tellPlayer, tellScore } )
 // TOOO : remove ?
@@ -240,5 +235,6 @@ function onDisconnect() {
 }
 async function handleKeyboardMapping( keyboardMapping ){
     const username = this.request.user.username
+    gameDebugMessage( username, 'maps keys' )
     const rez = await User.updateKeyboardMapping( username, keyboardMapping )
 }

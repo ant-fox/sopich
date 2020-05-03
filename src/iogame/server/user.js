@@ -15,6 +15,11 @@ UserSchema.statics.updateKeyboardMapping = function ( username, keyboardMapping 
                            { keyboardMapping },
                            { upsert : false } )
 }
+UserSchema.statics.updateScore = function ( username, score ) {
+    return this.updateOne( { username },
+                           { score : score.total },
+                           { upsert : false } )
+}
 function checkUsernameString( x ){
     return x && ( x.length >=1 ) && ( x.length < 50 )
 }
