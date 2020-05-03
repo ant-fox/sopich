@@ -14,6 +14,7 @@ const menu = new Menu.Menu( Menu.Definitions, Menu.defaultStore )
 const remapControlsButton = document.getElementById('remap-controls-button')
 const remapControlsList =  document.getElementById('remap-controls-list')
 const remapControlsResetButton = document.getElementById('remap-controls-reset-button')
+const remapControlsKeydownZone = document.getElementById('remap-controls-keydown-zone')
 
 import { KeyboardMapping, setOneKeyboardMapping, resetKeyboardMapping } from '../../controller.js'
 
@@ -22,8 +23,11 @@ import { KeyboardMapping, setOneKeyboardMapping, resetKeyboardMapping } from '..
  */
 function firstKeyDown( $element, continuation ){
     function onKeydown( { code } ){
+        console.log('keydown',code)
         continuation( code )
         $element.removeEventListener('keydown',onKeydown)
+        event.preventDefault()
+        event.stopPropagation()
     }
     $element.addEventListener('keydown',onKeydown)
     return () => $element.removeEventListener('keydown',onKeydown)
@@ -52,7 +56,7 @@ function keyboardMappingLoaded( keyboardMapping ){
 function remapControlsButtonClicked(){  
     
     remapControlsList.classList.toggle('hidden')
-
+    
     remapControlsResetButton.onclick = () => {
         resetKeyboardMapping( KeyboardMapping )
         Object.keys( KeyboardMapping ).forEach( type => {
@@ -66,11 +70,18 @@ function remapControlsButtonClicked(){
         const buttonId = `remap-control-${ type }-button`
         const remapButton = document.getElementById( buttonId )        
         console.log(buttonId, remapButton )
+        remapButton.onkeyup = e => {
+            event.preventDefault()
+            event.stopPropagation()
+        }
         remapButton.onclick = e => {
             remapButton.classList.add('active-remapping')
             console.log( buttonId, remapButton )
-            const cancelFkd = firstKeyDown( window.document, code => {
+            remapControlsKeydownZone.classList.remove('hidden');
+            const cancelFkd = firstKeyDown( document.body, code => {
                 console.log('type',type,code)
+                remapControlsKeydownZone.classList.add('hidden');
+
                 setOneKeyboardMapping( KeyboardMapping, type, code )
                 updateMappedKeySpan( type, KeyboardMapping )
                 remapButton.classList.remove('active-remapping')
@@ -104,7 +115,7 @@ Promise.all([
 
 function onGameStarting(){
     playMenu.classList.add('hidden');
-    document.body.classList.add('no-overflow-html-body')
+    document.body.classList.add('no-overflow')
     menu.start()
     initState();
     startCapturingInput();
