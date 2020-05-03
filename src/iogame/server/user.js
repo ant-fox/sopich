@@ -7,10 +7,14 @@ const UserSchema = new mongoose.Schema({
     passwordHash : String,
     keyboardMapping : mongoose.Schema.Types.Mixed
 })
-UserSchema.statics.findByUsername = function(username) {
+UserSchema.statics.findByUsername = function( username ) {
     return this.find({ username })
 };
-
+UserSchema.statics.updateKeyboardMapping = function ( username, keyboardMapping ) {
+    return this.updateOne( { username },
+                           { keyboardMapping },
+                           { upsert : false } )
+}
 function checkUsernameString( x ){
     return x && ( x.length >=1 ) && ( x.length < 50 )
 }
@@ -19,7 +23,6 @@ function checkPasswordString( x ){
 }
 
 export const User = mongoose.model('User', UserSchema);
-
 
 export async function loginOrCreate( username, password, done ){
 

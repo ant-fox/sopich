@@ -238,13 +238,7 @@ function handleInput(dir) {
 function onDisconnect() {
     game.removePlayer(this.id)
 }
-function handleKeyboardMapping( keyboardMapping ){
+async function handleKeyboardMapping( keyboardMapping ){
     const username = this.request.user.username
-    gameDebugMessage("keyboardMapping", username, JSON.stringify( keyboardMapping ) )
-    User.updateOne( { username : username },
-                    //{ $inc : { score : score.total } },
-                    { keyboardMapping },
-                    { upsert : false } )
-        //.then( x => console.log('updateKBM!YES',x))
-        //.catch( x => console.log('updateKBM!NO',x))
+    const rez = await User.updateKeyboardMapping( username, keyboardMapping )
 }
