@@ -130,6 +130,14 @@ function update_stars( stars ){
 /*
  * missile & explosion trails
  */
+
+const TrailColors = {
+    guidedmissiles : '#886500',
+    missiles : '#656',
+    debris : 'white',
+    falling1 : 'orange',
+    falling2 : 'cyan',
+}
 function TrailPoints(){
     const trailPoints = new Array( 500 ).fill(0).map( x => undefined )
     let currentTrailPointIdx = 0
@@ -315,8 +323,8 @@ export function Display() {
                 if (Math.random()>0.95){
                     //console.log(bl,tr)
                 }
-                $context.fillStyle = 'SkyBlue'
-                $context.fillRect( bl.x, bl.y, tr.x, tr.y )
+           //     $context.fillStyle = 'SkyBlue'
+             //   $context.fillRect( bl.x, bl.y, tr.x, tr.y )
                 
             }
             
@@ -328,7 +336,8 @@ export function Display() {
             if (Math.random()>0.90){
                 update_stars( stars )
             }
-            const bcolors = [ '#faff', '#a59a', '#0095' ]
+            //const bcolors = [ '#faff', '#a59a', '#0095' ]
+            const bcolors = [ 'red','violet','white' ]
             stars.forEach( ({x,y,brightness}) => {
                 let cxy = world_to_context( x, y )
                 $context.fillStyle = bcolors[ brightness ]
@@ -508,7 +517,7 @@ export function Display() {
                 if ( ttl > 0 ){
                     let wxy = world_to_context( x, y )
                     putSprite( Images.missile[cs][a], wxy.x , wxy.y )
-                    trailPoints.add( x + 4, y + 4,'#656', 2, 1 )
+                    trailPoints.add( x + 4, y + 4,TrailColors.missiles, 2, 1 )
                     if ( age !== undefined ){
                         if (DEBUG_AGE){
                             $context.fillStyle = 'white'
@@ -528,15 +537,16 @@ export function Display() {
                     let wxy = world_to_context( x, y )
                     putSprite( Images.guidedmissile[cs][a], wxy.x , wxy.y )
                     //console.log(age)
-                    trailPoints.add( x + 4, y + 4,'#886500',3, 2 )
-                    
-                    /*if ( age !== undefined ){
-                      if (DEBUG_AGE){*/
-                    $context.fillStyle = 'white'
-                    $context.font = `${ 10 }px monospace`;
-                    //$context.fillText(`[*]`, wxy.x , wxy.y + 9 )
-                    /*}
-                      }*/
+                    trailPoints.add( x + 4, y + 4, TrailColors.guidedmissiles,3, 2 )
+                    /*
+                    if ( age !== undefined ){
+                      if (DEBUG_AGE){
+                      $context.fillStyle = 'white'
+                      $context.font = `${ 10 }px monospace`;
+                      $context.fillText(`[*]`, wxy.x , wxy.y + 9 )
+                    }
+                    }
+                    */
                 }
             }
         }
@@ -546,7 +556,7 @@ export function Display() {
                 let { x, y, a, ttl, cs, dtype } = debris[ j ]
                 let wxy = world_to_context( x, y )
                 if (Math.random()>0.8){
-                    trailPoints.add( x + 4, y + 4,'#88550a',3, 2 )
+                    trailPoints.add( x + 4, y + 4,TrailColors.debris,3, 2 )
                 }
                 putSprite( Images.debris[cs][dtype], wxy.x , wxy.y )             
             }
@@ -575,9 +585,9 @@ export function Display() {
                 putSprite( Images.plane_hit[cs][as], wxy.x , wxy.y )
                 if (Math.random()>0.8){
                     if ( Math.random()>0.5){
-                        trailPoints.add( x + 8, y + 8,'#88888', 5, 4 )
+                        trailPoints.add( x + 8, y + 8,TrailColors.falling1, 5, 4 )
                     } else {
-                        trailPoints.add( x + 8, y + 8,'#a8888', 3, 2 )
+                        trailPoints.add( x + 8, y + 8,TrailColors.falling2, 3, 2 )
                     }
                 }
 
