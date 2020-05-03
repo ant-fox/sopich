@@ -1,11 +1,11 @@
 html, body {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  overscroll-behavior: none;
+    /* margin: 0;*/
+    /*padding: 0;*/
+  /*overflow: hidden;
+  overscroll-behavior: none;*/
   background-color: black;
   background-color : darkgrey;
-  margin:0px;
+/*  margin:0px;*/
 }
 
 hr {
@@ -44,10 +44,11 @@ canvas {
     /* margin : 5px; */
 }
 #play-menu {
-  position: fixed;
+/*  position: fixed;
   top: 50%;
   left: 50%;
   transform: translateY(-50%) translateX(-50%);
+*/
   padding: 20px 30px;
   background-color: white;
   display: flex;
