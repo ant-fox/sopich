@@ -1,16 +1,20 @@
-import io from 'socket.io-client';
+//import io from 'socket.io-client';
+
 import { throttle } from 'throttle-debounce';
 import { processGameUpdate } from './state';
 import { stopRendering } from './render'
 import { ADD_PLAYER_RETURNS } from '../../game'
 
 const Constants = require('../shared/constants');
-//const socket = io(`ws://${window.location.host}`, { reconnection: false, secure : true });
-//const socket = io('https://localhost');
-const socket = io();
+
+const gameName = 'monsocketserver1'
+const socketUrl = new URL( gameName, window.location )
+socketUrl.protocol = "ws:"
+console.log( 'create socket with',socketUrl.toString() )
+const socket = new WebSocket( socketUrl )
 
 const connectedPromise = new Promise(resolve => {
-    socket.on('connect', () => {
+    socket.onopen = ( () => {
         console.log('Connected to server!');
         resolve();
     });
@@ -46,38 +50,64 @@ function onYourInfof( yourInfo ){
         console.log('oooo',this,args)
     }
 }
+function deserializeMessage( data ){
+    const [ type, body ] = JSON.parse( data.data )
+    return [ type, body ]
+}
+function serializeMessage( type, body ){
+    const data = JSON.stringify( [ type, body ] )
+    return data
+}
+function sendMessage( type, body ){
+    return socket.send( serializeMessage( type, body ) )
+}
 export const connect = (onGameOver,joinSuccess,joinFailed,yourInfo) => (
     connectedPromise.then(() => {
-        // Register callbacks
-        socket.on(Constants.MSG_TYPES.YOUR_INFO, function(...args){
-            console.log('-------------------',args)
-            onYourInfof( yourInfo )(...args);
-        })
-        socket.on(Constants.MSG_TYPES.JOINED_GAME_OK, onPlayerAddedf( joinSuccess ) );
-        socket.on(Constants.MSG_TYPES.JOINED_GAME_KO, onPlayerNotAddedf( joinFailed ) );
-        socket.on(Constants.MSG_TYPES.GAME_UPDATE, processGameUpdate);
-        socket.on(Constants.MSG_TYPES.GAME_OVER, onGameOver);
-        socket.on('disconnect', () => {
-            stopRendering()
+
+        socket.onmessage = data => {
+            const [ type, body ] = deserializeMessage( data )
+            switch (type){
+            case Constants.MSG_TYPES.YOUR_INFO : {
+                onYourInfof( yourInfo )(body)
+                break
+            }
+            case Constants.MSG_TYPES.JOINED_GAME_OK : {
+                onPlayerAddedf( joinSuccess )(body)
+                break
+            }
+            case Constants.MSG_TYPES.JOINED_GAME_KO : {
+                onPlayerNotAddedf( joinFailed )(body )
+                break
+            }
+            case Constants.MSG_TYPES.GAME_UPDATE : {
+                processGameUpdate(body )
+                break
+            }
+            case Constants.MSG_TYPES.GAME_OVER : {
+                onGameOver( ...body )
+                break
+            }
+            }
+        }
+        socket.onclose = () => {
             console.log('Disconnected from server.');
+            stopRendering()
             document.getElementById('disconnect-modal').classList.remove('hidden');
             document.getElementById('reconnect-button').onclick = () => {
                 window.location.reload();
             };
-        });
+        };
     })
 );
 
 export const play = username => {
-    console.log('PLAY',username,'?')
-    socket.emit(Constants.MSG_TYPES.JOIN_GAME, username, function(o){
-        console.log('ooooooooooooooooooo',o)
-    });
+    sendMessage(Constants.MSG_TYPES.JOIN_GAME, username )
 };
 
 export const sendInputToServer = throttle(20, dir => {
-    socket.emit(Constants.MSG_TYPES.INPUT, dir );
+    sendMessage(Constants.MSG_TYPES.INPUT, dir );
 });
+
 export const sendKeyboardMappingToServer = mapping => {
-    socket.emit(Constants.MSG_TYPES.KEYBOARD_MAPPING, mapping );
+    sendMessage(Constants.MSG_TYPES.KEYBOARD_MAPPING, mapping );
 }
