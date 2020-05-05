@@ -1,4 +1,7 @@
 export function ia( State, options ){
+
+    const SHOOT_PROBABILITY = 0.5
+    
     function ia1( cp, target, maxdist ){
         //cp.undescrtu = true
         function pushButton( name ){
@@ -15,7 +18,7 @@ export function ia( State, options ){
                 //inputs.push( { input : 'noseup', client : cp.idx } )
                 cp.a = a16
             } else {
-                if ( Math.random() > 0.90 ) {
+                if ( Math.random() < SHOOT_PROBABILITY ) {
                     if (! options.IA_DOES_NOT_FIRE ){
                         if ( Math.random() > 0.6 ){
                             pushButton('firemissile')
