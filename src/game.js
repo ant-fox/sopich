@@ -1,5 +1,5 @@
-const IA_DOES_NOT_FIRE = true
-const IA_JUST_FLIES_AROUND = true
+const IA_DOES_NOT_FIRE = false
+const IA_JUST_FLIES_AROUND = false
 const FIRST_PLANE_CANNOT_BE_DESTRUCTED = false
 const MAX_PLANES = 10
 const IDLE_IF_NO_PLAYER = true
@@ -131,12 +131,14 @@ const Hitmaskfs = {
                       ?(Hitmasks.target_hit)
                       :(Hitmasks.targets[ item.as ])),
     ox : item => Hitmasks.ox[ item.as ],
+    debris : item => Hitmasks.ox[ 0 ], // TODO
 }
 const Bhitmaskfs = {
     plane : item => BottomHitmasks.plane[ (item.r)?1:0 ][ item.a ],
     bomb : item => BottomHitmasks.bomb[ item.a ],
     missile : item => BottomHitmasks.missile[ item.a ],
-    guidedmissile : item => BottomHitmasks.missile[ item.a ]
+    guidedmissile : item => BottomHitmasks.missile[ item.a ],
+    debris : item => BottomHitmasks.ox[ 0 ], // TODO
 }
 function available_ttl( items ){
     // get first dead item in a list
@@ -249,6 +251,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             x : x+Math.floor( Math.random()*50 ),
             y : y+Math.floor( Math.random()*50 ),
             a : ( (i*((Math.random()>0.5)?1:2)) % 16 ),
+            hitmaskf : Hitmaskfs.debris,
             dtype : ( i % 8 ),
         }
     }
@@ -551,6 +554,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 debris[j].x = x + dx
                 debris[j].y = y + dy
                 debris[j].step += 1
+                debris.ttl = explosion.ttl
             }
             explosion.ttl -= 1
         }
@@ -862,21 +866,21 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         State.planes.forEach( plane => {
             const { bombs, missiles, guidedmissiles, explosion } = plane
             f( 'plane', plane )
-            // explosion.debris.forEach( debri => f( 'debris', debri ) )
+            explosion.debris.forEach( debri => f( 'debris', debri ) )
             bombs.forEach( bomb => {
                 const { explosion } = bomb
                 f( 'bomb', bomb )
-                // // explosion.debris.forEach( debri => f( 'debris', debri ) )
+               // explosion.debris.forEach( debri => f( 'debris', debri ) )
             })
             missiles.forEach( missile => {
                 const { explosion } = missile
                 f( 'missile', missile )
-                // // explosion.debris.forEach( debri => f( 'debris', debri ) )
+                //                explosion.debris.forEach( debri => f( 'debris', debri ) )
             })
             guidedmissiles.forEach( missile => {
                 const { explosion } = missile
                 f( 'guidedmissile', missile )
-                // // explosion.debris.forEach( debri => f( 'debris', debri ) )
+                //explosion.debris.forEach( debri => f( 'debris', debri ) )
             })
         })
     }
@@ -1002,7 +1006,10 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             
         })
         // get rectangle intersections
+        const mes = { start : Date.now() }
         const intersections = boxIntersect( boundingBoxes )
+        mes.end = Date.now()
+        console.log('collide took', mes.end - mes.start )
         intersections.forEach( ([i1,i2]) => {
 
             const ci1 = collisionsItems[ i1 ],
@@ -1093,7 +1100,10 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         ia(State,{ IA_DOES_NOT_FIRE, IA_JUST_FLIES_AROUND } )
         handleinputs()
         move()
+        const mes = { start : Date.now() }
         collisions()
+        mes.end = Date.now()
+        console.log('total for collisions',mes.end - mes.start )
         stateUpdated()
         State.lastUpdateTime = now;
 
@@ -1102,8 +1112,10 @@ export function Game( { tellPlayer, // called with user centered world, each wor
     function gameloop(){
         setInterval( update, 1000/FPS)
     }
-    ////
     
+    /*
+     * Players
+     */
     const players = {
         names : () => Object.values( playerByInputId ).map( x => x.name ),
         scores : () => Object.values( playerByInputId ).map( x => x.plane.score.total )
