@@ -81,6 +81,7 @@ import { rectangle_intersection, rectangle_intersection_bool } from './rect.js'
 import { ColorSchemes } from './symbols.js'
 import { NameGenerator } from './misc/namegenerator.js'
 import { ia } from './cipiu.js'
+import { default as boxIntersect } from 'box-intersect'
 
 function debugMessage( ...p ){
     if ( DEBUG_MESSAGES ){
@@ -936,6 +937,70 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         return ( item1.cs === item2.cs )
     }
     function collisions(){
+
+        // ground items
+        State.oxs.forEach( ox => {
+            ground_item16( ox )
+        })
+        State.targets.forEach( ox => {
+            ground_item16( ox )
+        })
+        
+        // build list
+        const collisionsItems = []
+        const boundingBoxes = []
+        iterateCollisionItems( (type,item) => {
+
+            if ( item.ttl <= 0 )
+                return
+
+            const tooYoungtoDie = ( item.age && item.recklessness
+                                    && ( item.age < item.recklessness ) )
+
+            if ( tooYoungtoDie )
+                return
+            
+            const hitmask = item.hitmaskf( item ),
+                  { x, y } = item,
+                  { w, h } = hitmask,
+                  dims = [ x, y, x + w, y + h ]
+            collisionsItems.push( { type, item } )
+            boundingBoxes.push( dims )
+            
+        })
+        // get rectangle intersections
+        const intersections = boxIntersect( boundingBoxes )
+        intersections.forEach( ([i1,i2]) => {
+
+            const ci1 = collisionsItems[ i1 ],
+                  ci2 = collisionsItems[ i2 ],
+                  item1 = ci1.item,
+                  type1 = ci1.type,
+                  item2 = ci2.item,
+                  type2 = ci2.type
+            
+            console.log( type1, type2, item1.x, item2.x )
+
+            const dont = have_ownership_relation( item1, item2 )
+            if ( dont )
+                return
+
+            const PIXEL_COLLISION = false
+            if ( PIXEL_COLLISION ){
+                if (pixel_collision( o, x,y,hitmask.w,hitmask.h, hitmask,
+                                     tx,ty,16,16, Hitmasks.targets[ ttype ]) ){
+                    return
+                }
+            }
+            
+            resolve_collision( item1, item2 )
+
+        })
+        console.log(intersections.length)
+
+  
+    }
+    function collisionsZ(){
         // State.tree = new Tree( 4096, 256, 16 )
         // to move ?
         State.oxs.forEach( ox => {
@@ -951,6 +1016,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
               const y = ground[ Math.floor( x ) % ground.length ]
               ox.y = y*/
         })
+        
 
         State.planes[ 0 ].undescrtu = FIRST_PLANE_CANNOT_BE_DESTRUCTED
         
