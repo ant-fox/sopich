@@ -936,6 +936,32 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         if ( item2.cs ) return
         return ( item1.cs === item2.cs )
     }
+    function groundCollision(){
+
+        iterateCollisionItems( (type,item1) => {
+            if ( ( item1.ttl !== undefined ) && ( item1.ttl < 0 ) ){
+                return
+            }
+            if ( item1.ttl ){
+                const bhitmask = item1.bhitmaskf( item1 )
+                if ( bhitmask ){
+                    const x = item1.x
+                    const fx = Math.floor(x)
+                    const y = item1.y
+                    let collides = pixel_bottom_collision(fx,y,bhitmask) // modfies ground..
+                    if ( collides ) {
+                        if ( ! item1.undescrtu ) {
+                            item1.ttl = -1
+                            start_explosion( item1.explosion,fx ,y )
+                            start_falling( item1 )
+                        }
+                    }
+                }
+            }
+        })
+        
+    }
+    
     function collisions(){
         
         
@@ -992,168 +1018,18 @@ export function Game( { tellPlayer, // called with user centered world, each wor
 
             const PIXEL_COLLISION = false
             if ( PIXEL_COLLISION ){
+                // rectangle_intersection ->
                 if (pixel_collision( o, x,y,hitmask.w,hitmask.h, hitmask,
                                      tx,ty,16,16, Hitmasks.targets[ ttype ]) ){
-                    return
+                    resolve_collision( item1, item2 )
                 }
+            } else {
+                resolve_collision( item1, item2 )
             }
-            // resolve 
-            resolve_collision( item1, item2 )
 
         })
-//        console.log(intersections.length)
-
+    }
   
-    }
-    function groundCollision(){
-        //let c = { }
-        iterateCollisionItems( (type,item1) => {
-            if ( ( item1.ttl !== undefined ) && ( item1.ttl < 0 ) ){
-                return
-            }
-            //const hitmask = item1.hitmaskf( item1 )
-            //item1._hitmask = hitmask // cache the hitmask (A)
-            // 1. test ground
-            if ( item1.ttl ){
-                const bhitmask = item1.bhitmaskf( item1 )
-                if ( bhitmask ){
-                    const x = item1.x
-                    const fx = Math.floor(x)
-                    const y = item1.y
-                    let collides = pixel_bottom_collision(fx,y,bhitmask) // modfies ground..
-                    if ( collides ) {
-                        if ( ! item1.undescrtu ) {
-                            item1.ttl = -1
-                            start_explosion( item1.explosion,fx ,y )
-                            start_falling( item1 )
-                        }
-                    }
-                }
-            }
-        })
-        
-    }
-    function collisionsZ(){
-        // State.tree = new Tree( 4096, 256, 16 )
-        // to move ?
-        State.oxs.forEach( ox => {
-            ground_item16( ox )
-            // ox.y = Math.random() * 200
-            /* const { x } = ox
-               const y = ground[ Math.floor( x ) % ground.length ]
-               ox.y = y*/
-        })
-        State.targets.forEach( ox => {
-            ground_item16( ox )
-            /*const { x } = ox
-              const y = ground[ Math.floor( x ) % ground.length ]
-              ox.y = y*/
-        })
-        
-
-        State.planes[ 0 ].undescrtu = FIRST_PLANE_CANNOT_BE_DESTRUCTED
-        
-        let c = { }
-        let total = 0
-        //
-        State.showcolls = []
-        State.showtreecells = []
-        const tree = State.tree
-        State.version++
-        const version = State.version
-        iterateCollisionItems( (type,item1) => {
-            if ( ( item1.ttl !== undefined ) && ( item1.ttl < 0 ) ){
-                return
-            }
-            // stats
-            total++;
-            const ct = c[ type ]
-            c[ type ] = 1 + (ct?ct:0)
-            // set hitmask
-            const hitmask = item1.hitmaskf( item1 )
-            item1._hitmask = hitmask // cache the hitmask (A)
-            // 1. test ground
-            if ( item1.ttl ){
-                const bhitmask = item1.bhitmaskf( item1 )
-                if ( bhitmask ){
-                    const x = item1.x
-                    const fx = Math.floor(x)
-                    const y = item1.y
-                    let collides = pixel_bottom_collision(fx,y,bhitmask) // modfies ground..
-                    if ( collides ) {
-                        if ( ! item1.undescrtu ) {
-                            item1.ttl = -1
-                            start_explosion( item1.explosion,fx ,y )
-                            start_falling( item1 )
-                        }
-                    }
-                }
-            }
-
-            const tooYoungtoDie = ( item1.age && item1.recklessness
-                                    && ( item1.age < item1.recklessness ) )
-            if ( tooYoungtoDie ){
-                return
-            }   
-            // 2. insert/collide
-            const { x, y } = item1
-            let node = tree.insert(
-                { x,y, w:hitmask.w,h:hitmask.h, item :item1 },
-                version,
-                (candidates) => {
-                    // test all items in a the coll tree quad
-                    for ( let i = 0, l = candidates.length ; i < l ; i++ ){
-                        const candidate = candidates[ i ]
-                        // do not check against deads resulting of previous collisions
-                        if ( ( candidate.ttl !== undefined ) && ( candidate.ttl < 0 ) ){
-                            continue
-                        }
-                        const item2 = candidate.item
-                        let hitmask2 = item2._hitmask // we cached the hitmasks in (A)
-
-                        // 2.1 no collision between item and its owner
-                        const dont = have_ownership_relation( item1, item2 )
-
-                        // unused
-                        const dont2 = have_sameteam_relation( item1, item2 )
-
-                        // 2.2 test hitmask bounding rectangle
-                        if ( ( !dont ) && rectangle_intersection_bool(
-                            x,y,hitmask.w,hitmask.h,
-                            item2.x,item2.y,hitmask2.w,hitmask2.h
-                        )){
-                            //
-                            // if (pixel_collision( o, x,y,hitmask.w,hitmask.h, hitmask,
-                            //                         tx,ty,16,16, Hitmasks.targets[ ttype ]) )
-                            //
-                            if ( false ){
-                                State.showcolls.push( o )
-                            }
-                            resolve_collision( item1, item2 )
-                            
-                            // remove item from coll tree node
-                            // TODO why not remove item1 ??
-                            if ( (!item2.undescrtu) ){
-                                item2._node.remove( item2 )
-                                //item2_.node = undefined
-                            }
-                            return STOP_VISIT // do not insert node and stop testing collisions
-                        } else {
-                            //return CONTINUE_VISIT  ?? XX
-                        }
-                    }
-                    return CONTINUE_VISIT // ?? XX
-                }
-            )
-            if ( node ){
-                State.showtreecells.push( node )
-                item1._node = node
-            }
-        })
-        //debugMessage(total,c)
-        
-    }
-    
     function ground_item16( item ){
         const x = Math.floor( item.x )
         const ground = State.ground
