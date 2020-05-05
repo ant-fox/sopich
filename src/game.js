@@ -937,7 +937,8 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         return ( item1.cs === item2.cs )
     }
     function collisions(){
-
+        
+        
         // ground items
         State.oxs.forEach( ox => {
             ground_item16( ox )
@@ -945,6 +946,11 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         State.targets.forEach( ox => {
             ground_item16( ox )
         })
+
+        // collide with ground
+        groundCollision()
+
+        // object collisions
         
         // build list
         const collisionsItems = []
@@ -964,6 +970,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                   { x, y } = item,
                   { w, h } = hitmask,
                   dims = [ x, y, x + w, y + h ]
+            
             collisionsItems.push( { type, item } )
             boundingBoxes.push( dims )
             
@@ -979,8 +986,6 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                   item2 = ci2.item,
                   type2 = ci2.type
             
-            console.log( type1, type2, item1.x, item2.x )
-
             const dont = have_ownership_relation( item1, item2 )
             if ( dont )
                 return
@@ -992,13 +997,41 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                     return
                 }
             }
-            
+            // resolve 
             resolve_collision( item1, item2 )
 
         })
-        console.log(intersections.length)
+//        console.log(intersections.length)
 
   
+    }
+    function groundCollision(){
+        //let c = { }
+        iterateCollisionItems( (type,item1) => {
+            if ( ( item1.ttl !== undefined ) && ( item1.ttl < 0 ) ){
+                return
+            }
+            //const hitmask = item1.hitmaskf( item1 )
+            //item1._hitmask = hitmask // cache the hitmask (A)
+            // 1. test ground
+            if ( item1.ttl ){
+                const bhitmask = item1.bhitmaskf( item1 )
+                if ( bhitmask ){
+                    const x = item1.x
+                    const fx = Math.floor(x)
+                    const y = item1.y
+                    let collides = pixel_bottom_collision(fx,y,bhitmask) // modfies ground..
+                    if ( collides ) {
+                        if ( ! item1.undescrtu ) {
+                            item1.ttl = -1
+                            start_explosion( item1.explosion,fx ,y )
+                            start_falling( item1 )
+                        }
+                    }
+                }
+            }
+        })
+        
     }
     function collisionsZ(){
         // State.tree = new Tree( 4096, 256, 16 )
@@ -1166,7 +1199,6 @@ export function Game( { tellPlayer, // called with user centered world, each wor
 
     State.lastUpdateTime = Date.now()
     function update(){
-
         const nplayers = Object.keys( playerByInputId ).length
         if ( IDLE_IF_NO_PLAYER && ( nplayers === 0 )){
             return
@@ -1188,6 +1220,8 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         collisions()
         stateUpdated()
         State.lastUpdateTime = now;
+
+        State.version++
     }
     function gameloop(){
         setInterval( update, 1000/FPS)
