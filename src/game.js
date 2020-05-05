@@ -1009,7 +1009,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         const mes = { start : Date.now() }
         const intersections = boxIntersect( boundingBoxes )
         mes.end = Date.now()
-        console.log('collide took', mes.end - mes.start )
+//        console.log('collide took', mes.end - mes.start )
         intersections.forEach( ([i1,i2]) => {
 
             const ci1 = collisionsItems[ i1 ],
@@ -1103,7 +1103,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         const mes = { start : Date.now() }
         collisions()
         mes.end = Date.now()
-        console.log('total for collisions',mes.end - mes.start )
+//        console.log('total for collisions',mes.end - mes.start )
         stateUpdated()
         State.lastUpdateTime = now;
 
