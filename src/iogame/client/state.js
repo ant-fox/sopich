@@ -87,6 +87,7 @@ export function getCurrentState() {
 function linearInterpolation( v1, v2, ratio ){
     let d = ( v2 - v1 )
     if ( ( d > 16 ) || ( d < -16 ) ){
+        // todo...
         return v2
     } else {
         return v1 + ( v2 - v1 ) * ratio
