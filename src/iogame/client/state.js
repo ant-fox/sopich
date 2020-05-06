@@ -81,7 +81,11 @@ export function getCurrentState() {
         const baseUpdate = gameUpdates[base];
         const next = gameUpdates[base + 1];
         const ratio = (serverTime - baseUpdate.t) / (next.t - baseUpdate.t);
-        return interpolateState( baseUpdate, next, ratio )
+        if ( ratio < 0.5 ){
+            return interpolateState( baseUpdate, next, ratio )
+        } else {
+            return interpolateState( next, baseUpdate, ( 1 - ratio ) )
+        }
     }
 }
 function linearInterpolation( v1, v2, ratio ){
@@ -101,44 +105,67 @@ function a816Interpolation( v1, v2, ratio ){
     }
 }
 function interpolateState( s1, s2, ratio ){
-    const state = {}
-    Object.keys( s2 ).forEach( (k2,i2) => {
-        // planes, debris...
-        let vs2 = s2[ k2 ]
-        let copy_cs2
-        if ( vs2.length ){
-            if ( k2 === 'justfired' ){
-                copy_cs2 = vs2.concat( s1[ k2 ] )
-            } else  if ( k2 === 'ground' ){
-                copy_cs2 = vs2.map( (h2,ig2) => {
-                    let h1 = s1.ground[ ig2 ]
-                    return linearInterpolation( h1, h2, ratio )
-                })
-            } else {
-                copy_cs2 = vs2.map( (vsk2,vi2) => {
-                    let item = Object.assign({}, vsk2)
-                    if ( s1[ k2 ] ){
-                        let vsk1 = s1[ k2 ][ vi2 ]
-                        if ( vsk1 ){
-                            //if ( ( vsk1.ttl === undefined ) || ( vsk1.ttl >= 0 ) ){
-                            if ( (item.x!==undefined) && (item.y!==undefined) ){
-                                item.x = linearInterpolation( vsk1.x, vsk2.x, ratio )
-                                item.y = linearInterpolation( vsk1.y, vsk2.y, ratio )                                
-                            }
-                            if ( (item.a!==undefined) ){
-                                item.a = a816Interpolation( vsk1.a, vsk2.a, ratio )
-                            }
-                            //item.justfired = item.justfired || vsk1.justfired
-                        }
+
+    const keys = Object.keys( s1 )
+
+    // copy state 1
+    const state = JSON.parse( JSON.stringify( s1 ) )
+
+    // interpolate when possible
+    Object.entries( state ).forEach( ( [ ka, va ] ) => {
+        
+        const vb = s2[ ka ]
+
+        if ( vb === undefined ) {
+            return
+        }
+
+        if ( ka === 'ground' ){
+            va.forEach( ( h1, i ) => {
+                const h2 = va[ i ]
+                if ( h2 !== undefined ){
+                    va[ i ] = linearInterpolation( h1, h2, ratio )
+                }
+            })
+            return
+        }
+        if ( ka ==='justfired' ){
+            // use only one time
+            state[ ka ] = va.map( x => x )
+
+            // so remove from saved state
+            s1[ ka ] = []
+            return
+        }
+
+        if ( Array.isArray( va ) ){
+            va.forEach( ( item1, i ) => {
+
+                if ( item1.id === undefined )
+                    return
+                
+                const item2 = vb.find( ({id}) => ( id === item1.id ) )
+                if ( item2 === undefined )
+                    return
+
+                ;['x','y'].forEach( propk => {
+                    const pv1 = item1[ propk ]
+                    const pv2 = item2[ propk ]
+                    if ( ( pv1 !== undefined ) && ( pv2 !== undefined ) ){
+                        item1[ propk ] = linearInterpolation( pv1, pv2, ratio )
                     }
-                    return item
-                    //}
                 })
-            }
-            state[ k2 ] = copy_cs2
-        } else {
-            state[ k2 ] = vs2
+                ;['a'].forEach( propk => {
+                    const pv1 = item1[ propk ]
+                    const pv2 = item2[ propk ]
+                    if ( ( pv1 !== undefined ) && ( pv2 !== undefined ) ){
+                        item1[ propk ] = a816Interpolation( pv1, pv2, ratio )
+                    }
+                })
+            })
         }
     })
+        
     return state
+    
 }

@@ -158,7 +158,16 @@ function event_num(){
 export function Game( { tellPlayer, // called with user centered world, each world update 
                         tellScore,  // called with player score, when quitting
                       } ) {
-
+    
+    let _itemId = 0
+    function newItemId(){
+        return _itemId++
+    }
+    function newItem( item ){
+        item.id = newItemId()
+        return item
+    }
+    
     tellScore = tellScore || ( _ => _ )
 
     const State = init_state()
@@ -177,14 +186,14 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         }
     }
     function init_justfired( type ){
-        return {
+        return newItem({
             type,
             num : undefined,
             ttl : -1,
-        }
+        })
     }
     function init_falling_plane(idx,cs){
-        return {
+        return newItem({
             cs,idx,
             x : Math.floor( 100 + Math.random() * 2500 ),
             y : Math.floor( 100 + Math.random() * 200 ),
@@ -196,10 +205,10 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             ttl : -1,
             as : 0,
             p : 3,
-        }
+        })
     }
     function init_leaving_plane(idx,cs){
-        return {
+        return newItem({
             cs,idx,
             x : Math.floor( 100 + Math.random() * 2500 ),
             y : Math.floor( 100 + Math.random() * 200 ),
@@ -210,18 +219,18 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             interv : 15,
             ttl : -1,
             as : 3,
-        }
+        })
     }
     function init_ox( i , l ){
-        return {
+        return newItem({
             x : Math.floor( 400 + ( i / l ) * 2000 ),
             as : 0,
             destroyed : item => item.as = 1,
             hitmaskf : Hitmaskfs.ox,
-        }
+        })
     }
     function init_bird( i, l ){
-        return {
+        return newItem({
             x : Math.floor( 500 + Math.random() * 2000 ),
             y : Math.floor( 100 + ( i / l ) * 700 ),
             as : Math.floor( Math.random() * 2 ),
@@ -229,10 +238,10 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             step : 0,
             hitmaskf : Hitmaskfs.bird,
             destroyed : item => item.ttl = -1
-        }
+        })
     }
     function init_flock(i,l){
-        return {
+        return newItem({
             x : Math.floor( 500 + Math.random() * 2000 ),
             y : Math.floor( 100 + ( i / l ) * 500 ),
             as : Math.floor( Math.random() * 2 ),
@@ -240,23 +249,23 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             step : 0,
             hitmaskf : Hitmaskfs.flock,
             destroyed : item => item.ttl = -1
-        }
+        })
     }
     function init_ground(){
         return ground.map( x => x )
     }
     function init_debris( i, cs, x = 1600, y = 100 ){
-        return {
+        return newItem({
             cs,
             x : x+Math.floor( Math.random()*50 ),
             y : y+Math.floor( Math.random()*50 ),
             a : ( (i*((Math.random()>0.5)?1:2)) % 16 ),
             hitmaskf : Hitmaskfs.debris,
             dtype : ( i % 8 ),
-        }
+        })
     }
     function init_explosion( cs ){
-        return {
+        return newItem({
             x : 0,
             y : 0,
             cs,
@@ -267,7 +276,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 return init_debris( i, cs )
             }),
             justfired : init_justfired('explosion')
-        }
+        })
     }
     function init_targets(){
         const model = {
@@ -286,14 +295,14 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         }
         const targets = model.xs.map( (x,i) => {
             const as = model.tys[ i ]
-            return {
+            return newItem({
                 hitmaskf : Hitmaskfs.target,
                 x,as,
                 broken : false,
                 destroyed : item => {
                     item.broken = true
                 }
-            }
+            })
         })
         return targets
     }
@@ -315,7 +324,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
 
     function init_bomb( i, owner ){
         const idx = owner
-        return {
+        return newItem({
             age : 0,
             cs : idx%ColorSchemes.length,
             hitmaskf : Hitmaskfs.bomb,
@@ -339,11 +348,11 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 }
             },
             justfired : init_justfired('bomb')
-        }
+        })
     }
     function init_missile( i, owner ){
         const idx = owner
-        return {
+        return newItem({
             age : 0,
             cs : idx%ColorSchemes.length,
             hitmaskf : Hitmaskfs.missile,
@@ -367,7 +376,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
                 }
             },
             justfired : init_justfired('missile')
-        }
+        })
     }
     function init_guidedmissile( i, owner ){
         const missile = init_missile( i, owner )
@@ -378,7 +387,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
 
     function init_plane(idx){
         const cs = idx%ColorSchemes.length
-        return {
+        return newItem({
             age : 0,
             recklessness : 40,
             cs,
@@ -404,7 +413,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             value : 10,
             score : init_score( idx ),
             defaultname : generateName()
-        }
+        })
     }
     function init_state(){
         return {
@@ -453,6 +462,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         bomb.step = 0
         bomb.a = a >> 1
         bomb.age = 0
+        newItem( bomb )
         justfire( bomb.justfired )
     }
     function fire_guidedmissile_from_plane( missile, from ){
@@ -476,6 +486,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         missile.a = a 
         missile.age = 0
         justfire( missile.justfired )
+        newItem( missile )
     }
     function handleinputs(){
         State.planes.forEach( plane => {
@@ -609,6 +620,7 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         } else {
             plane.respawn -= 1                
             if ( plane.respawn < 0 ){
+                newItem( plane )
                 plane.ttl = 1
                 plane.x = Math.floor( worldSize.x1 + worldSize.w * Math.random() )
                 plane.y = Math.floor( 400 + Math.floor( Math.random() * 400 ) )
@@ -837,11 +849,13 @@ export function Game( { tellPlayer, // called with user centered world, each wor
         explosion.p = 2
         explosion.x = x
         explosion.y = y
+        newItem( explosion )
         const debris = explosion.debris
         for ( let j = 0, ll = debris.length ; j < ll ; j++ ){
             const debri = debris[ j ]
             debri.x = x
             debri.y = y
+            newItem( debri )
         }
         justfire( explosion.justfired )
     }
@@ -1244,28 +1258,30 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             payload.leaderboard = undefined
         }
         State.targets.forEach( target => {
-            let { x, y, as, broken } = target
-            payload.targets.push( { x, y, as, broken } )
+            let { id, x, y, as, broken } = target
+            payload.targets.push( { id, x, y, as, broken } )
         })
         State.flocks.forEach( flock => {
-            let { x, y, as } = flock
+            let { id, x, y, as } = flock
             if ( ( flock.ttl === undefined ) || ( flock.ttl > 0 ) ){
-                payload.flocks.push( { x, y, as } )
+                payload.flocks.push( { id, x, y, as } )
             }
         })
         State.birds.forEach( bird => {
-            let { x, y, as, ttl } = bird
+            let { id, x, y, as, ttl } = bird
             if ( ( bird.ttl === undefined ) || ( bird.ttl > 0 ) ){
-                payload.birds.push( { x, y, as } )
+                payload.birds.push( { id, x, y, as } )
             }
         })
         State.oxs.forEach( ox => {
-            let { x, y, as } = ox
-            payload.oxs.push( { x, y, as } )
+            let { id, x, y, as } = ox
+            payload.oxs.push( { id, x, y, as } )
         })
         
         State.planes.forEach( plane => {
-            let { defaultname,age,
+            let { id,
+                  defaultname,
+                  age,
                   idx, ttl, x, y, r, a, p, cs, explosion, leaving,
                   falling, value, score,
                   recklessness,
@@ -1288,88 +1304,88 @@ export function Game( { tellPlayer, // called with user centered world, each wor
 
             // TODO
             //if ( ttl > 0 ){
-            payload.planes.push( { human, ttl, age, x, y, r, a, p, cs, name, value, score, reckless } )
+            payload.planes.push( { id, human, ttl, age, x, y, r, a, p, cs, name, value, score, reckless } )
             //}
             {
-                const {x,y,as,ttl,cs,idx} = leaving
+                const {id, x,y,as,ttl,cs,idx} = leaving
                 if ( ttl > 0 ){
-                    payload.leavings.push({x,y,as,cs,idx})
+                    payload.leavings.push({id,x,y,as,cs,idx})
                 }
             }
             {
-                const {x,y,as,ttl} = falling
+                const {id, x,y,as,ttl} = falling
                 if ( ttl > 0 ){
-                    payload.fallings.push({x,y,as,cs,idx})
+                    payload.fallings.push({id, x,y,as,cs,idx})
                 }
             }
             if ( explosion.ttl > 0 ){
-                let { x,y,justfired } = explosion
+                let { id, x,y,justfired } = explosion
 
                 if ( justfired.ttl > 0 ){
-                    payload.justfired.push({ x,y, type : justfired.type, num : justfired.num } )
+                    payload.justfired.push({ id, x,y, type : justfired.type, num : justfired.num } )
                 }
                 
                 explosion.debris.forEach( debri => {
-                    let { x, y, a, dtype, cs } = debri
-                    payload.debris.push( { x, y, a, dtype, cs } )
+                    let { id, x, y, a, dtype, cs } = debri
+                    payload.debris.push( { id, x, y, a, dtype, cs } )
                 })
             }
             plane.bombs.forEach( bomb => {
-                let { x, age, y, a, p, cs, ttl, step, explosion, justfired } = bomb
+                let { id, x, age, y, a, p, cs, ttl, step, explosion, justfired } = bomb
 
                 if ( justfired.ttl > 0 ){
-                    payload.justfired.push( { x,y, type : justfired.type, num : justfired.num } )
+                    payload.justfired.push( { id, x,y, type : justfired.type, num : justfired.num } )
                 }
                 
-                payload.bombs.push( { age, x, y, a, p, cs, ttl /*, step */ } )
+                payload.bombs.push( { id, age, x, y, a, p, cs, ttl /*, step */ } )
                 if ( explosion.ttl > 0 ){
-                    let { x,y,justfired } = explosion
+                    let { id, x,y,justfired } = explosion
 
                     if ( justfired.ttl > 0 ){
-                        payload.justfired.push( { x,y, type : justfired.type, num : justfired.num } )
+                        payload.justfired.push( { id, x,y, type : justfired.type, num : justfired.num } )
                     }
 
                     explosion.debris.forEach( debri => {
-                        let { x, y, a, cs, dtype } = debri
-                        payload.debris.push( { x, y, a, cs, dtype } )
+                        let { id, x, y, a, cs, dtype } = debri
+                        payload.debris.push( { id, x, y, a, cs, dtype } )
                     })
                 }
             })
             plane.missiles.forEach( missile => {
-                let { age, x, y, a, p, cs, ttl, step, explosion, justfired } = missile
+                let { id, age, x, y, a, p, cs, ttl, step, explosion, justfired } = missile
                 if ( justfired.ttl > 0 ){
-                    payload.justfired.push( { x,y, type : justfired.type, num : justfired.num } )
+                    payload.justfired.push( { id, x,y, type : justfired.type, num : justfired.num } )
                 }
-                payload.missiles.push( { age, x, y, a, p, cs, ttl, justfired /*, step */ })               
+                payload.missiles.push( { id, age, x, y, a, p, cs, ttl, justfired /*, step */ })               
                 if ( explosion.ttl > 0 ){
-                    let { x,y,justfired } = explosion
+                    let { id, x,y,justfired } = explosion
 
                     
                     if ( justfired.ttl > 0 ){
-                        payload.justfired.push( { x,y, type : justfired.type, num : justfired.num } )
+                        payload.justfired.push( { id, x,y, type : justfired.type, num : justfired.num } )
                     }
                     explosion.debris.forEach( debri => {
                         let { x, y, a, dtype } = debri
-                        payload.debris.push( { x, y, a, cs, dtype }) 
+                        payload.debris.push( { id, x, y, a, cs, dtype }) 
                     })
                 }
             })
             plane.guidedmissiles.forEach( guidedmissile => {
-                let { age, x, y, a, p, cs, ttl, step, explosion, justfired } = guidedmissile
+                let { id, age, x, y, a, p, cs, ttl, step, explosion, justfired } = guidedmissile
                 if ( justfired.ttl > 0 ){
-                    payload.justfired.push( { x,y, type : justfired.type, num : justfired.num } )
+                    payload.justfired.push( { id, x,y, type : justfired.type, num : justfired.num } )
                 }
-                payload.guidedmissiles.push( { age, x, y, a, p, cs, ttl, justfired /*, step */ })               
+                payload.guidedmissiles.push( {id,  age, x, y, a, p, cs, ttl, justfired /*, step */ })               
                 if ( explosion.ttl > 0 ){
-                    let { x,y,justfired } = explosion
+                    let { x,y,id, justfired } = explosion
 
                     
                     if ( justfired.ttl > 0 ){
-                        payload.justfired.push( { x,y, type : justfired.type, num : justfired.num } )
+                        payload.justfired.push( { id, x,y, type : justfired.type, num : justfired.num } )
                     }
                     explosion.debris.forEach( debri => {
                         let { x, y, a, dtype } = debri
-                        payload.debris.push( { x, y, a, cs, dtype } )
+                        payload.debris.push( { id, x, y, a, cs, dtype } )
                     })
                 }
             })
@@ -1380,9 +1396,12 @@ export function Game( { tellPlayer, // called with user centered world, each wor
             if ( ! player ) return
             let plane = player.plane
             if ( ! plane ) return
+            const idx = State.planes.findIndex( p => plane === p )
+            const id = State.planes[ idx ].id
             let me = {
                 type : 'planes',
-                idx : State.planes.findIndex( p => plane === p )
+                idx,
+                id
             }
             tellPlayer( inputId, Object.assign( { me } , payload ) )
         })
